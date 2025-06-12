@@ -11,22 +11,28 @@ import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
 import PoolFund from "@/pages/pool-fund";
 import Reports from "@/pages/reports";
+import Mobile from "@/pages/mobile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/clients" component={Clients} />
-        <Route path="/properties" component={Properties} />
-        <Route path="/applications" component={Applications} />
-        <Route path="/financials" component={Financials} />
-        <Route path="/pool-fund" component={PoolFund} />
-        <Route path="/reports" component={Reports} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      <Route path="/mobile" component={Mobile} />
+      <Route path="/" nest>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/clients" component={Clients} />
+            <Route path="/properties" component={Properties} />
+            <Route path="/applications" component={Applications} />
+            <Route path="/financials" component={Financials} />
+            <Route path="/pool-fund" component={PoolFund} />
+            <Route path="/reports" component={Reports} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 

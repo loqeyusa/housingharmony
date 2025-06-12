@@ -15,6 +15,8 @@ import {
   type PoolFund,
   type InsertPoolFund
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // Clients
@@ -57,177 +59,141 @@ export interface IStorage {
   }>;
 }
 
-export class MemStorage implements IStorage {
-  private clients: Map<number, Client>;
-  private properties: Map<number, Property>;
-  private applications: Map<number, Application>;
-  private transactions: Map<number, Transaction>;
-  private poolFund: Map<number, PoolFund>;
-  private currentClientId: number;
-  private currentPropertyId: number;
-  private currentApplicationId: number;
-  private currentTransactionId: number;
-  private currentPoolFundId: number;
-
-  constructor() {
-    this.clients = new Map();
-    this.properties = new Map();
-    this.applications = new Map();
-    this.transactions = new Map();
-    this.poolFund = new Map();
-    this.currentClientId = 1;
-    this.currentPropertyId = 1;
-    this.currentApplicationId = 1;
-    this.currentTransactionId = 1;
-    this.currentPoolFundId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getClients(): Promise<Client[]> {
-    return Array.from(this.clients.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const result = await db.select().from(clients).orderBy(clients.createdAt);
+    return result.reverse();
   }
 
   async getClient(id: number): Promise<Client | undefined> {
-    return this.clients.get(id);
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client || undefined;
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
-    const id = this.currentClientId++;
-    const client: Client = {
-      ...insertClient,
-      id,
-      createdAt: new Date(),
-    };
-    this.clients.set(id, client);
+    const [client] = await db
+      .insert(clients)
+      .values(insertClient)
+      .returning();
     return client;
   }
 
   async updateClient(id: number, updateData: Partial<InsertClient>): Promise<Client | undefined> {
-    const client = this.clients.get(id);
-    if (!client) return undefined;
-    
-    const updatedClient = { ...client, ...updateData };
-    this.clients.set(id, updatedClient);
-    return updatedClient;
+    const [client] = await db
+      .update(clients)
+      .set(updateData)
+      .where(eq(clients.id, id))
+      .returning();
+    return client || undefined;
   }
 
   async deleteClient(id: number): Promise<boolean> {
-    return this.clients.delete(id);
+    const result = await db.delete(clients).where(eq(clients.id, id));
+    return result.rowCount > 0;
   }
 
   async getProperties(): Promise<Property[]> {
-    return Array.from(this.properties.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const result = await db.select().from(properties).orderBy(properties.createdAt);
+    return result.reverse();
   }
 
   async getProperty(id: number): Promise<Property | undefined> {
-    return this.properties.get(id);
+    const [property] = await db.select().from(properties).where(eq(properties.id, id));
+    return property || undefined;
   }
 
   async createProperty(insertProperty: InsertProperty): Promise<Property> {
-    const id = this.currentPropertyId++;
-    const property: Property = {
-      ...insertProperty,
-      id,
-      createdAt: new Date(),
-    };
-    this.properties.set(id, property);
+    const [property] = await db
+      .insert(properties)
+      .values(insertProperty)
+      .returning();
     return property;
   }
 
   async updateProperty(id: number, updateData: Partial<InsertProperty>): Promise<Property | undefined> {
-    const property = this.properties.get(id);
-    if (!property) return undefined;
-    
-    const updatedProperty = { ...property, ...updateData };
-    this.properties.set(id, updatedProperty);
-    return updatedProperty;
+    const [property] = await db
+      .update(properties)
+      .set(updateData)
+      .where(eq(properties.id, id))
+      .returning();
+    return property || undefined;
   }
 
   async deleteProperty(id: number): Promise<boolean> {
-    return this.properties.delete(id);
+    const result = await db.delete(properties).where(eq(properties.id, id));
+    return result.rowCount > 0;
   }
 
   async getApplications(): Promise<Application[]> {
-    return Array.from(this.applications.values()).sort((a, b) => 
-      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-    );
+    const result = await db.select().from(applications).orderBy(applications.submittedAt);
+    return result.reverse();
   }
 
   async getApplication(id: number): Promise<Application | undefined> {
-    return this.applications.get(id);
+    const [application] = await db.select().from(applications).where(eq(applications.id, id));
+    return application || undefined;
   }
 
   async createApplication(insertApplication: InsertApplication): Promise<Application> {
-    const id = this.currentApplicationId++;
-    const application: Application = {
-      ...insertApplication,
-      id,
-      submittedAt: new Date(),
-      approvedAt: null,
-    };
-    this.applications.set(id, application);
+    const [application] = await db
+      .insert(applications)
+      .values(insertApplication)
+      .returning();
     return application;
   }
 
   async updateApplication(id: number, updateData: Partial<InsertApplication>): Promise<Application | undefined> {
-    const application = this.applications.get(id);
-    if (!application) return undefined;
-    
-    const updatedApplication = { ...application, ...updateData };
-    if (updateData.status === 'approved' && !application.approvedAt) {
-      updatedApplication.approvedAt = new Date();
+    const updateValues: any = { ...updateData };
+    if (updateData.status === 'approved') {
+      updateValues.approvedAt = new Date();
     }
-    this.applications.set(id, updatedApplication);
-    return updatedApplication;
+    
+    const [application] = await db
+      .update(applications)
+      .set(updateValues)
+      .where(eq(applications.id, id))
+      .returning();
+    return application || undefined;
   }
 
   async deleteApplication(id: number): Promise<boolean> {
-    return this.applications.delete(id);
+    const result = await db.delete(applications).where(eq(applications.id, id));
+    return result.rowCount > 0;
   }
 
   async getTransactions(): Promise<Transaction[]> {
-    return Array.from(this.transactions.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const result = await db.select().from(transactions).orderBy(transactions.createdAt);
+    return result.reverse();
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {
-    return this.transactions.get(id);
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction || undefined;
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const id = this.currentTransactionId++;
-    const transaction: Transaction = {
-      ...insertTransaction,
-      id,
-      createdAt: new Date(),
-    };
-    this.transactions.set(id, transaction);
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
     return transaction;
   }
 
   async getPoolFundEntries(): Promise<PoolFund[]> {
-    return Array.from(this.poolFund.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const result = await db.select().from(poolFund).orderBy(poolFund.createdAt);
+    return result.reverse();
   }
 
   async createPoolFundEntry(insertPoolFund: InsertPoolFund): Promise<PoolFund> {
-    const id = this.currentPoolFundId++;
-    const entry: PoolFund = {
-      ...insertPoolFund,
-      id,
-      createdAt: new Date(),
-    };
-    this.poolFund.set(id, entry);
+    const [entry] = await db
+      .insert(poolFund)
+      .values(insertPoolFund)
+      .returning();
     return entry;
   }
 
   async getPoolFundBalance(): Promise<number> {
-    const entries = Array.from(this.poolFund.values());
+    const entries = await db.select().from(poolFund);
     return entries.reduce((balance, entry) => {
       const amount = parseFloat(entry.amount.toString());
       return entry.type === 'deposit' ? balance + amount : balance - amount;
@@ -240,13 +206,19 @@ export class MemStorage implements IStorage {
     pendingApplications: number;
     poolFundBalance: number;
   }> {
-    const totalClients = this.clients.size;
-    const activeProperties = Array.from(this.properties.values()).filter(p => p.status === 'available').length;
-    const pendingApplications = Array.from(this.applications.values()).filter(a => a.status === 'pending').length;
+    const [clientsCount] = await db.select().from(clients);
+    const totalClients = await db.select().from(clients);
+    
+    const availablePropertiesResult = await db.select().from(properties).where(eq(properties.status, 'available'));
+    const activeProperties = availablePropertiesResult.length;
+    
+    const pendingApplicationsResult = await db.select().from(applications).where(eq(applications.status, 'pending'));
+    const pendingApplications = pendingApplicationsResult.length;
+    
     const poolFundBalance = await this.getPoolFundBalance();
 
     return {
-      totalClients,
+      totalClients: totalClients.length,
       activeProperties,
       pendingApplications,
       poolFundBalance,
@@ -254,4 +226,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

@@ -1,8 +1,16 @@
 import { useAuth } from '@/contexts/auth-context';
 import { PERMISSIONS, Permission } from '@shared/schema';
+import { useQuery } from '@tanstack/react-query';
 
 export function usePermissions() {
   const { user } = useAuth();
+
+  // Fetch user's actual permissions from the API
+  const { data: userPermissions = [] } = useQuery({
+    queryKey: [`/api/users/${user?.id}/permissions`],
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
   const hasPermission = (permission: Permission): boolean => {
     if (!user) return false;
@@ -10,98 +18,7 @@ export function usePermissions() {
     // Super admins have all permissions
     if (user.isSuperAdmin) return true;
 
-    // Define role-based permissions
-    const rolePermissions: Record<string, Permission[]> = {
-      'Administrator': [
-        PERMISSIONS.MANAGE_USERS,
-        PERMISSIONS.MANAGE_ROLES,
-        PERMISSIONS.VIEW_AUDIT_LOGS,
-        PERMISSIONS.VIEW_CLIENTS,
-        PERMISSIONS.CREATE_CLIENTS,
-        PERMISSIONS.EDIT_CLIENTS,
-        PERMISSIONS.DELETE_CLIENTS,
-        PERMISSIONS.VIEW_PROPERTIES,
-        PERMISSIONS.CREATE_PROPERTIES,
-        PERMISSIONS.EDIT_PROPERTIES,
-        PERMISSIONS.DELETE_PROPERTIES,
-        PERMISSIONS.VIEW_APPLICATIONS,
-        PERMISSIONS.CREATE_APPLICATIONS,
-        PERMISSIONS.EDIT_APPLICATIONS,
-        PERMISSIONS.DELETE_APPLICATIONS,
-        PERMISSIONS.APPROVE_APPLICATIONS,
-        PERMISSIONS.VIEW_TRANSACTIONS,
-        PERMISSIONS.CREATE_TRANSACTIONS,
-        PERMISSIONS.EDIT_TRANSACTIONS,
-        PERMISSIONS.DELETE_TRANSACTIONS,
-        PERMISSIONS.MANAGE_POOL_FUND,
-        PERMISSIONS.VIEW_VENDORS,
-        PERMISSIONS.CREATE_VENDORS,
-        PERMISSIONS.EDIT_VENDORS,
-        PERMISSIONS.DELETE_VENDORS,
-        PERMISSIONS.VIEW_OTHER_SUBSIDIES,
-        PERMISSIONS.CREATE_OTHER_SUBSIDIES,
-        PERMISSIONS.EDIT_OTHER_SUBSIDIES,
-        PERMISSIONS.DELETE_OTHER_SUBSIDIES,
-        PERMISSIONS.VIEW_HOUSING_SUPPORT,
-        PERMISSIONS.CREATE_HOUSING_SUPPORT,
-        PERMISSIONS.EDIT_HOUSING_SUPPORT,
-        PERMISSIONS.DELETE_HOUSING_SUPPORT,
-        PERMISSIONS.VIEW_REPORTS,
-        PERMISSIONS.EXPORT_DATA,
-      ],
-      'Manager': [
-        PERMISSIONS.VIEW_CLIENTS,
-        PERMISSIONS.CREATE_CLIENTS,
-        PERMISSIONS.EDIT_CLIENTS,
-        PERMISSIONS.VIEW_PROPERTIES,
-        PERMISSIONS.CREATE_PROPERTIES,
-        PERMISSIONS.EDIT_PROPERTIES,
-        PERMISSIONS.VIEW_APPLICATIONS,
-        PERMISSIONS.CREATE_APPLICATIONS,
-        PERMISSIONS.EDIT_APPLICATIONS,
-        PERMISSIONS.APPROVE_APPLICATIONS,
-        PERMISSIONS.VIEW_TRANSACTIONS,
-        PERMISSIONS.CREATE_TRANSACTIONS,
-        PERMISSIONS.EDIT_TRANSACTIONS,
-        PERMISSIONS.MANAGE_POOL_FUND,
-        PERMISSIONS.VIEW_VENDORS,
-        PERMISSIONS.CREATE_VENDORS,
-        PERMISSIONS.EDIT_VENDORS,
-        PERMISSIONS.VIEW_OTHER_SUBSIDIES,
-        PERMISSIONS.CREATE_OTHER_SUBSIDIES,
-        PERMISSIONS.EDIT_OTHER_SUBSIDIES,
-        PERMISSIONS.VIEW_HOUSING_SUPPORT,
-        PERMISSIONS.CREATE_HOUSING_SUPPORT,
-        PERMISSIONS.EDIT_HOUSING_SUPPORT,
-        PERMISSIONS.VIEW_REPORTS,
-        PERMISSIONS.EXPORT_DATA,
-      ],
-      'Staff': [
-        PERMISSIONS.VIEW_CLIENTS,
-        PERMISSIONS.CREATE_CLIENTS,
-        PERMISSIONS.EDIT_CLIENTS,
-        PERMISSIONS.VIEW_PROPERTIES,
-        PERMISSIONS.VIEW_APPLICATIONS,
-        PERMISSIONS.CREATE_APPLICATIONS,
-        PERMISSIONS.EDIT_APPLICATIONS,
-        PERMISSIONS.VIEW_TRANSACTIONS,
-        PERMISSIONS.CREATE_TRANSACTIONS,
-        PERMISSIONS.VIEW_VENDORS,
-        PERMISSIONS.VIEW_OTHER_SUBSIDIES,
-        PERMISSIONS.VIEW_HOUSING_SUPPORT,
-        PERMISSIONS.CREATE_HOUSING_SUPPORT,
-        PERMISSIONS.VIEW_REPORTS,
-      ],
-    };
-
-    // For now, we'll determine role based on user properties
-    // In a full implementation, you'd fetch the user's actual roles from the API
-    let userRole = 'Staff'; // Default role
-    if (user.isSuperAdmin) {
-      userRole = 'Administrator';
-    }
-
-    const userPermissions = rolePermissions[userRole] || [];
+    // Check actual permissions from database
     return userPermissions.includes(permission);
   };
 

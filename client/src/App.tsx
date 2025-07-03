@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import Layout from "@/components/layout";
+import ProtectedRoute from "@/components/protected-route";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import Properties from "@/pages/properties";
@@ -19,6 +20,7 @@ import UserManagement from "@/pages/user-management";
 import Mobile from "@/pages/mobile";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
+import { PERMISSIONS } from "@shared/schema";
 
 function AuthenticatedRouter() {
   return (
@@ -37,7 +39,11 @@ function AuthenticatedRouter() {
             <Route path="/housing-support" component={HousingSupport} />
             <Route path="/vendors" component={Vendors} />
             <Route path="/other-subsidies" component={OtherSubsidies} />
-            <Route path="/user-management" component={UserManagement} />
+            <Route path="/user-management">
+              <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                <UserManagement />
+              </ProtectedRoute>
+            </Route>
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>

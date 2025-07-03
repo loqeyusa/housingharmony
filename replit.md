@@ -146,6 +146,7 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 03, 2025. Added comprehensive vendor management system with 19+ healthcare, group home, and service provider organizations
 - July 03, 2025. Added AI Assistant with chat and voice capabilities using OpenAI GPT-4, Whisper, and TTS
 - July 03, 2025. Fixed critical housing support pool fund calculations to match real-world formula
 - July 03, 2025. Enhanced dashboard to count both available and occupied properties as active

@@ -55,11 +55,10 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
   const form = useForm<InsertPoolFund>({
     resolver: zodResolver(insertPoolFundSchema),
     defaultValues: {
-      transactionId: 0,
-      amount: "0",
+      transactionId: 1, // This will be set by the backend
+      amount: "0.00",
       type: "withdrawal",
       description: "",
-      clientId: undefined,
     },
   });
 
@@ -73,7 +72,16 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
         applicationId: null,
       };
 
-      const transactionResponse = await apiRequest("POST", "/api/transactions", transactionData);
+      const transactionResponse = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(transactionData),
+      });
+      
+      if (!transactionResponse.ok) {
+        throw new Error("Failed to create transaction");
+      }
+      
       const transaction = await transactionResponse.json();
 
       // Then create the pool fund entry
@@ -82,7 +90,15 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
         transactionId: transaction.id,
       };
 
-      const response = await apiRequest("POST", "/api/pool-fund", poolFundData);
+      const response = await fetch("/api/pool-fund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(poolFundData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create pool fund entry");
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -110,7 +126,7 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
     createPoolFundMutation.mutate(data);
   };
 
-  const currentBalance = poolFundBalance?.balance || 0;
+  const currentBalance = (poolFundBalance as any)?.balance || 0;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>

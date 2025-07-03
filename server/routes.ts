@@ -4,8 +4,45 @@ import { storage } from "./storage";
 import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // PWA Routes
+  app.get('/manifest.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+    const manifestPath = path.resolve('client/public/manifest.json');
+    if (fs.existsSync(manifestPath)) {
+      res.sendFile(path.resolve(manifestPath));
+    } else {
+      res.status(404).json({ error: 'Manifest not found' });
+    }
+  });
+
+  app.get('/sw.js', (_req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'no-cache'); // Service worker should not be cached
+    res.setHeader('Service-Worker-Allowed', '/');
+    const swPath = path.resolve('client/public/sw.js');
+    if (fs.existsSync(swPath)) {
+      res.sendFile(path.resolve(swPath));
+    } else {
+      res.status(404).json({ error: 'Service worker not found' });
+    }
+  });
+
+  // Serve PWA icons
+  app.get('/icons/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const iconPath = path.resolve(`client/public/icons/${filename}`);
+    if (fs.existsSync(iconPath)) {
+      res.sendFile(path.resolve(iconPath));
+    } else {
+      res.status(404).json({ error: 'Icon not found' });
+    }
+  });
+
   // Dashboard
   app.get("/api/dashboard/stats", async (_req, res) => {
     try {

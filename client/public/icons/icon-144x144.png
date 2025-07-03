@@ -1,0 +1,44 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="#0f172a"/>
+  
+  <!-- House Icon -->
+  <path d="M256 80L440 240H400V400H320V320H192V400H112V240H72L256 80Z" fill="#ffffff"/>
+  
+  <!-- AI Circuit Pattern -->
+  <g opacity="0.8">
+    <!-- Central Node -->
+    <circle cx="256" cy="180" r="8" fill="#60a5fa"/>
+    
+    <!-- Circuit Lines -->
+    <line x1="256" y1="180" x2="320" y2="120" stroke="#60a5fa" stroke-width="3"/>
+    <line x1="256" y1="180" x2="192" y2="120" stroke="#60a5fa" stroke-width="3"/>
+    <line x1="256" y1="180" x2="300" y2="200" stroke="#60a5fa" stroke-width="3"/>
+    <line x1="256" y1="180" x2="212" y2="200" stroke="#60a5fa" stroke-width="3"/>
+    
+    <!-- Circuit Nodes -->
+    <circle cx="320" cy="120" r="4" fill="#60a5fa"/>
+    <circle cx="192" cy="120" r="4" fill="#60a5fa"/>
+    <circle cx="300" cy="200" r="4" fill="#60a5fa"/>
+    <circle cx="212" cy="200" r="4" fill="#60a5fa"/>
+  </g>
+  
+  <!-- Mobile Device Indicator -->
+  <rect x="340" y="320" width="60" height="100" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+  <rect x="348" y="328" width="44" height="70" fill="#0f172a"/>
+  <circle cx="370" cy="410" r="4" fill="#0f172a"/>
+  
+  <!-- Management Icons -->
+  <g opacity="0.9">
+    <!-- Document/Report Icon -->
+    <rect x="120" y="320" width="40" height="52" fill="#ffffff" rx="4"/>
+    <line x1="128" y1="332" x2="152" y2="332" stroke="#0f172a" stroke-width="2"/>
+    <line x1="128" y1="340" x2="148" y2="340" stroke="#0f172a" stroke-width="2"/>
+    <line x1="128" y1="348" x2="152" y2="348" stroke="#0f172a" stroke-width="2"/>
+    
+    <!-- Graph/Analytics Icon -->
+    <rect x="180" y="320" width="40" height="52" fill="#ffffff" rx="4"/>
+    <polyline points="188,360 192,350 196,355 200,345 204,350 208,340 212,345" 
+              stroke="#0f172a" stroke-width="2" fill="none"/>
+  </g>
+</svg>

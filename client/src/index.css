@@ -89,3 +89,113 @@
     text-wrap: balance;
   }
 }
+
+/* PWA Specific Styles */
+@layer utilities {
+  /* PWA Safe Area Insets for iOS */
+  .pwa-safe-top {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  
+  .pwa-safe-bottom {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  
+  .pwa-safe-left {
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+  
+  .pwa-safe-right {
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  
+  /* Mobile Touch Optimizations */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Offline Status Styles */
+  .offline {
+    filter: grayscale(0.3);
+  }
+  
+  .offline .online-only {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  
+  /* PWA Install Banner Styles */
+  .pwa-install-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Mobile Optimized Scrolling */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* PWA Splash Screen Styles */
+  .pwa-splash {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    color: white;
+  }
+  
+  /* High DPI Display Optimizations */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .pwa-icon {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+  
+  /* Landscape Mode Adjustments */
+  @media screen and (orientation: landscape) and (max-height: 500px) {
+    .mobile-header {
+      padding: 8px 16px;
+    }
+    
+    .mobile-nav {
+      padding: 4px 8px;
+    }
+  }
+  
+  /* Dark Mode PWA Optimizations */
+  @media (prefers-color-scheme: dark) {
+    .pwa-install-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    }
+  }
+  
+  /* Accessibility Improvements */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-scroll {
+      scroll-behavior: auto;
+    }
+    
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  /* Touch Device Optimizations */
+  @media (hover: none) and (pointer: coarse) {
+    .hover\:scale-105:hover {
+      transform: scale(1.02);
+    }
+    
+    .hover\:shadow-lg:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+  }
+}

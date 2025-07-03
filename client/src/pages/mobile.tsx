@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Home, 
   Users, 
@@ -20,7 +21,12 @@ import {
   Phone,
   Bot,
   BarChart3,
-  X
+  X,
+  Wifi,
+  WifiOff,
+  Download,
+  Share,
+  Smartphone
 } from "lucide-react";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
@@ -39,6 +45,82 @@ export default function Mobile() {
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  
+  // PWA State Management
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  
+  // PWA Effects
+  useEffect(() => {
+    // Check if running as PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone === true;
+    setIsPWA(isStandalone);
+
+    // Online/Offline listeners
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // PWA install prompt listener
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // PWA installed listener
+    const handleAppInstalled = () => {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+      setIsPWA(true);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  // PWA Install function
+  const handleInstallPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to the install prompt: ${outcome}`);
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+    }
+  };
+
+  // Share API function
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Housing Manager',
+          text: 'Comprehensive housing program management system',
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      // Fallback to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
 
   const { data: stats } = useQuery<{
     totalClients: number;
@@ -86,6 +168,79 @@ export default function Mobile() {
       return client ? { ...client, application: app } : null;
     }).filter(Boolean);
   };
+
+  // PWA Status Header Component
+  const PWAHeader = () => (
+    <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <Smartphone className="w-5 h-5 text-slate-700" />
+            <span className="font-semibold text-slate-900">Housing Manager</span>
+          </div>
+          {isPWA && (
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              PWA
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {/* Network Status */}
+          <div className="flex items-center space-x-1">
+            {isOnline ? (
+              <Wifi className="w-4 h-4 text-green-600" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-red-600" />
+            )}
+          </div>
+          
+          {/* PWA Install Button */}
+          {isInstallable && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleInstallPWA}
+              className="h-8 px-2 text-xs"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Install
+            </Button>
+          )}
+          
+          {/* Share Button */}
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={handleShare}
+            className="h-8 px-2"
+          >
+            <Share className="w-4 h-4" />
+          </Button>
+          
+          {/* AI Assistant Button */}
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => setShowAIAssistant(true)}
+            className="h-8 px-2"
+          >
+            <Bot className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Offline Status Alert */}
+      {!isOnline && (
+        <Alert className="mt-2 bg-orange-50 border-orange-200">
+          <WifiOff className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-700 text-sm">
+            You're currently offline. Some features may be limited.
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
 
   const DashboardTab = () => (
     <div className="space-y-4">
@@ -697,21 +852,8 @@ export default function Mobile() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">Housing Pro</h1>
-            <p className="text-xs text-slate-500">Mobile Management</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Bell className="text-slate-400 w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full"></span>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* PWA Header */}
+      <PWAHeader />
 
       {/* Content */}
       <div className="p-4">

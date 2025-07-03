@@ -209,8 +209,8 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
                 <FormItem>
                   <FormLabel>Beneficiary Client (Optional)</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                    defaultValue={field.value?.toString()}
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                    defaultValue={field.value?.toString() || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -218,7 +218,7 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No specific client</SelectItem>
+                      <SelectItem value="none">No specific client</SelectItem>
                       {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id.toString()}>
                           {client.firstName} {client.lastName}

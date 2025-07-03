@@ -65,6 +65,9 @@ export interface IStorage {
     activeProperties: number;
     pendingApplications: number;
     poolFundBalance: number;
+    totalVendors: number;
+    activeOtherSubsidies: number;
+    totalOtherSubsidyAmount: number;
   }>;
 
   // Client balance operations
@@ -246,6 +249,9 @@ export class DatabaseStorage implements IStorage {
     activeProperties: number;
     pendingApplications: number;
     poolFundBalance: number;
+    totalVendors: number;
+    activeOtherSubsidies: number;
+    totalOtherSubsidyAmount: number;
   }> {
     const [clientsCount] = await db.select().from(clients);
     const totalClients = await db.select().from(clients);
@@ -260,11 +266,29 @@ export class DatabaseStorage implements IStorage {
     
     const poolFundBalance = await this.getPoolFundBalance();
 
+    // Get vendor statistics
+    const allVendors = await db.select().from(vendors);
+    const totalVendors = allVendors.length;
+
+    // Get other subsidies statistics
+    const allOtherSubsidies = await db.select().from(otherSubsidies);
+    const activeOtherSubsidies = allOtherSubsidies.filter(s => s.status === 'active').length;
+    
+    // Calculate total subsidy amount (rent we paid)
+    const totalOtherSubsidyAmount = allOtherSubsidies
+      .filter(s => s.status === 'active' && s.rentWePaid)
+      .reduce((total, subsidy) => {
+        return total + parseFloat(subsidy.rentWePaid?.toString() || "0");
+      }, 0);
+
     return {
       totalClients: totalClients.length,
       activeProperties,
       pendingApplications,
       poolFundBalance,
+      totalVendors,
+      activeOtherSubsidies,
+      totalOtherSubsidyAmount,
     };
   }
 

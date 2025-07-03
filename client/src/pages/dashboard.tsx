@@ -12,7 +12,10 @@ import {
   Clock,
   Plus,
   TrendingUp,
-  File
+  File,
+  Building2,
+  DollarSign,
+  ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
 import ClientForm from "@/components/client-form";
@@ -50,8 +53,8 @@ export default function Dashboard() {
   if (statsLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
+          {[...Array(7)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
                 <div className="h-16 bg-gray-200 rounded"></div>
@@ -66,7 +69,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -142,6 +145,66 @@ export default function Dashboard() {
               </div>
               <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
                 <PiggyBank className="text-emerald-600 w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-600 text-sm font-medium">Total Vendors</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
+                  {stats?.totalVendors || 0}
+                </p>
+                <p className="text-blue-600 text-xs mt-2 flex items-center">
+                  <Building2 className="w-3 h-3 mr-1" />
+                  Service providers
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Building2 className="text-blue-600 w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-600 text-sm font-medium">Active Other Subsidies</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
+                  {stats?.activeOtherSubsidies || 0}
+                </p>
+                <p className="text-purple-600 text-xs mt-2 flex items-center">
+                  <ShieldCheck className="w-3 h-3 mr-1" />
+                  Non-HS/GRH programs
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <ShieldCheck className="text-purple-600 w-6 h-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-600 text-sm font-medium">Monthly Subsidy Total</p>
+                <p className="text-2xl font-bold text-slate-900 mt-1">
+                  ${stats?.totalOtherSubsidyAmount?.toFixed(2) || '0.00'}
+                </p>
+                <p className="text-indigo-600 text-xs mt-2 flex items-center">
+                  <DollarSign className="w-3 h-3 mr-1" />
+                  We pay monthly
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <DollarSign className="text-indigo-600 w-6 h-6" />
               </div>
             </div>
           </CardContent>

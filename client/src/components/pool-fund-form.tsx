@@ -39,6 +39,8 @@ interface PoolFundFormProps {
 export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  console.log("PoolFundForm component mounted");
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -66,7 +68,7 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
     mutationFn: async (data: InsertPoolFund) => {
       // First create the base transaction
       const transactionData = {
-        type: "pool_fund_withdrawal",
+        type: data.type === "deposit" ? "pool_fund_deposit" : "pool_fund_withdrawal",
         amount: data.amount,
         description: data.description,
         applicationId: null,
@@ -113,16 +115,18 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
       onSuccess?.();
       onClose();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Pool fund creation error:", error);
       toast({
         title: "Error",
-        description: "Failed to record pool fund transaction. Please try again.",
+        description: `Failed to record pool fund transaction: ${error.message}`,
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: InsertPoolFund) => {
+    console.log("Form data being submitted:", data);
     createPoolFundMutation.mutate(data);
   };
 

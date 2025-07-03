@@ -253,7 +253,6 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
           <div className="flex items-center space-x-2">
             <Bot className="w-6 h-6 text-primary" />
             <CardTitle>AI Assistant</CardTitle>
-            <Badge variant="secondary">Powered by GPT-4</Badge>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="w-4 h-4" />

@@ -427,70 +427,207 @@ export default function Mobile() {
     </div>
   );
 
-  const ReportsTab = () => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Reports</h2>
-      </div>
+  const ReportsTab = () => {
+    // Enhanced statistics calculations
+    const reportStats = {
+      totalClients: clients.length,
+      activeClients: clients.filter(c => c.status === 'active').length,
+      totalProperties: properties.length,
+      availableProperties: properties.filter(p => p.status === 'available').length,
+      occupiedProperties: properties.filter(p => p.status === 'occupied').length,
+      totalApplications: applications.length,
+      pendingApplications: applications.filter(a => a.status === 'pending').length,
+      approvedApplications: applications.filter(a => a.status === 'approved').length,
+      rejectedApplications: applications.filter(a => a.status === 'rejected').length,
+      totalRevenue: transactions
+        .filter(t => t.type === 'county_reimbursement')
+        .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
+      totalExpenses: transactions
+        .filter(t => ['rent_payment', 'deposit_payment', 'application_fee', 'pool_fund_withdrawal'].includes(t.type))
+        .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
+      poolFundBalance: poolFundBalance?.balance || 0,
+    };
 
-      <div className="grid grid-cols-2 gap-4">
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Reports</h2>
+        </div>
+
+        {/* Overview Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="p-3 text-center">
+              <Users className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-slate-900">{reportStats.totalClients}</p>
+              <p className="text-xs text-slate-600">Total Clients</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <Building className="w-6 h-6 text-green-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-slate-900">{reportStats.totalProperties}</p>
+              <p className="text-xs text-slate-600">Properties</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <FileText className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-slate-900">{reportStats.pendingApplications}</p>
+              <p className="text-xs text-slate-600">Pending Apps</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <PiggyBank className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+              <p className="text-lg font-bold text-slate-900">${reportStats.poolFundBalance.toFixed(0)}</p>
+              <p className="text-xs text-slate-600">Pool Fund</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Client Management Report */}
         <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-slate-900">{stats?.totalClients || 0}</p>
-            <p className="text-xs text-slate-600">Total Clients</p>
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <Users className="w-5 h-5 text-blue-600 mr-2" />
+              <h3 className="font-medium text-sm">Client Management</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Active Clients</span>
+                <span className="text-xs font-medium">{reportStats.activeClients}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Inactive Clients</span>
+                <span className="text-xs font-medium">{reportStats.totalClients - reportStats.activeClients}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Active Rate</span>
+                <span className="text-xs font-medium">
+                  {reportStats.totalClients > 0 ? ((reportStats.activeClients / reportStats.totalClients) * 100).toFixed(1) : 0}%
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Property Portfolio Report */}
         <Card>
-          <CardContent className="p-4 text-center">
-            <Building className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-slate-900">{stats?.activeProperties || 0}</p>
-            <p className="text-xs text-slate-600">Active Properties</p>
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <Building className="w-5 h-5 text-green-600 mr-2" />
+              <h3 className="font-medium text-sm">Property Portfolio</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Available Properties</span>
+                <span className="text-xs font-medium">{reportStats.availableProperties}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Occupied Properties</span>
+                <span className="text-xs font-medium">{reportStats.occupiedProperties}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Occupancy Rate</span>
+                <span className="text-xs font-medium">
+                  {reportStats.totalProperties > 0 ? ((reportStats.occupiedProperties / reportStats.totalProperties) * 100).toFixed(1) : 0}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Average Rent</span>
+                <span className="text-xs font-medium">
+                  ${properties.length > 0 ? (properties.reduce((sum, p) => sum + parseFloat(p.rentAmount.toString()), 0) / properties.length).toFixed(0) : 0}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Application Status Report */}
         <Card>
-          <CardContent className="p-4 text-center">
-            <FileText className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-slate-900">{stats?.pendingApplications || 0}</p>
-            <p className="text-xs text-slate-600">Pending Apps</p>
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <FileText className="w-5 h-5 text-orange-600 mr-2" />
+              <h3 className="font-medium text-sm">Application Status</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Approved Applications</span>
+                <span className="text-xs font-medium">{reportStats.approvedApplications}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Rejected Applications</span>
+                <span className="text-xs font-medium">{reportStats.rejectedApplications}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Approval Rate</span>
+                <span className="text-xs font-medium">
+                  {reportStats.totalApplications > 0 ? ((reportStats.approvedApplications / reportStats.totalApplications) * 100).toFixed(1) : 0}%
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Financial Summary Report */}
         <Card>
-          <CardContent className="p-4 text-center">
-            <PiggyBank className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-            <p className="text-xl font-bold text-slate-900">${stats?.poolFundBalance?.toFixed(0) || 0}</p>
-            <p className="text-xs text-slate-600">Pool Fund</p>
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <DollarSign className="w-5 h-5 text-purple-600 mr-2" />
+              <h3 className="font-medium text-sm">Financial Summary</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Total Revenue</span>
+                <span className="text-xs font-medium">${reportStats.totalRevenue.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Total Expenses</span>
+                <span className="text-xs font-medium">${reportStats.totalExpenses.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Net Cash Flow</span>
+                <span className="text-xs font-medium">${(reportStats.totalRevenue - reportStats.totalExpenses).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Avg Application Amount</span>
+                <span className="text-xs font-medium">
+                  ${reportStats.totalApplications > 0 ? (reportStats.totalRevenue / reportStats.totalApplications).toFixed(2) : '0.00'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pool Fund Activity Report */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center mb-3">
+              <PiggyBank className="w-5 h-5 text-emerald-600 mr-2" />
+              <h3 className="font-medium text-sm">Pool Fund Activity</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Current Balance</span>
+                <span className="text-xs font-medium">${reportStats.poolFundBalance.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Pool Fund Transactions</span>
+                <span className="text-xs font-medium">{transactions.filter(t => t.type === 'pool_fund').length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-600">Recent Activity</span>
+                <span className="text-xs font-medium">
+                  {transactions.filter(t => t.type === 'pool_fund').slice(0, 1).length > 0 ? 'Active' : 'None'}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-medium text-sm mb-3">Quick Stats</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-600">Approval Rate</span>
-              <span className="text-xs font-medium">
-                {applications.length > 0 ? ((applications.filter(a => a.status === 'approved').length / applications.length) * 100).toFixed(1) : 0}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-600">Occupied Properties</span>
-              <span className="text-xs font-medium">
-                {properties.filter(p => p.status === 'occupied').length} of {properties.length}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-600">Average Rent</span>
-              <span className="text-xs font-medium">
-                ${properties.length > 0 ? (properties.reduce((sum, p) => sum + parseFloat(p.rentAmount.toString()), 0) / properties.length).toFixed(0) : 0}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+    );
+  };
 
   const renderActiveTab = () => {
     switch (activeTab) {

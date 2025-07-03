@@ -19,7 +19,7 @@ import {
   type InsertHousingSupport
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Clients
@@ -227,8 +227,10 @@ export class DatabaseStorage implements IStorage {
     const [clientsCount] = await db.select().from(clients);
     const totalClients = await db.select().from(clients);
     
-    const availablePropertiesResult = await db.select().from(properties).where(eq(properties.status, 'available'));
-    const activeProperties = availablePropertiesResult.length;
+    const allProperties = await db.select().from(properties);
+    const activeProperties = allProperties.filter(p => 
+      p.status === 'available' || p.status === 'occupied'
+    ).length;
     
     const pendingApplicationsResult = await db.select().from(applications).where(eq(applications.status, 'pending'));
     const pendingApplications = pendingApplicationsResult.length;

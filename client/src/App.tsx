@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import Layout from "@/components/layout";
 import ProtectedRoute from "@/components/protected-route";
+import MobileRedirect from "@/components/mobile-redirect";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import Properties from "@/pages/properties";
@@ -55,6 +57,23 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, loading } = useAuth();
+
+  // Simple mobile detection
+  const isMobile = () => {
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    const touchDevice = 'ontouchstart' in window;
+    const smallScreen = window.innerWidth <= 768;
+    
+    return mobileRegex.test(userAgent) || (touchDevice && smallScreen);
+  };
+
+  // Redirect mobile users to mobile interface
+  useEffect(() => {
+    if (isAuthenticated && isMobile() && !window.location.pathname.includes('/mobile')) {
+      window.location.href = '/mobile';
+    }
+  }, [isAuthenticated]);
 
   if (loading) {
     return (

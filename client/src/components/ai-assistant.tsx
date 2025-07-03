@@ -144,6 +144,10 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       
+      // Set volume to maximum and ensure audio context
+      audio.volume = 1.0;
+      audio.preload = 'auto';
+      
       setIsSpeaking(true);
       
       audio.onended = () => {
@@ -151,15 +155,31 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
         URL.revokeObjectURL(audioUrl);
       };
       
-      audio.play().catch(error => {
-        console.error('Error playing audio:', error);
+      audio.onerror = (error) => {
+        console.error('Audio error:', error);
         setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
         toast({
-          title: "Error",
-          description: "Failed to play audio response",
+          title: "Audio Error",
+          description: "Failed to play audio. Check your device volume and audio settings.",
           variant: "destructive",
         });
-      });
+      };
+      
+      // Try to play with user interaction awareness
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Play error:', error);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          toast({
+            title: "Audio Playback",
+            description: "Audio ready but requires user interaction. Try clicking the speaker icon.",
+            variant: "default",
+          });
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -357,16 +377,17 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-1">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="default"
                     onClick={isRecording ? stopRecording : startRecording}
                     disabled={speechToTextMutation.isPending}
+                    className="h-8 w-8 p-0"
                   >
                     {speechToTextMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     ) : isRecording ? (
-                      <MicOff className="w-4 h-4 text-red-500" />
+                      <MicOff className="w-5 h-5 text-red-500" />
                     ) : (
-                      <Mic className="w-4 h-4" />
+                      <Mic className="w-5 h-5" />
                     )}
                   </Button>
                   <Button
@@ -381,11 +402,39 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
               </div>
             </div>
             
+            {/* Mobile Voice Recording Button */}
+            <div className="flex items-center justify-center mt-3 space-x-4">
+              <Button
+                variant={isRecording ? "destructive" : "default"}
+                size="lg"
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={speechToTextMutation.isPending}
+                className="h-12 px-6 font-medium"
+              >
+                {speechToTextMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : isRecording ? (
+                  <>
+                    <MicOff className="w-5 h-5 mr-2" />
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-5 h-5 mr-2" />
+                    Voice Input
+                  </>
+                )}
+              </Button>
+            </div>
+            
             {isRecording && (
               <div className="flex items-center justify-center mt-2 text-sm text-red-500">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  <span>Recording... Click microphone to stop</span>
+                  <span>Recording... Click "Stop Recording" when done</span>
                 </div>
               </div>
             )}

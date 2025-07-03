@@ -8,6 +8,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export interface AssistantQuery {
   message: string;
   context?: string;
+  conversationHistory?: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+  }>;
 }
 
 export interface AssistantResponse {
@@ -18,10 +22,12 @@ export interface AssistantResponse {
 
 export class PropertyAssistant {
   private async getSystemContext(): Promise<string> {
-    const [clients, properties, applications] = await Promise.all([
+    const [clients, properties, applications, vendors, otherSubsidies] = await Promise.all([
       storage.getClients(),
       storage.getProperties(),
       storage.getApplications(),
+      storage.getVendors(),
+      storage.getOtherSubsidies(),
     ]);
 
     const stats = await storage.getDashboardStats();
@@ -33,6 +39,9 @@ SYSTEM OVERVIEW:
 - Active Properties: ${stats.activeProperties}
 - Pending Applications: ${stats.pendingApplications}
 - Pool Fund Balance: $${stats.poolFundBalance.toFixed(2)}
+- Total Vendors: ${stats.totalVendors}
+- Active Other Subsidies: ${stats.activeOtherSubsidies}
+- Monthly Subsidy Total: $${stats.totalOtherSubsidyAmount.toFixed(2)}
 
 PROPERTIES:
 ${properties.map(p => `
@@ -65,12 +74,41 @@ ${applications.map(a => `
   County Reimbursement: $${a.countyReimbursement || 'N/A'}
 `).join('')}
 
+VENDORS:
+${vendors.map(v => `
+- ${v.name} (ID: ${v.id})
+  Type: ${v.type}
+  Contact: ${v.contactPerson || 'N/A'} (${v.phone || 'N/A'})
+  Email: ${v.email || 'N/A'}
+  Address: ${v.address || 'N/A'}
+  Registration: ${v.registrationNumber || 'N/A'}
+  Capacity: ${v.capacity || 'N/A'}
+  Daily Rate: $${v.dailyRate || 'N/A'}
+`).join('')}
+
+OTHER SUBSIDIES:
+${otherSubsidies.map(s => `
+- Client: ${s.clientName}
+  Vendor: ${s.vendorName}
+  Program: ${s.subsidyProgram}
+  Status: ${s.subsidyStatus}
+  Base Rent: $${s.baseRent || 'N/A'}
+  We Pay: $${s.rentWePaid || 'N/A'}
+  Subsidy Received: $${s.subsidyReceived || 'N/A'}
+  Site: ${s.site || 'N/A'}
+  Cluster: ${s.cluster || 'N/A'}
+`).join('')}
+
 You can answer questions about:
 - Property availability, details, and recommendations
 - Client information and status
 - Application processing and requirements
 - Financial information and calculations
+- Vendor details and contact information
+- Other subsidies and program information
 - General housing program guidance
+
+IMPORTANT: Pay attention to conversation context. If a user asks about a specific property, vendor, or client and then asks follow-up questions like "what's their contact", "where are they located", etc., understand they are referring to the previously mentioned entity.
 
 Always be helpful, accurate, and professional. If you don't have specific information, suggest how the user can find it or what actions they should take.`;
   }
@@ -79,18 +117,23 @@ Always be helpful, accurate, and professional. If you don't have specific inform
     try {
       const systemContext = await this.getSystemContext();
 
+      // Build conversation messages with history
+      const messages = [
+        {
+          role: "system" as const,
+          content: systemContext,
+        },
+        // Add conversation history if provided
+        ...(query.conversationHistory || []),
+        {
+          role: "user" as const,
+          content: query.message,
+        },
+      ];
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: systemContext,
-          },
-          {
-            role: "user",
-            content: query.message,
-          },
-        ],
+        messages,
         temperature: 0.7,
         max_tokens: 1000,
       });

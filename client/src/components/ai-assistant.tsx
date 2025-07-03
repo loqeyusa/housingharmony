@@ -43,12 +43,13 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm your AI assistant for the Housing Program Management System. I can help you with questions about properties, clients, applications, and financial information. You can type your questions or use voice input. How can I help you today?",
+      content: "Hello! I'm your AI assistant for the Housing Program Management System. I can help you with questions about properties, clients, applications, vendors, other subsidies, and financial information. I understand conversation context, so you can ask follow-up questions naturally. You can type your questions or use voice input. How can I help you today?",
       timestamp: new Date(),
       suggestions: [
         "Show me available properties",
         "What's the current pool fund balance?",
-        "List all active clients"
+        "Find Central Housing contact info",
+        "List all active vendors"
       ]
     }
   ]);
@@ -63,10 +64,22 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
+      // Prepare conversation history (exclude initial greeting and limit to last 10 exchanges)
+      const conversationHistory = messages
+        .slice(1) // Skip the initial greeting
+        .slice(-20) // Keep last 20 messages (10 exchanges)
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
       const response = await fetch("/api/assistant/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          message,
+          conversationHistory 
+        }),
       });
       
       if (!response.ok) {

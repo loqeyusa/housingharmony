@@ -573,13 +573,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat with AI Assistant
   app.post("/api/assistant/chat", async (req, res) => {
     try {
-      const { message, context } = req.body;
+      const { message, context, conversationHistory } = req.body;
       
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "Message is required" });
       }
 
-      const response = await propertyAssistant.processQuery({ message, context });
+      const response = await propertyAssistant.processQuery({ 
+        message, 
+        context, 
+        conversationHistory 
+      });
       res.json(response);
     } catch (error) {
       console.error('Assistant chat error:', error);

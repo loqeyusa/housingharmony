@@ -11,6 +11,7 @@ import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
 import PoolFund from "@/pages/pool-fund";
 import Reports from "@/pages/reports";
+import HousingSupport from "@/pages/housing-support";
 import Mobile from "@/pages/mobile";
 import NotFound from "@/pages/not-found";
 
@@ -27,6 +28,7 @@ function Router() {
             <Route path="/applications" component={Applications} />
             <Route path="/financials" component={Financials} />
             <Route path="/pool-fund" component={PoolFund} />
+            <Route path="/housing-support" component={HousingSupport} />
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>

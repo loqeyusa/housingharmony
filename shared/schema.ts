@@ -14,6 +14,14 @@ export const clients = pgTable("clients", {
   employmentStatus: text("employment_status").notNull(),
   monthlyIncome: decimal("monthly_income", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("active"), // active, inactive, pending
+  // Housing Support specific fields
+  vendorNumber: text("vendor_number"),
+  site: text("site"),
+  cluster: text("cluster"),
+  subsidyStatus: text("subsidy_status").default("pending"), // pending, receiving, stopped
+  grhStatus: text("grh_status").default("pending"), // pending, approved, denied
+  maxHousingPayment: decimal("max_housing_payment", { precision: 10, scale: 2 }).default("1220.00"),
+  clientObligationPercent: decimal("client_obligation_percent", { precision: 5, scale: 2 }).default("30.00"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -64,6 +72,27 @@ export const poolFund = pgTable("pool_fund", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Housing Support Monthly Tracking - automates the spreadsheet calculations
+export const housingSupport = pgTable("housing_support", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  propertyId: integer("property_id"),
+  month: text("month").notNull(), // YYYY-MM format
+  rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }).notNull(),
+  subsidyAward: decimal("subsidy_award", { precision: 10, scale: 2 }).notNull(),
+  subsidyReceived: decimal("subsidy_received", { precision: 10, scale: 2 }).notNull(),
+  clientObligation: decimal("client_obligation", { precision: 10, scale: 2 }).notNull(),
+  clientPaid: decimal("client_paid", { precision: 10, scale: 2 }).default("0.00"),
+  electricityFee: decimal("electricity_fee", { precision: 10, scale: 2 }).default("0.00"),
+  adminFee: decimal("admin_fee", { precision: 10, scale: 2 }).notNull(),
+  rentLateFee: decimal("rent_late_fee", { precision: 10, scale: 2 }).default("0.00"),
+  monthPoolTotal: decimal("month_pool_total", { precision: 10, scale: 2 }).notNull(), // calculated field
+  runningPoolTotal: decimal("running_pool_total", { precision: 10, scale: 2 }).notNull(), // calculated field
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
@@ -90,6 +119,12 @@ export const insertPoolFundSchema = createInsertSchema(poolFund).omit({
   createdAt: true,
 });
 
+export const insertHousingSupportSchema = createInsertSchema(housingSupport).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 
@@ -104,3 +139,6 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type PoolFund = typeof poolFund.$inferSelect;
 export type InsertPoolFund = z.infer<typeof insertPoolFundSchema>;
+
+export type HousingSupport = typeof housingSupport.$inferSelect;
+export type InsertHousingSupport = z.infer<typeof insertHousingSupportSchema>;

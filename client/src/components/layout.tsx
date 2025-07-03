@@ -7,6 +7,7 @@ import {
   DollarSign, 
   PiggyBank, 
   BarChart3,
+  Calculator,
   Bell,
   Plus,
   User
@@ -24,6 +25,7 @@ const navigationItems = [
   { path: "/clients", label: "Clients", icon: Users },
   { path: "/properties", label: "Properties", icon: Building },
   { path: "/applications", label: "Applications", icon: FileText },
+  { path: "/housing-support", label: "Housing Support", icon: Calculator },
   { path: "/financials", label: "Financials", icon: DollarSign },
   { path: "/pool-fund", label: "Pool Fund", icon: PiggyBank },
   { path: "/reports", label: "Reports", icon: BarChart3 },
@@ -45,6 +47,7 @@ export default function Layout({ children }: LayoutProps) {
       "/properties": "Track available properties and landlord details",
       "/applications": "Monitor county application status",
       "/financials": "View financial transactions and payments",
+      "/housing-support": "Automated Housing Support pooled fund tracking",
       "/pool-fund": "Manage surplus funds for client supplies",
       "/reports": "Generate reports and analytics",
     };

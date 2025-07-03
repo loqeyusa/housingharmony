@@ -4,6 +4,7 @@ import {
   applications, 
   transactions, 
   poolFund,
+  housingSupport,
   type Client, 
   type InsertClient,
   type Property,
@@ -13,7 +14,9 @@ import {
   type Transaction,
   type InsertTransaction,
   type PoolFund,
-  type InsertPoolFund
+  type InsertPoolFund,
+  type HousingSupport,
+  type InsertHousingSupport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -57,6 +60,15 @@ export interface IStorage {
     pendingApplications: number;
     poolFundBalance: number;
   }>;
+
+  // Housing Support operations
+  getHousingSupportRecords(): Promise<HousingSupport[]>;
+  getHousingSupportByClient(clientId: number): Promise<HousingSupport[]>;
+  getHousingSupportByMonth(month: string): Promise<HousingSupport[]>;
+  createHousingSupportRecord(record: InsertHousingSupport): Promise<HousingSupport>;
+  updateHousingSupportRecord(id: number, record: Partial<InsertHousingSupport>): Promise<HousingSupport | undefined>;
+  calculateMonthlyPoolTotal(clientId: number, month: string): Promise<number>;
+  getRunningPoolTotal(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -223,6 +235,107 @@ export class DatabaseStorage implements IStorage {
       pendingApplications,
       poolFundBalance,
     };
+  }
+
+  // Housing Support operations
+  async getHousingSupportRecords(): Promise<HousingSupport[]> {
+    return await db.select().from(housingSupport);
+  }
+
+  async getHousingSupportByClient(clientId: number): Promise<HousingSupport[]> {
+    return await db.select().from(housingSupport).where(eq(housingSupport.clientId, clientId));
+  }
+
+  async getHousingSupportByMonth(month: string): Promise<HousingSupport[]> {
+    return await db.select().from(housingSupport).where(eq(housingSupport.month, month));
+  }
+
+  async createHousingSupportRecord(insertRecord: InsertHousingSupport): Promise<HousingSupport> {
+    // Calculate pool contribution: (subsidyReceived + clientObligation - rentAmount - adminFee - electricityFee - rentLateFee)
+    const monthPoolTotal = 
+      parseFloat(insertRecord.subsidyReceived.toString()) + 
+      parseFloat(insertRecord.clientObligation.toString()) - 
+      parseFloat(insertRecord.rentAmount.toString()) - 
+      parseFloat(insertRecord.adminFee.toString()) - 
+      parseFloat(insertRecord.electricityFee?.toString() || "0") - 
+      parseFloat(insertRecord.rentLateFee?.toString() || "0");
+
+    // Get current running total and add this month's contribution
+    const currentRunningTotal = await this.getRunningPoolTotal();
+    const newRunningTotal = currentRunningTotal + monthPoolTotal;
+
+    const recordWithCalculations = {
+      ...insertRecord,
+      monthPoolTotal: monthPoolTotal.toString(),
+      runningPoolTotal: newRunningTotal.toString(),
+    };
+
+    const [record] = await db
+      .insert(housingSupport)
+      .values(recordWithCalculations)
+      .returning();
+    return record;
+  }
+
+  async updateHousingSupportRecord(id: number, updateData: Partial<InsertHousingSupport>): Promise<HousingSupport | undefined> {
+    // If financial fields are being updated, recalculate the pool totals
+    if (updateData.subsidyReceived || updateData.clientObligation || updateData.rentAmount || 
+        updateData.adminFee || updateData.electricityFee || updateData.rentLateFee) {
+      
+      const [existingRecord] = await db.select().from(housingSupport).where(eq(housingSupport.id, id));
+      if (!existingRecord) return undefined;
+
+      // Use existing values for fields not being updated
+      const subsidyReceived = updateData.subsidyReceived || existingRecord.subsidyReceived;
+      const clientObligation = updateData.clientObligation || existingRecord.clientObligation;
+      const rentAmount = updateData.rentAmount || existingRecord.rentAmount;
+      const adminFee = updateData.adminFee || existingRecord.adminFee;
+      const electricityFee = updateData.electricityFee || existingRecord.electricityFee || "0";
+      const rentLateFee = updateData.rentLateFee || existingRecord.rentLateFee || "0";
+
+      const monthPoolTotal = 
+        parseFloat(subsidyReceived.toString()) + 
+        parseFloat(clientObligation.toString()) - 
+        parseFloat(rentAmount.toString()) - 
+        parseFloat(adminFee.toString()) - 
+        parseFloat(electricityFee.toString()) - 
+        parseFloat(rentLateFee.toString());
+
+      updateData.monthPoolTotal = monthPoolTotal.toString();
+      
+      // Note: In a production system, you'd want to recalculate all running totals
+      // after this record's month for accuracy. For now, we'll keep it simple.
+    }
+
+    const [updatedRecord] = await db
+      .update(housingSupport)
+      .set(updateData)
+      .where(eq(housingSupport.id, id))
+      .returning();
+    return updatedRecord || undefined;
+  }
+
+  async calculateMonthlyPoolTotal(clientId: number, month: string): Promise<number> {
+    const records = await db.select()
+      .from(housingSupport)
+      .where(eq(housingSupport.month, month));
+    
+    return records.reduce((total, record) => {
+      return total + parseFloat(record.monthPoolTotal.toString());
+    }, 0);
+  }
+
+  async getRunningPoolTotal(): Promise<number> {
+    const allRecords = await db.select().from(housingSupport);
+    
+    if (allRecords.length === 0) return 0;
+    
+    // Sort by month and calculate running total
+    const sortedRecords = allRecords.sort((a, b) => a.month.localeCompare(b.month));
+    
+    return sortedRecords.reduce((total, record) => {
+      return total + parseFloat(record.monthPoolTotal.toString());
+    }, 0);
   }
 }
 

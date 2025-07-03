@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard
@@ -289,6 +289,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(entry);
     } catch (error) {
       res.status(400).json({ error: "Invalid pool fund data" });
+    }
+  });
+
+  // Housing Support routes
+  app.get("/api/housing-support", async (_req, res) => {
+    try {
+      const records = await storage.getHousingSupportRecords();
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch housing support records" });
+    }
+  });
+
+  app.get("/api/housing-support/client/:clientId", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const records = await storage.getHousingSupportByClient(clientId);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch client housing support records" });
+    }
+  });
+
+  app.get("/api/housing-support/month/:month", async (req, res) => {
+    try {
+      const month = req.params.month;
+      const records = await storage.getHousingSupportByMonth(month);
+      res.json(records);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch monthly housing support records" });
+    }
+  });
+
+  app.post("/api/housing-support", async (req, res) => {
+    try {
+      const recordData = insertHousingSupportSchema.parse(req.body);
+      const record = await storage.createHousingSupportRecord(recordData);
+      res.status(201).json(record);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid housing support data" });
+    }
+  });
+
+  app.put("/api/housing-support/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = insertHousingSupportSchema.partial().parse(req.body);
+      const record = await storage.updateHousingSupportRecord(id, updateData);
+      if (!record) {
+        return res.status(404).json({ error: "Housing support record not found" });
+      }
+      res.json(record);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid housing support data" });
+    }
+  });
+
+  app.get("/api/housing-support/pool-total/running", async (_req, res) => {
+    try {
+      const total = await storage.getRunningPoolTotal();
+      res.json({ total });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to calculate running pool total" });
+    }
+  });
+
+  app.get("/api/housing-support/pool-total/month/:month", async (req, res) => {
+    try {
+      const month = req.params.month;
+      const total = await storage.calculateMonthlyPoolTotal(0, month); // Pass 0 as clientId to get all clients for month
+      res.json({ total });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to calculate monthly pool total" });
     }
   });
 

@@ -24,13 +24,23 @@ import ApplicationForm from "@/components/application-form";
 import PoolFundForm from "@/components/pool-fund-form";
 import type { Client, Application, Transaction } from "@shared/schema";
 
+interface DashboardStats {
+  totalClients: number;
+  activeProperties: number;
+  pendingApplications: number;
+  poolFundBalance: number;
+  totalVendors: number;
+  activeOtherSubsidies: number;
+  totalOtherSubsidyAmount: number;
+}
+
 export default function Dashboard() {
   const [showClientForm, setShowClientForm] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 

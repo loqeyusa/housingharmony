@@ -1,16 +1,24 @@
 import { useAuth } from '@/contexts/auth-context';
 import { PERMISSIONS, Permission } from '@shared/schema';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 export function usePermissions() {
   const { user } = useAuth();
 
-  // Fetch user's actual permissions from the API
-  const { data: userPermissions = [] } = useQuery({
+  // Fetch user's actual permissions from the API with optimized caching
+  const { data: userPermissions = [], isLoading } = useQuery({
     queryKey: [`/api/users/${user?.id}/permissions`],
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
   });
+
+  // Memoize permission checks to avoid repeated computations
+  const permissionSet = useMemo(() => 
+    new Set(userPermissions as Permission[]), 
+    [userPermissions]
+  );
 
   const hasPermission = (permission: Permission): boolean => {
     if (!user) return false;
@@ -18,15 +26,16 @@ export function usePermissions() {
     // Super admins have all permissions
     if (user.isSuperAdmin) return true;
 
-    // Check actual permissions from database
-    return userPermissions.includes(permission);
+    // Use Set for O(1) lookup performance
+    return permissionSet.has(permission);
   };
 
   const canAccess = (permissions: Permission[]): boolean => {
     return permissions.some(permission => hasPermission(permission));
   };
 
-  const getAccessiblePages = () => {
+  // Memoize accessible pages calculation
+  const accessiblePages = useMemo(() => {
     const pages = [
       { path: '/', permission: null }, // Dashboard accessible to all
       { path: '/clients', permission: PERMISSIONS.VIEW_CLIENTS },
@@ -44,7 +53,9 @@ export function usePermissions() {
     return pages.filter(page => 
       page.permission === null || hasPermission(page.permission)
     );
-  };
+  }, [permissionSet, user?.isSuperAdmin]);
+
+  const getAccessiblePages = () => accessiblePages;
 
   return {
     hasPermission,
@@ -52,5 +63,6 @@ export function usePermissions() {
     getAccessiblePages,
     isStaff: !user?.isSuperAdmin,
     isAdmin: user?.isSuperAdmin,
+    isLoading,
   };
 }

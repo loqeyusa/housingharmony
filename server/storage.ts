@@ -184,7 +184,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteClient(id: number): Promise<boolean> {
     const result = await db.delete(clients).where(eq(clients.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getProperties(): Promise<Property[]> {
@@ -216,7 +216,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProperty(id: number): Promise<boolean> {
     const result = await db.delete(properties).where(eq(properties.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getApplications(): Promise<Application[]> {
@@ -253,7 +253,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteApplication(id: number): Promise<boolean> {
     const result = await db.delete(applications).where(eq(applications.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getTransactions(): Promise<Transaction[]> {

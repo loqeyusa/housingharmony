@@ -24,14 +24,14 @@ interface OtherSubsidyFormProps {
 export default function OtherSubsidyForm({ onClose, onSuccess }: OtherSubsidyFormProps) {
   const { toast } = useToast();
 
-  // Fetch vendors for dropdown
-  const { data: vendors = [] } = useQuery({
-    queryKey: ["/api/vendors"],
+  // Fetch clients for dropdown
+  const { data: clients = [] } = useQuery<any[]>({
+    queryKey: ["/api/clients"],
   });
 
-  // Fetch clients for dropdown
-  const { data: clients = [] } = useQuery({
-    queryKey: ["/api/clients"],
+  // Fetch vendors for dropdown
+  const { data: vendors = [] } = useQuery<any[]>({
+    queryKey: ["/api/vendors"],
   });
 
   const form = useForm<InsertOtherSubsidy>({
@@ -60,13 +60,7 @@ export default function OtherSubsidyForm({ onClose, onSuccess }: OtherSubsidyFor
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertOtherSubsidy) => {
-      const response = await apiRequest("/api/other-subsidies", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await apiRequest("POST", "/api/other-subsidies", data);
       return response;
     },
     onSuccess: () => {
@@ -267,7 +261,7 @@ export default function OtherSubsidyForm({ onClose, onSuccess }: OtherSubsidyFor
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.value}
+                          selected={field.value as Date | undefined}
                           onSelect={field.onChange}
                           disabled={(date) =>
                             date > new Date() || date < new Date("1900-01-01")
@@ -287,7 +281,7 @@ export default function OtherSubsidyForm({ onClose, onSuccess }: OtherSubsidyFor
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Subsidy Program</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select program" />

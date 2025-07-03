@@ -103,19 +103,19 @@ export default function UserManagement() {
   const queryClient = useQueryClient();
 
   // Data fetching
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
-  const { data: roles = [], isLoading: rolesLoading } = useQuery({
+  const { data: roles = [], isLoading: rolesLoading } = useQuery<Role[]>({
     queryKey: ["/api/roles"],
   });
 
-  const { data: permissions = [] } = useQuery({
+  const { data: permissions = [] } = useQuery<string[]>({
     queryKey: ["/api/system/permissions"],
   });
 
-  const { data: auditLogs = [] } = useQuery({
+  const { data: auditLogs = [] } = useQuery<AuditLog[]>({
     queryKey: ["/api/audit-logs"],
   });
 
@@ -134,24 +134,23 @@ export default function UserManagement() {
   });
 
   // Role form
-  const roleForm = useForm({
+  const roleForm = useForm<z.infer<typeof roleFormSchema>>({
     resolver: zodResolver(roleFormSchema),
     defaultValues: {
       name: "",
       description: "",
-      permissions: [],
+      permissions: [] as string[],
       canCreateUsers: false,
-      canAssignRoles: [],
+      canAssignRoles: [] as number[],
     },
   });
 
   // User mutations
   const createUserMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/users", {
-      method: "POST",
-      body: JSON.stringify({ ...data, createdById: 1 }), // TODO: Use actual current user ID
-      headers: { "Content-Type": "application/json" },
-    }),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/users", { ...data, createdById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({ title: "User created successfully" });
@@ -168,11 +167,10 @@ export default function UserManagement() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/users/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ ...data, modifiedById: 1 }), // TODO: Use actual current user ID
-      headers: { "Content-Type": "application/json" },
-    }),
+    mutationFn: async ({ id, ...data }: any) => {
+      const response = await apiRequest("PUT", `/api/users/${id}`, { ...data, modifiedById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({ title: "User updated successfully" });
@@ -188,12 +186,10 @@ export default function UserManagement() {
   });
 
   const toggleUserMutation = useMutation({
-    mutationFn: ({ id, enabled }: { id: number; enabled: boolean }) => 
-      apiRequest(`/api/users/${id}/enable`, {
-        method: "PUT",
-        body: JSON.stringify({ enabled, modifiedById: 1 }), // TODO: Use actual current user ID
-        headers: { "Content-Type": "application/json" },
-      }),
+    mutationFn: async ({ id, enabled }: { id: number; enabled: boolean }) => {
+      const response = await apiRequest("PUT", `/api/users/${id}/enable`, { enabled, modifiedById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({ title: "User status updated" });
@@ -201,11 +197,10 @@ export default function UserManagement() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/users/${id}`, {
-      method: "DELETE",
-      body: JSON.stringify({ deletedById: 1 }), // TODO: Use actual current user ID
-      headers: { "Content-Type": "application/json" },
-    }),
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/users/${id}`, { deletedById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({ title: "User deleted successfully" });
@@ -214,11 +209,10 @@ export default function UserManagement() {
 
   // Role mutations
   const createRoleMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/roles", {
-      method: "POST",
-      body: JSON.stringify({ ...data, createdById: 1 }), // TODO: Use actual current user ID
-      headers: { "Content-Type": "application/json" },
-    }),
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/roles", { ...data, createdById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
       toast({ title: "Role created successfully" });
@@ -235,11 +229,10 @@ export default function UserManagement() {
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: ({ id, ...data }: any) => apiRequest(`/api/roles/${id}`, {
-      method: "PUT",
-      body: JSON.stringify({ ...data, modifiedById: 1 }), // TODO: Use actual current user ID
-      headers: { "Content-Type": "application/json" },
-    }),
+    mutationFn: async ({ id, ...data }: any) => {
+      const response = await apiRequest("PUT", `/api/roles/${id}`, { ...data, modifiedById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
       toast({ title: "Role updated successfully" });
@@ -255,11 +248,10 @@ export default function UserManagement() {
   });
 
   const deleteRoleMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/roles/${id}`, {
-      method: "DELETE",
-      body: JSON.stringify({ deletedById: 1 }), // TODO: Use actual current user ID
-      headers: { "Content-Type": "application/json" },
-    }),
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/roles/${id}`, { deletedById: 1 });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
       toast({ title: "Role deleted successfully" });
@@ -306,9 +298,9 @@ export default function UserManagement() {
     roleForm.reset({
       name: role.name,
       description: role.description,
-      permissions: role.permissions,
+      permissions: (role.permissions || []) as string[],
       canCreateUsers: role.canCreateUsers,
-      canAssignRoles: role.canAssignRoles,
+      canAssignRoles: (role.canAssignRoles || []) as number[],
     });
     setShowRoleDialog(true);
   };
@@ -512,7 +504,7 @@ export default function UserManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user: User) => (
+                  {users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div>
@@ -636,12 +628,12 @@ export default function UserManagement() {
                                 {permissions.map((permission: string) => (
                                   <div key={permission} className="flex items-center space-x-2">
                                     <Checkbox
-                                      checked={field.value.includes(permission)}
+                                      checked={(field.value as string[]).includes(permission)}
                                       onCheckedChange={(checked) => {
                                         if (checked) {
-                                          field.onChange([...field.value, permission]);
+                                          field.onChange([...(field.value as string[]), permission]);
                                         } else {
-                                          field.onChange(field.value.filter((p: string) => p !== permission));
+                                          field.onChange((field.value as string[]).filter((p: string) => p !== permission));
                                         }
                                       }}
                                     />
@@ -685,7 +677,7 @@ export default function UserManagement() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {roles.map((role: Role) => (
+            {roles.map((role) => (
               <Card key={role.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -781,7 +773,7 @@ export default function UserManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {auditLogs.slice(0, 50).map((log: AuditLog) => (
+                  {auditLogs.slice(0, 50).map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>
                         {new Date(log.timestamp).toLocaleString()}

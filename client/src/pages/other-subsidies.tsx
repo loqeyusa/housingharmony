@@ -21,15 +21,13 @@ export default function OtherSubsidiesPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: subsidies = [], isLoading } = useQuery({
+  const { data: subsidies = [], isLoading } = useQuery<OtherSubsidy[]>({
     queryKey: ["/api/other-subsidies"],
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest(`/api/other-subsidies/${id}`, {
-        method: "DELETE",
-      });
+      const response = await apiRequest("DELETE", `/api/other-subsidies/${id}`);
       return response;
     },
     onSuccess: () => {
@@ -91,7 +89,7 @@ export default function OtherSubsidiesPage() {
     }
   };
 
-  const uniquePrograms = [...new Set(subsidies.map((s: OtherSubsidy) => s.subsidyProgram).filter(Boolean))];
+  const uniquePrograms = Array.from(new Set(subsidies.map((s: OtherSubsidy) => s.subsidyProgram).filter((p): p is string => Boolean(p))));
 
   if (isLoading) {
     return (
@@ -192,7 +190,7 @@ export default function OtherSubsidiesPage() {
           <SelectContent>
             <SelectItem value="all">All Programs</SelectItem>
             {uniquePrograms.map((program) => (
-              <SelectItem key={program} value={program}>{program}</SelectItem>
+              <SelectItem key={program} value={program as string}>{program}</SelectItem>
             ))}
           </SelectContent>
         </Select>

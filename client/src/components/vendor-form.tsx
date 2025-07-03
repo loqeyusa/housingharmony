@@ -166,7 +166,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                   <FormItem>
                     <FormLabel>Registration Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter license/registration number" {...field} />
+                      <Input placeholder="Enter license/registration number" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -180,7 +180,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                   <FormItem>
                     <FormLabel>GRH Type</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter GRH classification" {...field} />
+                      <Input placeholder="Enter GRH classification" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,7 +196,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                   <FormItem>
                     <FormLabel>Contact Person</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter contact person" {...field} />
+                      <Input placeholder="Enter contact person" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,7 +210,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                   <FormItem>
                     <FormLabel>Key Person</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter key contract person" {...field} />
+                      <Input placeholder="Enter key contract person" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -226,7 +226,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter phone number" {...field} />
+                      <Input placeholder="Enter phone number" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -240,7 +240,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                   <FormItem>
                     <FormLabel>Service Area</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter geographic coverage area" {...field} />
+                      <Input placeholder="Enter geographic coverage area" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -255,7 +255,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
+                    <Input type="email" placeholder="Enter email address" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -269,7 +269,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter address" {...field} />
+                    <Textarea placeholder="Enter address" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -283,7 +283,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                 <FormItem>
                   <FormLabel>Website</FormLabel>
                   <FormControl>
-                    <Input type="url" placeholder="Enter website URL" {...field} />
+                    <Input type="url" placeholder="Enter website URL" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -310,8 +310,12 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                       <Input 
                         type="number" 
                         placeholder="Number of beds/units"
-                        {...field}
+                        value={field.value || ""}
                         onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        disabled={field.disabled}
                       />
                     </FormControl>
                     <FormMessage />
@@ -330,8 +334,12 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                         type="number" 
                         step="0.01"
                         placeholder="Daily reimbursement rate"
-                        {...field}
+                        value={field.value ? String(field.value) : ""}
                         onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        disabled={field.disabled}
                       />
                     </FormControl>
                     <FormMessage />
@@ -385,7 +393,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>License Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select license status" />
@@ -453,7 +461,7 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter notes" {...field} />
+                    <Textarea placeholder="Enter notes" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

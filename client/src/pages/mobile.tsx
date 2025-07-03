@@ -19,7 +19,8 @@ import {
   Calendar,
   Phone,
   Bot,
-  BarChart3
+  BarChart3,
+  X
 } from "lucide-react";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
@@ -39,11 +40,19 @@ export default function Mobile() {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<{
+    totalClients: number;
+    activeProperties: number;
+    pendingApplications: number;
+    poolFundBalance: number;
+    totalVendors: number;
+    activeOtherSubsidies: number;
+    totalOtherSubsidyAmount: number;
+  }>({
     queryKey: ["/api/dashboard/stats"],
   });
 
-  const { data: poolFundBalance } = useQuery({
+  const { data: poolFundBalance } = useQuery<{ balance: number }>({
     queryKey: ["/api/pool-fund/balance"],
   });
 

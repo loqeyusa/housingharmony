@@ -20,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { usePermissions } from "@/hooks/use-permissions";
+import { PERMISSIONS } from "@shared/schema";
 import ClientForm from "./client-form";
 import AIAssistant from "./ai-assistant";
 
@@ -46,6 +48,7 @@ export default function Layout({ children }: LayoutProps) {
   const [showClientForm, setShowClientForm] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const { user, logout } = useAuth();
+  const { getAccessiblePages, hasPermission } = usePermissions();
 
   const handleLogout = async () => {
     try {
@@ -54,6 +57,12 @@ export default function Layout({ children }: LayoutProps) {
       console.error('Logout error:', error);
     }
   };
+
+  // Filter navigation items based on user permissions
+  const accessiblePages = getAccessiblePages();
+  const filteredNavigationItems = navigationItems.filter(item =>
+    accessiblePages.some(page => page.path === item.path)
+  );
 
   const getPageTitle = () => {
     const item = navigationItems.find(item => item.path === location);
@@ -94,7 +103,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
         
         <nav className="p-4 space-y-2">
-          {navigationItems.map((item) => {
+          {filteredNavigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
             
@@ -136,13 +145,15 @@ export default function Layout({ children }: LayoutProps) {
               <p className="text-slate-600 mt-1">{getPageDescription()}</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button 
-                onClick={() => setShowClientForm(true)}
-                className="bg-primary text-white hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Client
-              </Button>
+              {hasPermission(PERMISSIONS.CREATE_CLIENTS) && (
+                <Button 
+                  onClick={() => setShowClientForm(true)}
+                  className="bg-primary text-white hover:bg-primary/90"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Client
+                </Button>
+              )}
               <div className="relative">
                 <Bell className="text-slate-400 w-5 h-5 cursor-pointer hover:text-slate-600 transition-colors" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full"></span>

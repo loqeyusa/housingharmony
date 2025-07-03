@@ -84,12 +84,6 @@ export default function Login() {
               )}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-            <p>Default super admin:</p>
-            <p>Username: admin | Password: password123</p>
-            <p>New super admin:</p>
-            <p>Username: hussein | Password: 12345678</p>
-          </div>
         </CardContent>
       </Card>
     </div>

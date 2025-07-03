@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, decimal, timestamp, boolean, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, timestamp, boolean, date, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
@@ -213,3 +214,199 @@ export type InsertVendor = z.infer<typeof insertVendorSchema>;
 
 export type OtherSubsidy = typeof otherSubsidies.$inferSelect;
 export type InsertOtherSubsidy = z.infer<typeof insertOtherSubsidySchema>;
+
+// User Management Schema
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  isEnabled: boolean("is_enabled").default(false).notNull(),
+  isSuperAdmin: boolean("is_super_admin").default(false).notNull(),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdById: integer("created_by_id"), // References the user who created this user
+});
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  permissions: json("permissions").notNull(), // Array of permission strings
+  canCreateUsers: boolean("can_create_users").default(false).notNull(),
+  canAssignRoles: json("can_assign_roles").default([]).notNull(), // Array of role IDs they can assign
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdById: integer("created_by_id").notNull(),
+});
+
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  roleId: integer("role_id").notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  assignedById: integer("assigned_by_id").notNull(),
+});
+
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id"),
+  action: text("action").notNull(), // login, logout, create_user, assign_role, etc.
+  resource: text("resource"), // user, role, client, property, etc.
+  resourceId: integer("resource_id"),
+  details: json("details"), // Additional context about the action
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+// Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [users.createdById],
+    references: [users.id],
+    relationName: "creator",
+  }),
+  createdUsers: many(users, { relationName: "creator" }),
+  userRoles: many(userRoles),
+  createdRoles: many(roles),
+  auditLogs: many(auditLogs),
+}));
+
+export const rolesRelations = relations(roles, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [roles.createdById],
+    references: [users.id],
+  }),
+  userRoles: many(userRoles),
+}));
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoles.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id],
+  }),
+  assignedBy: one(users, {
+    fields: [userRoles.assignedById],
+    references: [users.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for user management
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  passwordHash: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+// Types for user management
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>;
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+// Permission constants
+export const PERMISSIONS = {
+  // System permissions
+  SUPER_ADMIN: 'super_admin',
+  MANAGE_USERS: 'manage_users',
+  MANAGE_ROLES: 'manage_roles',
+  VIEW_AUDIT_LOGS: 'view_audit_logs',
+  
+  // Client permissions
+  VIEW_CLIENTS: 'view_clients',
+  CREATE_CLIENTS: 'create_clients',
+  EDIT_CLIENTS: 'edit_clients',
+  DELETE_CLIENTS: 'delete_clients',
+  
+  // Property permissions
+  VIEW_PROPERTIES: 'view_properties',
+  CREATE_PROPERTIES: 'create_properties',
+  EDIT_PROPERTIES: 'edit_properties',
+  DELETE_PROPERTIES: 'delete_properties',
+  
+  // Application permissions
+  VIEW_APPLICATIONS: 'view_applications',
+  CREATE_APPLICATIONS: 'create_applications',
+  EDIT_APPLICATIONS: 'edit_applications',
+  DELETE_APPLICATIONS: 'delete_applications',
+  APPROVE_APPLICATIONS: 'approve_applications',
+  
+  // Financial permissions
+  VIEW_TRANSACTIONS: 'view_transactions',
+  CREATE_TRANSACTIONS: 'create_transactions',
+  EDIT_TRANSACTIONS: 'edit_transactions',
+  DELETE_TRANSACTIONS: 'delete_transactions',
+  MANAGE_POOL_FUND: 'manage_pool_fund',
+  
+  // Vendor permissions
+  VIEW_VENDORS: 'view_vendors',
+  CREATE_VENDORS: 'create_vendors',
+  EDIT_VENDORS: 'edit_vendors',
+  DELETE_VENDORS: 'delete_vendors',
+  
+  // Other subsidies permissions
+  VIEW_OTHER_SUBSIDIES: 'view_other_subsidies',
+  CREATE_OTHER_SUBSIDIES: 'create_other_subsidies',
+  EDIT_OTHER_SUBSIDIES: 'edit_other_subsidies',
+  DELETE_OTHER_SUBSIDIES: 'delete_other_subsidies',
+  
+  // Housing support permissions
+  VIEW_HOUSING_SUPPORT: 'view_housing_support',
+  CREATE_HOUSING_SUPPORT: 'create_housing_support',
+  EDIT_HOUSING_SUPPORT: 'edit_housing_support',
+  DELETE_HOUSING_SUPPORT: 'delete_housing_support',
+  
+  // Report permissions
+  VIEW_REPORTS: 'view_reports',
+  EXPORT_DATA: 'export_data',
+} as const;
+
+export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

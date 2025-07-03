@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 
@@ -623,6 +623,628 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Text to speech error:', error);
       res.status(500).json({ error: "Failed to generate speech" });
+    }
+  });
+
+  // ========================
+  // USER MANAGEMENT & AUTHENTICATION API ROUTES
+  // ========================
+
+  // Authentication Routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const user = await storage.authenticateUser(username, password);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials or account disabled" });
+      }
+
+      // Log the login
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "login",
+        resource: "auth",
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      // Remove password hash from response
+      const { passwordHash, ...userResponse } = user;
+      res.json({ user: userResponse });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: "Authentication failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (userId) {
+        await storage.createAuditLog({
+          userId,
+          action: "logout",
+          resource: "auth",
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: "Logout failed" });
+    }
+  });
+
+  // User Management Routes
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      // Remove password hashes from response
+      const safeUsers = users.map(({ passwordHash, ...user }) => user);
+      res.json(safeUsers);
+    } catch (error) {
+      console.error('Get users error:', error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Remove password hash from response
+      const { passwordHash, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const { createdById } = req.body;
+      
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+
+      const user = await storage.createUser(userData, createdById);
+      
+      // Log the user creation
+      await storage.createAuditLog({
+        userId: createdById,
+        action: "create_user",
+        resource: "user",
+        resourceId: user.id,
+        details: { createdUser: userData.username },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      // Remove password hash from response
+      const { passwordHash, ...userResponse } = user;
+      res.status(201).json(userResponse);
+    } catch (error) {
+      console.error('Create user error:', error);
+      res.status(400).json({ error: "Invalid user data" });
+    }
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { modifiedById, ...updateData } = req.body;
+      
+      const user = await storage.updateUser(id, updateData);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Log the update
+      await storage.createAuditLog({
+        userId: modifiedById,
+        action: "update_user",
+        resource: "user",
+        resourceId: id,
+        details: { updatedFields: Object.keys(updateData) },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      // Remove password hash from response
+      const { passwordHash, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error('Update user error:', error);
+      res.status(400).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.put("/api/users/:id/enable", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { enabled, modifiedById } = req.body;
+      
+      const success = await storage.enableUser(id, enabled);
+      if (!success) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Log the enable/disable action
+      await storage.createAuditLog({
+        userId: modifiedById,
+        action: enabled ? "enable_user" : "disable_user",
+        resource: "user",
+        resourceId: id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Enable user error:', error);
+      res.status(500).json({ error: "Failed to update user status" });
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { deletedById } = req.body;
+      
+      const success = await storage.deleteUser(id);
+      if (!success) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Log the deletion
+      await storage.createAuditLog({
+        userId: deletedById,
+        action: "delete_user",
+        resource: "user",
+        resourceId: id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Role Management Routes
+  app.get("/api/roles", async (req, res) => {
+    try {
+      const roles = await storage.getRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error('Get roles error:', error);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
+  app.get("/api/roles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const role = await storage.getRole(id);
+      
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
+      res.json(role);
+    } catch (error) {
+      console.error('Get role error:', error);
+      res.status(500).json({ error: "Failed to fetch role" });
+    }
+  });
+
+  app.post("/api/roles", async (req, res) => {
+    try {
+      const roleData = insertRoleSchema.parse(req.body);
+      
+      // Check if role name already exists
+      const existingRole = await storage.getRoleByName(roleData.name);
+      if (existingRole) {
+        return res.status(400).json({ error: "Role name already exists" });
+      }
+
+      const role = await storage.createRole(roleData);
+      
+      // Log the role creation
+      await storage.createAuditLog({
+        userId: roleData.createdById,
+        action: "create_role",
+        resource: "role",
+        resourceId: role.id,
+        details: { roleName: role.name },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.status(201).json(role);
+    } catch (error) {
+      console.error('Create role error:', error);
+      res.status(400).json({ error: "Invalid role data" });
+    }
+  });
+
+  app.put("/api/roles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { modifiedById, ...updateData } = req.body;
+      
+      const role = await storage.updateRole(id, updateData);
+      if (!role) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
+      // Log the update
+      await storage.createAuditLog({
+        userId: modifiedById,
+        action: "update_role",
+        resource: "role",
+        resourceId: id,
+        details: { updatedFields: Object.keys(updateData) },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json(role);
+    } catch (error) {
+      console.error('Update role error:', error);
+      res.status(400).json({ error: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/roles/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { deletedById } = req.body;
+      
+      const success = await storage.deleteRole(id);
+      if (!success) {
+        return res.status(404).json({ error: "Role not found" });
+      }
+
+      // Log the deletion
+      await storage.createAuditLog({
+        userId: deletedById,
+        action: "delete_role",
+        resource: "role",
+        resourceId: id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete role error:', error);
+      res.status(500).json({ error: "Failed to delete role" });
+    }
+  });
+
+  // User Role Assignment Routes
+  app.get("/api/users/:id/roles", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const userRoles = await storage.getUserRoles(userId);
+      res.json(userRoles);
+    } catch (error) {
+      console.error('Get user roles error:', error);
+      res.status(500).json({ error: "Failed to fetch user roles" });
+    }
+  });
+
+  app.get("/api/users/:id/permissions", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const permissions = await storage.getUserPermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error('Get user permissions error:', error);
+      res.status(500).json({ error: "Failed to fetch user permissions" });
+    }
+  });
+
+  app.post("/api/users/:id/roles", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { roleId, assignedById } = req.body;
+      
+      const userRole = await storage.assignRole(userId, roleId, assignedById);
+      
+      // Log the role assignment
+      await storage.createAuditLog({
+        userId: assignedById,
+        action: "assign_role",
+        resource: "user_role",
+        resourceId: userId,
+        details: { roleId },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.status(201).json(userRole);
+    } catch (error) {
+      console.error('Assign role error:', error);
+      res.status(400).json({ error: "Failed to assign role" });
+    }
+  });
+
+  app.delete("/api/users/:userId/roles/:roleId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const roleId = parseInt(req.params.roleId);
+      const { removedById } = req.body;
+      
+      const success = await storage.removeRole(userId, roleId);
+      if (!success) {
+        return res.status(404).json({ error: "User role assignment not found" });
+      }
+
+      // Log the role removal
+      await storage.createAuditLog({
+        userId: removedById,
+        action: "remove_role",
+        resource: "user_role",
+        resourceId: userId,
+        details: { roleId },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Remove role error:', error);
+      res.status(500).json({ error: "Failed to remove role" });
+    }
+  });
+
+  // Permission Checking Routes
+  app.get("/api/users/:id/check-permission/:permission", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const permission = req.params.permission;
+      
+      const hasPermission = await storage.hasPermission(userId, permission as any);
+      res.json({ hasPermission });
+    } catch (error) {
+      console.error('Check permission error:', error);
+      res.status(500).json({ error: "Failed to check permission" });
+    }
+  });
+
+  app.get("/api/users/:id/is-super-admin", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const isSuperAdmin = await storage.isSuperAdmin(userId);
+      res.json({ isSuperAdmin });
+    } catch (error) {
+      console.error('Check super admin error:', error);
+      res.status(500).json({ error: "Failed to check super admin status" });
+    }
+  });
+
+  app.get("/api/users/:id/can-create-users", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const canCreateUsers = await storage.canUserCreateUsers(userId);
+      res.json({ canCreateUsers });
+    } catch (error) {
+      console.error('Check can create users error:', error);
+      res.status(500).json({ error: "Failed to check user creation permissions" });
+    }
+  });
+
+  app.get("/api/users/:userId/can-assign-role/:roleId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const roleId = parseInt(req.params.roleId);
+      
+      const canAssignRole = await storage.canUserAssignRole(userId, roleId);
+      res.json({ canAssignRole });
+    } catch (error) {
+      console.error('Check can assign role error:', error);
+      res.status(500).json({ error: "Failed to check role assignment permissions" });
+    }
+  });
+
+  // Audit Log Routes
+  app.get("/api/audit-logs", async (req, res) => {
+    try {
+      const { userId, limit } = req.query;
+      const userIdNum = userId ? parseInt(userId as string) : undefined;
+      const limitNum = limit ? parseInt(limit as string) : 100;
+      
+      const logs = await storage.getAuditLogs(userIdNum, limitNum);
+      res.json(logs);
+    } catch (error) {
+      console.error('Get audit logs error:', error);
+      res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+  });
+
+  // System Setup Routes
+  app.get("/api/system/permissions", async (req, res) => {
+    try {
+      res.json(Object.values(PERMISSIONS));
+    } catch (error) {
+      console.error('Get permissions error:', error);
+      res.status(500).json({ error: "Failed to fetch permissions" });
+    }
+  });
+
+  app.post("/api/system/initialize", async (req, res) => {
+    try {
+      const { superAdminData } = req.body;
+      
+      // Check if any users exist
+      const existingUsers = await storage.getUsers();
+      if (existingUsers.length > 0) {
+        return res.status(400).json({ error: "System already initialized" });
+      }
+
+      // Create the super admin user
+      const superAdmin = await storage.createUser({
+        ...superAdminData,
+        isSuperAdmin: true,
+        isEnabled: true,
+      });
+
+      // Create default roles
+      const adminRole = await storage.createRole({
+        name: "Administrator",
+        description: "Full system access except user management",
+        permissions: [
+          PERMISSIONS.MANAGE_ROLES,
+          PERMISSIONS.VIEW_AUDIT_LOGS,
+          PERMISSIONS.VIEW_CLIENTS,
+          PERMISSIONS.CREATE_CLIENTS,
+          PERMISSIONS.EDIT_CLIENTS,
+          PERMISSIONS.DELETE_CLIENTS,
+          PERMISSIONS.VIEW_PROPERTIES,
+          PERMISSIONS.CREATE_PROPERTIES,
+          PERMISSIONS.EDIT_PROPERTIES,
+          PERMISSIONS.DELETE_PROPERTIES,
+          PERMISSIONS.VIEW_APPLICATIONS,
+          PERMISSIONS.CREATE_APPLICATIONS,
+          PERMISSIONS.EDIT_APPLICATIONS,
+          PERMISSIONS.DELETE_APPLICATIONS,
+          PERMISSIONS.APPROVE_APPLICATIONS,
+          PERMISSIONS.VIEW_TRANSACTIONS,
+          PERMISSIONS.CREATE_TRANSACTIONS,
+          PERMISSIONS.EDIT_TRANSACTIONS,
+          PERMISSIONS.DELETE_TRANSACTIONS,
+          PERMISSIONS.MANAGE_POOL_FUND,
+          PERMISSIONS.VIEW_VENDORS,
+          PERMISSIONS.CREATE_VENDORS,
+          PERMISSIONS.EDIT_VENDORS,
+          PERMISSIONS.DELETE_VENDORS,
+          PERMISSIONS.VIEW_OTHER_SUBSIDIES,
+          PERMISSIONS.CREATE_OTHER_SUBSIDIES,
+          PERMISSIONS.EDIT_OTHER_SUBSIDIES,
+          PERMISSIONS.DELETE_OTHER_SUBSIDIES,
+          PERMISSIONS.VIEW_HOUSING_SUPPORT,
+          PERMISSIONS.CREATE_HOUSING_SUPPORT,
+          PERMISSIONS.EDIT_HOUSING_SUPPORT,
+          PERMISSIONS.DELETE_HOUSING_SUPPORT,
+          PERMISSIONS.VIEW_REPORTS,
+          PERMISSIONS.EXPORT_DATA,
+        ],
+        canCreateUsers: true,
+        canAssignRoles: [],
+        createdById: superAdmin.id,
+      });
+
+      const managerRole = await storage.createRole({
+        name: "Manager",
+        description: "Management access with limited administrative functions",
+        permissions: [
+          PERMISSIONS.VIEW_CLIENTS,
+          PERMISSIONS.CREATE_CLIENTS,
+          PERMISSIONS.EDIT_CLIENTS,
+          PERMISSIONS.VIEW_PROPERTIES,
+          PERMISSIONS.CREATE_PROPERTIES,
+          PERMISSIONS.EDIT_PROPERTIES,
+          PERMISSIONS.VIEW_APPLICATIONS,
+          PERMISSIONS.CREATE_APPLICATIONS,
+          PERMISSIONS.EDIT_APPLICATIONS,
+          PERMISSIONS.APPROVE_APPLICATIONS,
+          PERMISSIONS.VIEW_TRANSACTIONS,
+          PERMISSIONS.CREATE_TRANSACTIONS,
+          PERMISSIONS.MANAGE_POOL_FUND,
+          PERMISSIONS.VIEW_VENDORS,
+          PERMISSIONS.CREATE_VENDORS,
+          PERMISSIONS.EDIT_VENDORS,
+          PERMISSIONS.VIEW_OTHER_SUBSIDIES,
+          PERMISSIONS.CREATE_OTHER_SUBSIDIES,
+          PERMISSIONS.EDIT_OTHER_SUBSIDIES,
+          PERMISSIONS.VIEW_HOUSING_SUPPORT,
+          PERMISSIONS.CREATE_HOUSING_SUPPORT,
+          PERMISSIONS.EDIT_HOUSING_SUPPORT,
+          PERMISSIONS.VIEW_REPORTS,
+        ],
+        canCreateUsers: true,
+        canAssignRoles: [],
+        createdById: superAdmin.id,
+      });
+
+      const staffRole = await storage.createRole({
+        name: "Staff",
+        description: "Basic operational access",
+        permissions: [
+          PERMISSIONS.VIEW_CLIENTS,
+          PERMISSIONS.CREATE_CLIENTS,
+          PERMISSIONS.EDIT_CLIENTS,
+          PERMISSIONS.VIEW_PROPERTIES,
+          PERMISSIONS.VIEW_APPLICATIONS,
+          PERMISSIONS.CREATE_APPLICATIONS,
+          PERMISSIONS.EDIT_APPLICATIONS,
+          PERMISSIONS.VIEW_TRANSACTIONS,
+          PERMISSIONS.VIEW_VENDORS,
+          PERMISSIONS.VIEW_OTHER_SUBSIDIES,
+          PERMISSIONS.VIEW_HOUSING_SUPPORT,
+          PERMISSIONS.CREATE_HOUSING_SUPPORT,
+          PERMISSIONS.EDIT_HOUSING_SUPPORT,
+        ],
+        canCreateUsers: false,
+        canAssignRoles: [],
+        createdById: superAdmin.id,
+      });
+
+      // Update admin role to allow assigning manager and staff roles
+      await storage.updateRole(adminRole.id, {
+        canAssignRoles: [managerRole.id, staffRole.id],
+      });
+
+      // Update manager role to allow assigning staff role
+      await storage.updateRole(managerRole.id, {
+        canAssignRoles: [staffRole.id],
+      });
+
+      // Log the system initialization
+      await storage.createAuditLog({
+        userId: superAdmin.id,
+        action: "system_initialization",
+        resource: "system",
+        details: { defaultRolesCreated: [adminRole.id, managerRole.id, staffRole.id] },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      const { passwordHash, ...safeUser } = superAdmin;
+      res.status(201).json({
+        superAdmin: safeUser,
+        defaultRoles: [adminRole, managerRole, staffRole],
+      });
+    } catch (error) {
+      console.error('System initialization error:', error);
+      res.status(500).json({ error: "Failed to initialize system" });
     }
   });
 

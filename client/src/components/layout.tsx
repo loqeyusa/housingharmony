@@ -13,7 +13,8 @@ import {
   User,
   Bot,
   MessageCircle,
-  Building2
+  Building2,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -34,6 +35,7 @@ const navigationItems = [
   { path: "/other-subsidies", label: "Other Subsidies", icon: FileText },
   { path: "/financials", label: "Financials", icon: DollarSign },
   { path: "/pool-fund", label: "Pool Fund", icon: PiggyBank },
+  { path: "/user-management", label: "User Management", icon: Shield },
   { path: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
@@ -56,7 +58,9 @@ export default function Layout({ children }: LayoutProps) {
       "/financials": "View financial transactions and payments",
       "/housing-support": "Automated Housing Support pooled fund tracking",
       "/vendors": "Manage housing support service providers",
+      "/other-subsidies": "Track non-HS/GRH subsidies and vendor payments",
       "/pool-fund": "Manage surplus funds for client supplies",
+      "/user-management": "Manage users, roles, and system permissions",
       "/reports": "Generate reports and analytics",
     };
     return descriptions[location] || "Page not found";

@@ -7,6 +7,10 @@ import {
   housingSupport,
   vendors,
   otherSubsidies,
+  users,
+  roles,
+  userRoles,
+  auditLogs,
   type Client, 
   type InsertClient,
   type Property,
@@ -22,8 +26,19 @@ import {
   type Vendor,
   type InsertVendor,
   type OtherSubsidy,
-  type InsertOtherSubsidy
+  type InsertOtherSubsidy,
+  type User,
+  type InsertUser,
+  type UpdateUser,
+  type Role,
+  type InsertRole,
+  type UserRole,
+  type InsertUserRole,
+  type AuditLog,
+  type InsertAuditLog,
+  type Permission
 } from "@shared/schema";
+import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 
@@ -101,6 +116,42 @@ export interface IStorage {
   createOtherSubsidy(subsidy: InsertOtherSubsidy): Promise<OtherSubsidy>;
   updateOtherSubsidy(id: number, subsidy: Partial<InsertOtherSubsidy>): Promise<OtherSubsidy | undefined>;
   deleteOtherSubsidy(id: number): Promise<boolean>;
+
+  // User Management operations
+  getUsers(): Promise<User[]>;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser, createdById?: number): Promise<User>;
+  updateUser(id: number, user: UpdateUser): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
+  enableUser(id: number, enabled: boolean): Promise<boolean>;
+  authenticateUser(username: string, password: string): Promise<User | null>;
+  updateLastLogin(id: number): Promise<void>;
+  
+  // Role Management operations
+  getRoles(): Promise<Role[]>;
+  getRole(id: number): Promise<Role | undefined>;
+  getRoleByName(name: string): Promise<Role | undefined>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, role: Partial<InsertRole>): Promise<Role | undefined>;
+  deleteRole(id: number): Promise<boolean>;
+  
+  // User Role Assignment operations
+  getUserRoles(userId: number): Promise<UserRole[]>;
+  getUserPermissions(userId: number): Promise<Permission[]>;
+  assignRole(userId: number, roleId: number, assignedById: number): Promise<UserRole>;
+  removeRole(userId: number, roleId: number): Promise<boolean>;
+  
+  // Audit Log operations
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(userId?: number, limit?: number): Promise<AuditLog[]>;
+  
+  // Permission checking
+  hasPermission(userId: number, permission: Permission): Promise<boolean>;
+  isSuperAdmin(userId: number): Promise<boolean>;
+  canUserCreateUsers(userId: number): Promise<boolean>;
+  canUserAssignRole(userId: number, roleId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -485,6 +536,278 @@ export class DatabaseStorage implements IStorage {
   async deleteOtherSubsidy(id: number): Promise<boolean> {
     const result = await db.delete(otherSubsidies).where(eq(otherSubsidies.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // User Management implementations
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.createdAt);
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser, createdById?: number): Promise<User> {
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(insertUser.password, saltRounds);
+    
+    const userData = {
+      username: insertUser.username,
+      email: insertUser.email,
+      passwordHash,
+      firstName: insertUser.firstName,
+      lastName: insertUser.lastName,
+      isEnabled: insertUser.isEnabled || false,
+      isSuperAdmin: insertUser.isSuperAdmin || false,
+      createdById,
+    };
+
+    const [user] = await db.insert(users).values(userData).returning();
+    return user;
+  }
+
+  async updateUser(id: number, updateData: UpdateUser): Promise<User | undefined> {
+    const updateFields: any = { ...updateData, updatedAt: new Date() };
+    
+    // Hash password if it's being updated
+    if (updateData.passwordHash) {
+      const saltRounds = 12;
+      updateFields.passwordHash = await bcrypt.hash(updateData.passwordHash, saltRounds);
+    }
+
+    const [user] = await db
+      .update(users)
+      .set(updateFields)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async enableUser(id: number, enabled: boolean): Promise<boolean> {
+    const [user] = await db
+      .update(users)
+      .set({ isEnabled: enabled, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user !== undefined;
+  }
+
+  async authenticateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user || !user.isEnabled) {
+      return null;
+    }
+
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) {
+      return null;
+    }
+
+    await this.updateLastLogin(user.id);
+    return user;
+  }
+
+  async updateLastLogin(id: number): Promise<void> {
+    await db
+      .update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  // Role Management implementations
+  async getRoles(): Promise<Role[]> {
+    return await db.select().from(roles).orderBy(roles.name);
+  }
+
+  async getRole(id: number): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    return role || undefined;
+  }
+
+  async getRoleByName(name: string): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.name, name));
+    return role || undefined;
+  }
+
+  async createRole(insertRole: InsertRole): Promise<Role> {
+    const [role] = await db.insert(roles).values(insertRole).returning();
+    return role;
+  }
+
+  async updateRole(id: number, updateData: Partial<InsertRole>): Promise<Role | undefined> {
+    const [role] = await db
+      .update(roles)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(roles.id, id))
+      .returning();
+    return role || undefined;
+  }
+
+  async deleteRole(id: number): Promise<boolean> {
+    const result = await db.delete(roles).where(eq(roles.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // User Role Assignment implementations
+  async getUserRoles(userId: number): Promise<UserRole[]> {
+    return await db.select().from(userRoles).where(eq(userRoles.userId, userId));
+  }
+
+  async getUserPermissions(userId: number): Promise<Permission[]> {
+    const user = await this.getUser(userId);
+    if (!user) return [];
+
+    // Super admins have all permissions
+    if (user.isSuperAdmin) {
+      return Object.values({
+        SUPER_ADMIN: 'super_admin',
+        MANAGE_USERS: 'manage_users',
+        MANAGE_ROLES: 'manage_roles',
+        VIEW_AUDIT_LOGS: 'view_audit_logs',
+        VIEW_CLIENTS: 'view_clients',
+        CREATE_CLIENTS: 'create_clients',
+        EDIT_CLIENTS: 'edit_clients',
+        DELETE_CLIENTS: 'delete_clients',
+        VIEW_PROPERTIES: 'view_properties',
+        CREATE_PROPERTIES: 'create_properties',
+        EDIT_PROPERTIES: 'edit_properties',
+        DELETE_PROPERTIES: 'delete_properties',
+        VIEW_APPLICATIONS: 'view_applications',
+        CREATE_APPLICATIONS: 'create_applications',
+        EDIT_APPLICATIONS: 'edit_applications',
+        DELETE_APPLICATIONS: 'delete_applications',
+        APPROVE_APPLICATIONS: 'approve_applications',
+        VIEW_TRANSACTIONS: 'view_transactions',
+        CREATE_TRANSACTIONS: 'create_transactions',
+        EDIT_TRANSACTIONS: 'edit_transactions',
+        DELETE_TRANSACTIONS: 'delete_transactions',
+        MANAGE_POOL_FUND: 'manage_pool_fund',
+        VIEW_VENDORS: 'view_vendors',
+        CREATE_VENDORS: 'create_vendors',
+        EDIT_VENDORS: 'edit_vendors',
+        DELETE_VENDORS: 'delete_vendors',
+        VIEW_OTHER_SUBSIDIES: 'view_other_subsidies',
+        CREATE_OTHER_SUBSIDIES: 'create_other_subsidies',
+        EDIT_OTHER_SUBSIDIES: 'edit_other_subsidies',
+        DELETE_OTHER_SUBSIDIES: 'delete_other_subsidies',
+        VIEW_HOUSING_SUPPORT: 'view_housing_support',
+        CREATE_HOUSING_SUPPORT: 'create_housing_support',
+        EDIT_HOUSING_SUPPORT: 'edit_housing_support',
+        DELETE_HOUSING_SUPPORT: 'delete_housing_support',
+        VIEW_REPORTS: 'view_reports',
+        EXPORT_DATA: 'export_data',
+      } as const) as Permission[];
+    }
+
+    // Get user's roles and extract permissions
+    const userRoleRecords = await this.getUserRoles(userId);
+    const permissions = new Set<Permission>();
+
+    for (const userRole of userRoleRecords) {
+      const role = await this.getRole(userRole.roleId);
+      if (role && role.isActive) {
+        const rolePermissions = role.permissions as Permission[];
+        rolePermissions.forEach(permission => permissions.add(permission));
+      }
+    }
+
+    return Array.from(permissions);
+  }
+
+  async assignRole(userId: number, roleId: number, assignedById: number): Promise<UserRole> {
+    const [userRole] = await db.insert(userRoles).values({
+      userId,
+      roleId,
+      assignedById,
+    }).returning();
+    return userRole;
+  }
+
+  async removeRole(userId: number, roleId: number): Promise<boolean> {
+    const result = await db.delete(userRoles)
+      .where(sql`${userRoles.userId} = ${userId} AND ${userRoles.roleId} = ${roleId}`);
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Audit Log implementations
+  async createAuditLog(insertLog: InsertAuditLog): Promise<AuditLog> {
+    const [log] = await db.insert(auditLogs).values(insertLog).returning();
+    return log;
+  }
+
+  async getAuditLogs(userId?: number, limit: number = 100): Promise<AuditLog[]> {
+    if (userId) {
+      return await db.select().from(auditLogs)
+        .where(eq(auditLogs.userId, userId))
+        .orderBy(sql`${auditLogs.timestamp} DESC`)
+        .limit(limit);
+    }
+    
+    return await db.select().from(auditLogs)
+      .orderBy(sql`${auditLogs.timestamp} DESC`)
+      .limit(limit);
+  }
+
+  // Permission checking implementations
+  async hasPermission(userId: number, permission: Permission): Promise<boolean> {
+    const permissions = await this.getUserPermissions(userId);
+    return permissions.includes(permission);
+  }
+
+  async isSuperAdmin(userId: number): Promise<boolean> {
+    const user = await this.getUser(userId);
+    return user?.isSuperAdmin || false;
+  }
+
+  async canUserCreateUsers(userId: number): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    if (user.isSuperAdmin) return true;
+
+    const userRoleRecords = await this.getUserRoles(userId);
+    for (const userRole of userRoleRecords) {
+      const role = await this.getRole(userRole.roleId);
+      if (role && role.isActive && role.canCreateUsers) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async canUserAssignRole(userId: number, roleId: number): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    if (user.isSuperAdmin) return true;
+
+    const userRoleRecords = await this.getUserRoles(userId);
+    for (const userRole of userRoleRecords) {
+      const role = await this.getRole(userRole.roleId);
+      if (role && role.isActive) {
+        const assignableRoles = role.canAssignRoles as number[];
+        if (assignableRoles.includes(roleId)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }
 

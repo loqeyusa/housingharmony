@@ -95,6 +95,23 @@ export const housingSupport = pgTable("housing_support", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Vendors - Organizations that provide housing support services
+export const vendors = pgTable("vendors", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // county_hopwa, group_homes, other_subsidies, lth_pool, healthcare, residential_care
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  website: text("website"),
+  services: text("services").array(),
+  status: text("status").notNull().default("active"), // active, inactive
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
@@ -127,6 +144,12 @@ export const insertHousingSupportSchema = createInsertSchema(housingSupport).omi
   updatedAt: true,
 });
 
+export const insertVendorSchema = createInsertSchema(vendors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 
@@ -144,3 +167,6 @@ export type InsertPoolFund = z.infer<typeof insertPoolFundSchema>;
 
 export type HousingSupport = typeof housingSupport.$inferSelect;
 export type InsertHousingSupport = z.infer<typeof insertHousingSupportSchema>;
+
+export type Vendor = typeof vendors.$inferSelect;
+export type InsertVendor = z.infer<typeof insertVendorSchema>;

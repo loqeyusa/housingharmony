@@ -5,6 +5,7 @@ import {
   transactions, 
   poolFund,
   housingSupport,
+  vendors,
   type Client, 
   type InsertClient,
   type Property,
@@ -16,7 +17,9 @@ import {
   type PoolFund,
   type InsertPoolFund,
   type HousingSupport,
-  type InsertHousingSupport
+  type InsertHousingSupport,
+  type Vendor,
+  type InsertVendor
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -75,6 +78,14 @@ export interface IStorage {
   updateHousingSupportRecord(id: number, record: Partial<InsertHousingSupport>): Promise<HousingSupport | undefined>;
   calculateMonthlyPoolTotal(clientId: number, month: string): Promise<number>;
   getRunningPoolTotal(): Promise<number>;
+
+  // Vendor operations
+  getVendors(): Promise<Vendor[]>;
+  getVendor(id: number): Promise<Vendor | undefined>;
+  getVendorsByType(type: string): Promise<Vendor[]>;
+  createVendor(vendor: InsertVendor): Promise<Vendor>;
+  updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
+  deleteVendor(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -368,6 +379,39 @@ export class DatabaseStorage implements IStorage {
   async setGlobalCreditLimit(limit: number): Promise<void> {
     await db.update(clients)
       .set({ creditLimit: limit.toString() });
+  }
+
+  // Vendor operations
+  async getVendors(): Promise<Vendor[]> {
+    return await db.select().from(vendors).orderBy(vendors.name);
+  }
+
+  async getVendor(id: number): Promise<Vendor | undefined> {
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
+    return vendor || undefined;
+  }
+
+  async getVendorsByType(type: string): Promise<Vendor[]> {
+    return await db.select().from(vendors).where(eq(vendors.type, type)).orderBy(vendors.name);
+  }
+
+  async createVendor(insertVendor: InsertVendor): Promise<Vendor> {
+    const [vendor] = await db.insert(vendors).values(insertVendor).returning();
+    return vendor;
+  }
+
+  async updateVendor(id: number, updateData: Partial<InsertVendor>): Promise<Vendor | undefined> {
+    const [vendor] = await db
+      .update(vendors)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(vendors.id, id))
+      .returning();
+    return vendor || undefined;
+  }
+
+  async deleteVendor(id: number): Promise<boolean> {
+    const result = await db.delete(vendors).where(eq(vendors.id, id));
+    return (result.rowCount || 0) > 0;
   }
 }
 

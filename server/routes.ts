@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 
@@ -407,6 +407,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to set global credit limit" });
+    }
+  });
+
+  // Vendor routes
+  app.get("/api/vendors", async (_req, res) => {
+    try {
+      const vendors = await storage.getVendors();
+      res.json(vendors);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendors" });
+    }
+  });
+
+  app.get("/api/vendors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vendor = await storage.getVendor(id);
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json(vendor);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendor" });
+    }
+  });
+
+  app.get("/api/vendors/type/:type", async (req, res) => {
+    try {
+      const type = req.params.type;
+      const vendors = await storage.getVendorsByType(type);
+      res.json(vendors);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vendors by type" });
+    }
+  });
+
+  app.post("/api/vendors", async (req, res) => {
+    try {
+      const vendorData = insertVendorSchema.parse(req.body);
+      const vendor = await storage.createVendor(vendorData);
+      res.status(201).json(vendor);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid vendor data" });
+    }
+  });
+
+  app.put("/api/vendors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vendorData = insertVendorSchema.partial().parse(req.body);
+      const vendor = await storage.updateVendor(id, vendorData);
+      if (!vendor) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json(vendor);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid vendor data" });
+    }
+  });
+
+  app.delete("/api/vendors/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteVendor(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Vendor not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete vendor" });
     }
   });
 

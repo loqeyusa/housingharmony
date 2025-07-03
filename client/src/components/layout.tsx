@@ -12,7 +12,8 @@ import {
   Plus,
   User,
   Bot,
-  MessageCircle
+  MessageCircle,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -29,6 +30,7 @@ const navigationItems = [
   { path: "/properties", label: "Properties", icon: Building },
   { path: "/applications", label: "Applications", icon: FileText },
   { path: "/housing-support", label: "Housing Support", icon: Calculator },
+  { path: "/vendors", label: "Vendors", icon: Building2 },
   { path: "/financials", label: "Financials", icon: DollarSign },
   { path: "/pool-fund", label: "Pool Fund", icon: PiggyBank },
   { path: "/reports", label: "Reports", icon: BarChart3 },
@@ -52,6 +54,7 @@ export default function Layout({ children }: LayoutProps) {
       "/applications": "Monitor county application status",
       "/financials": "View financial transactions and payments",
       "/housing-support": "Automated Housing Support pooled fund tracking",
+      "/vendors": "Manage housing support service providers",
       "/pool-fund": "Manage surplus funds for client supplies",
       "/reports": "Generate reports and analytics",
     };

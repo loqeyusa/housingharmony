@@ -54,6 +54,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error) {
       console.error('Login error:', error);
+      // Try to parse error message from server response
+      if (error instanceof Error && error.message.includes('401:')) {
+        throw new Error('Invalid username or password');
+      }
       throw error;
     }
   };

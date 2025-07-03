@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 
@@ -478,6 +478,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete vendor" });
+    }
+  });
+
+  // Other Subsidies Routes
+  app.get("/api/other-subsidies", async (req, res) => {
+    try {
+      const subsidies = await storage.getOtherSubsidies();
+      res.json(subsidies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch other subsidies" });
+    }
+  });
+
+  app.get("/api/other-subsidies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const subsidy = await storage.getOtherSubsidy(id);
+      if (!subsidy) {
+        return res.status(404).json({ error: "Other subsidy not found" });
+      }
+      res.json(subsidy);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch other subsidy" });
+    }
+  });
+
+  app.get("/api/other-subsidies/client/:clientName", async (req, res) => {
+    try {
+      const clientName = req.params.clientName;
+      const subsidies = await storage.getOtherSubsidiesByClient(clientName);
+      res.json(subsidies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch other subsidies by client" });
+    }
+  });
+
+  app.get("/api/other-subsidies/vendor/:vendorName", async (req, res) => {
+    try {
+      const vendorName = req.params.vendorName;
+      const subsidies = await storage.getOtherSubsidiesByVendor(vendorName);
+      res.json(subsidies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch other subsidies by vendor" });
+    }
+  });
+
+  app.post("/api/other-subsidies", async (req, res) => {
+    try {
+      const result = insertOtherSubsidySchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid data", details: result.error.errors });
+      }
+      const subsidy = await storage.createOtherSubsidy(result.data);
+      res.json(subsidy);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create other subsidy" });
+    }
+  });
+
+  app.patch("/api/other-subsidies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = insertOtherSubsidySchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid data", details: result.error.errors });
+      }
+      const subsidy = await storage.updateOtherSubsidy(id, result.data);
+      if (!subsidy) {
+        return res.status(404).json({ error: "Other subsidy not found" });
+      }
+      res.json(subsidy);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update other subsidy" });
+    }
+  });
+
+  app.delete("/api/other-subsidies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteOtherSubsidy(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Other subsidy not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete other subsidy" });
     }
   });
 

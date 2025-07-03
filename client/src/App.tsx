@@ -13,6 +13,7 @@ import PoolFund from "@/pages/pool-fund";
 import Reports from "@/pages/reports";
 import HousingSupport from "@/pages/housing-support";
 import Vendors from "@/pages/vendors";
+import OtherSubsidies from "@/pages/other-subsidies";
 import Mobile from "@/pages/mobile";
 import NotFound from "@/pages/not-found";
 
@@ -31,6 +32,7 @@ function Router() {
             <Route path="/pool-fund" component={PoolFund} />
             <Route path="/housing-support" component={HousingSupport} />
             <Route path="/vendors" component={Vendors} />
+            <Route path="/other-subsidies" component={OtherSubsidies} />
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>

@@ -122,6 +122,30 @@ export const vendors = pgTable("vendors", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const otherSubsidies = pgTable("other_subsidies", {
+  id: serial("id").primaryKey(),
+  clientName: text("client_name").notNull(),
+  serviceStatus: text("service_status").notNull().default("active"), // active, discharged
+  vendorNumber: text("vendor_number"), // Vendor ID reference
+  vendorName: text("vendor_name").notNull(),
+  rentLateFee: decimal("rent_late_fee", { precision: 10, scale: 2 }),
+  site: text("site"), // Property/site location
+  cluster: text("cluster"), // Service cluster designation
+  subsidyStatus: text("subsidy_status"), // Subsidy approval status
+  grhStatusDate: date("grh_status_date"), // GRH status effective date
+  subsidyProgram: text("subsidy_program"), // MHR, Other, MSA, etc.
+  baseRent: decimal("base_rent", { precision: 10, scale: 2 }),
+  rentWePaid: decimal("rent_we_paid", { precision: 10, scale: 2 }), // Amount organization paid
+  rentPaidMonthly: decimal("rent_paid_monthly", { precision: 10, scale: 2 }), // Monthly payment amount
+  subsidyReceived: decimal("subsidy_received", { precision: 10, scale: 2 }), // Subsidy amount received
+  clientObligation: decimal("client_obligation", { precision: 10, scale: 2 }), // Client's obligation amount
+  lastLease: decimal("last_lease", { precision: 10, scale: 2 }), // Last lease amount
+  status: text("status").notNull().default("active"), // active, inactive, discharged
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,
   createdAt: true,
@@ -160,6 +184,12 @@ export const insertVendorSchema = createInsertSchema(vendors).omit({
   updatedAt: true,
 });
 
+export const insertOtherSubsidySchema = createInsertSchema(otherSubsidies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 
@@ -180,3 +210,6 @@ export type InsertHousingSupport = z.infer<typeof insertHousingSupportSchema>;
 
 export type Vendor = typeof vendors.$inferSelect;
 export type InsertVendor = z.infer<typeof insertVendorSchema>;
+
+export type OtherSubsidy = typeof otherSubsidies.$inferSelect;
+export type InsertOtherSubsidy = z.infer<typeof insertOtherSubsidySchema>;

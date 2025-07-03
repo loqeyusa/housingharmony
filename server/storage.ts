@@ -6,6 +6,7 @@ import {
   poolFund,
   housingSupport,
   vendors,
+  otherSubsidies,
   type Client, 
   type InsertClient,
   type Property,
@@ -19,7 +20,9 @@ import {
   type HousingSupport,
   type InsertHousingSupport,
   type Vendor,
-  type InsertVendor
+  type InsertVendor,
+  type OtherSubsidy,
+  type InsertOtherSubsidy
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
@@ -86,6 +89,15 @@ export interface IStorage {
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
   deleteVendor(id: number): Promise<boolean>;
+
+  // Other Subsidies operations
+  getOtherSubsidies(): Promise<OtherSubsidy[]>;
+  getOtherSubsidy(id: number): Promise<OtherSubsidy | undefined>;
+  getOtherSubsidiesByClient(clientName: string): Promise<OtherSubsidy[]>;
+  getOtherSubsidiesByVendor(vendorName: string): Promise<OtherSubsidy[]>;
+  createOtherSubsidy(subsidy: InsertOtherSubsidy): Promise<OtherSubsidy>;
+  updateOtherSubsidy(id: number, subsidy: Partial<InsertOtherSubsidy>): Promise<OtherSubsidy | undefined>;
+  deleteOtherSubsidy(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -411,6 +423,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteVendor(id: number): Promise<boolean> {
     const result = await db.delete(vendors).where(eq(vendors.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Other Subsidies methods
+  async getOtherSubsidies(): Promise<OtherSubsidy[]> {
+    return await db.select().from(otherSubsidies).orderBy(otherSubsidies.clientName);
+  }
+
+  async getOtherSubsidy(id: number): Promise<OtherSubsidy | undefined> {
+    const [subsidy] = await db.select().from(otherSubsidies).where(eq(otherSubsidies.id, id));
+    return subsidy || undefined;
+  }
+
+  async getOtherSubsidiesByClient(clientName: string): Promise<OtherSubsidy[]> {
+    return await db.select().from(otherSubsidies).where(eq(otherSubsidies.clientName, clientName));
+  }
+
+  async getOtherSubsidiesByVendor(vendorName: string): Promise<OtherSubsidy[]> {
+    return await db.select().from(otherSubsidies).where(eq(otherSubsidies.vendorName, vendorName));
+  }
+
+  async createOtherSubsidy(insertSubsidy: InsertOtherSubsidy): Promise<OtherSubsidy> {
+    const [subsidy] = await db.insert(otherSubsidies).values(insertSubsidy).returning();
+    return subsidy;
+  }
+
+  async updateOtherSubsidy(id: number, updateData: Partial<InsertOtherSubsidy>): Promise<OtherSubsidy | undefined> {
+    const [subsidy] = await db
+      .update(otherSubsidies)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(otherSubsidies.id, id))
+      .returning();
+    return subsidy || undefined;
+  }
+
+  async deleteOtherSubsidy(id: number): Promise<boolean> {
+    const result = await db.delete(otherSubsidies).where(eq(otherSubsidies.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

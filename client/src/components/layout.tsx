@@ -31,6 +31,7 @@ const navigationItems = [
   { path: "/applications", label: "Applications", icon: FileText },
   { path: "/housing-support", label: "Housing Support", icon: Calculator },
   { path: "/vendors", label: "Vendors", icon: Building2 },
+  { path: "/other-subsidies", label: "Other Subsidies", icon: FileText },
   { path: "/financials", label: "Financials", icon: DollarSign },
   { path: "/pool-fund", label: "Pool Fund", icon: PiggyBank },
   { path: "/reports", label: "Reports", icon: BarChart3 },

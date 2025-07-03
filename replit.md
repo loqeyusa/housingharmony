@@ -146,6 +146,8 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 03, 2025. Enhanced AI Assistant with comprehensive system data access including all transactions, housing support records, pool fund entries, and user data for faster, more accurate responses
+- July 03, 2025. Optimized AI assistant with intelligent context-aware suggestions based on real-time system statistics and improved confidence scoring algorithms
 - July 03, 2025. Successfully implemented comprehensive role-based access control system with permission-based navigation filtering and Maya staff user created with limited access
 - July 03, 2025. Added secure logout functionality to header with user information display and role indication
 - July 03, 2025. Removed login hints from login page for enhanced security

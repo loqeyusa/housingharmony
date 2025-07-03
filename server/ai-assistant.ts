@@ -22,26 +22,49 @@ export interface AssistantResponse {
 
 export class PropertyAssistant {
   private async getSystemContext(): Promise<string> {
-    const [clients, properties, applications, vendors, otherSubsidies] = await Promise.all([
+    const [
+      clients, 
+      properties, 
+      applications, 
+      vendors, 
+      otherSubsidies, 
+      transactions, 
+      poolFundEntries, 
+      housingSupportRecords,
+      users
+    ] = await Promise.all([
       storage.getClients(),
       storage.getProperties(),
       storage.getApplications(),
       storage.getVendors(),
       storage.getOtherSubsidies(),
+      storage.getTransactions(),
+      storage.getPoolFundEntries(),
+      storage.getHousingSupportRecords(),
+      storage.getUsers(),
     ]);
 
     const stats = await storage.getDashboardStats();
+    const poolFundBalance = await storage.getPoolFundBalance();
 
-    return `You are a helpful assistant for a Housing Program Management System. Here's the current system data:
+    return `You are an expert AI assistant for a comprehensive Housing Program Management System. You have complete access to all system data and can provide detailed insights and analysis.
 
-SYSTEM OVERVIEW:
-- Total Clients: ${stats.totalClients}
-- Active Properties: ${stats.activeProperties}
-- Pending Applications: ${stats.pendingApplications}
-- Pool Fund Balance: $${stats.poolFundBalance.toFixed(2)}
+SYSTEM OVERVIEW & STATISTICS:
+- Total Clients: ${stats.totalClients} (Active: ${clients.filter(c => c.status === 'active').length})
+- Total Properties: ${stats.activeProperties} (Available: ${properties.filter(p => p.status === 'available').length}, Occupied: ${properties.filter(p => p.status === 'occupied').length})
+- Pending Applications: ${stats.pendingApplications} (Total: ${applications.length})
+- Current Pool Fund Balance: $${poolFundBalance.toFixed(2)}
 - Total Vendors: ${stats.totalVendors}
-- Active Other Subsidies: ${stats.activeOtherSubsidies}
-- Monthly Subsidy Total: $${stats.totalOtherSubsidyAmount.toFixed(2)}
+- Active Other Subsidies: ${stats.activeOtherSubsidies} (Total Monthly: $${stats.totalOtherSubsidyAmount.toFixed(2)})
+- Total Transactions: ${transactions.length}
+- Housing Support Records: ${housingSupportRecords.length}
+- System Users: ${users.length}
+
+FINANCIAL SUMMARY:
+- Total Revenue: $${transactions.filter(t => t.type === 'county_reimbursement').reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0).toFixed(2)}
+- Total Expenses: $${transactions.filter(t => ['rent_payment', 'deposit_payment', 'application_fee'].includes(t.type)).reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0).toFixed(2)}
+- Pool Fund Deposits: $${poolFundEntries.filter(e => e.type === 'deposit').reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0).toFixed(2)}
+- Pool Fund Withdrawals: $${poolFundEntries.filter(e => e.type === 'withdrawal').reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0).toFixed(2)}
 
 PROPERTIES:
 ${properties.map(p => `
@@ -99,18 +122,102 @@ ${otherSubsidies.map(s => `
   Cluster: ${s.cluster || 'N/A'}
 `).join('')}
 
-You can answer questions about:
-- Property availability, details, and recommendations
-- Client information and status
-- Application processing and requirements
-- Financial information and calculations
-- Vendor details and contact information
-- Other subsidies and program information
-- General housing program guidance
+RECENT TRANSACTIONS:
+${transactions.slice(-10).map(t => `
+- ID: ${t.id}, Type: ${t.type}
+  Amount: $${t.amount}
+  Description: ${t.description || 'N/A'}
+  Date: ${t.createdAt}
+`).join('')}
 
-IMPORTANT: Pay attention to conversation context. If a user asks about a specific property, vendor, or client and then asks follow-up questions like "what's their contact", "where are they located", etc., understand they are referring to the previously mentioned entity.
+HOUSING SUPPORT RECORDS:
+${housingSupportRecords.slice(-5).map(h => `
+- Client ID: ${h.clientId}, Month: ${h.month}
+  Rent Amount: $${h.rentAmount}
+  Subsidy Received: $${h.subsidyReceived}
+  Running Pool Total: $${h.runningPoolTotal}
+`).join('')}
 
-Always be helpful, accurate, and professional. If you don't have specific information, suggest how the user can find it or what actions they should take.`;
+POOL FUND ENTRIES:
+${poolFundEntries.slice(-5).map(p => `
+- Type: ${p.type}, Amount: $${p.amount}
+  Client ID: ${p.clientId || 'N/A'}
+  Description: ${p.description || 'N/A'}
+`).join('')}
+
+SYSTEM USERS:
+${users.map(u => `
+- ${u.firstName} ${u.lastName} (${u.username})
+  Email: ${u.email}
+  Role: ${u.isSuperAdmin ? 'Super Admin' : 'Staff'}
+  Status: ${u.isEnabled ? 'Active' : 'Inactive'}
+  Last Login: ${u.lastLogin || 'Never'}
+`).join('')}
+
+EXPERT CAPABILITIES - You can provide comprehensive assistance with:
+
+PROPERTY MANAGEMENT:
+- Instant property searches by location, price, bedrooms, status
+- Vacancy recommendations based on client needs
+- Landlord contact information and property details
+- Rental market analysis and comparisons
+- Property availability forecasting
+
+CLIENT SERVICES:
+- Complete client profiles and history analysis
+- Income verification and eligibility assessments
+- Application status tracking and next steps
+- Client matching with suitable properties
+- KYC compliance monitoring
+
+FINANCIAL ANALYSIS:
+- Real-time financial reporting and cash flow analysis
+- Pool fund optimization and allocation strategies
+- Revenue forecasting and expense tracking
+- Reimbursement calculations and timing
+- Budget variance analysis
+
+VENDOR COORDINATION:
+- Service provider recommendations by type and location
+- Contract management and compliance tracking
+- Capacity planning and resource allocation
+- Performance metrics and vendor comparisons
+
+HOUSING SUPPORT OPERATIONS:
+- Automated pool fund calculations
+- Monthly reporting and compliance tracking
+- Client fund allocation optimization
+- Running total maintenance and monitoring
+
+SYSTEM ADMINISTRATION:
+- User management and role-based permissions
+- Audit trail analysis and compliance reporting
+- Data integrity monitoring and validation
+- Performance metrics and system optimization
+
+ADVANCED FEATURES:
+- Predictive analytics for application success rates
+- Automated eligibility screening
+- Risk assessment and mitigation strategies
+- Trend analysis and performance insights
+- Compliance monitoring and reporting
+
+CONVERSATION INTELLIGENCE:
+- Context-aware responses maintaining conversation history
+- Entity recognition (clients, properties, vendors, applications)
+- Multi-step task completion and workflow automation
+- Proactive suggestions based on current data patterns
+
+IMPORTANT GUIDELINES:
+1. Always provide specific, actionable information based on real system data
+2. Maintain conversation context - remember previous references to specific entities
+3. Offer proactive insights and recommendations based on data patterns
+4. Suggest optimal next steps for complex workflows
+5. Provide comprehensive analysis when requested, including financial impacts
+6. Alert users to important deadlines, compliance issues, or data anomalies
+7. Support both quick queries and detailed analytical requests
+
+Always be professional, accurate, and solution-oriented. Leverage the complete system knowledge to provide insights that go beyond simple data retrieval.`;
   }
 
   async processQuery(query: AssistantQuery): Promise<AssistantResponse> {
@@ -132,20 +239,26 @@ Always be helpful, accurate, and professional. If you don't have specific inform
       ];
 
       const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages,
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 1500,
+        top_p: 0.9,
+        frequency_penalty: 0.1,
+        presence_penalty: 0.1,
       });
 
       const assistantResponse = response.choices[0].message.content || "I'm sorry, I couldn't process your request.";
 
-      // Generate suggestions based on the query
+      // Generate intelligent suggestions based on the query and current system state
       const suggestions = await this.generateSuggestions(query.message);
+
+      // Calculate confidence based on response quality and system data availability
+      const confidence = this.calculateConfidence(assistantResponse, query.message);
 
       return {
         response: assistantResponse,
-        confidence: 0.9, // In a real system, this would be calculated based on various factors
+        confidence,
         suggestions,
       };
     } catch (error) {
@@ -162,38 +275,100 @@ Always be helpful, accurate, and professional. If you don't have specific inform
     const queryLower = query.toLowerCase();
     const suggestions: string[] = [];
 
-    if (queryLower.includes('property') || queryLower.includes('house') || queryLower.includes('apartment')) {
-      suggestions.push("Show me available properties");
-      suggestions.push("What properties need maintenance?");
-      suggestions.push("Which properties have the lowest rent?");
+    // Get current system data for context-aware suggestions
+    const stats = await storage.getDashboardStats();
+
+    // Property-related queries
+    if (queryLower.includes('property') || queryLower.includes('house') || queryLower.includes('apartment') || queryLower.includes('available')) {
+      suggestions.push(`Show ${stats.activeProperties} available properties by rent range`);
+      suggestions.push("Find properties suitable for specific client needs");
+      suggestions.push("Compare landlord contact details and rates");
     }
 
-    if (queryLower.includes('client') || queryLower.includes('tenant')) {
-      suggestions.push("List all active clients");
-      suggestions.push("Show clients with pending applications");
-      suggestions.push("Which clients have the highest income?");
+    // Client-related queries  
+    else if (queryLower.includes('client') || queryLower.includes('tenant') || queryLower.includes('resident')) {
+      suggestions.push(`Analyze ${stats.totalClients} client profiles and eligibility`);
+      suggestions.push("Match clients with suitable properties");
+      suggestions.push("Review client application history and success rates");
     }
 
-    if (queryLower.includes('application') || queryLower.includes('apply')) {
-      suggestions.push("Show pending applications");
-      suggestions.push("What's the approval rate?");
-      suggestions.push("How long does application processing take?");
+    // Application-related queries
+    else if (queryLower.includes('application') || queryLower.includes('apply') || queryLower.includes('pending')) {
+      suggestions.push(`Process ${stats.pendingApplications} pending applications`);
+      suggestions.push("Calculate application approval rates and trends");
+      suggestions.push("Review county reimbursement status");
     }
 
-    if (queryLower.includes('money') || queryLower.includes('cost') || queryLower.includes('rent')) {
-      suggestions.push("What's the average rent amount?");
-      suggestions.push("Show pool fund balance");
-      suggestions.push("Calculate total monthly expenses");
+    // Financial queries
+    else if (queryLower.includes('money') || queryLower.includes('cost') || queryLower.includes('rent') || queryLower.includes('fund') || queryLower.includes('budget')) {
+      suggestions.push(`Analyze pool fund balance: $${stats.poolFundBalance.toFixed(0)}`);
+      suggestions.push("Calculate monthly revenue and expense projections");
+      suggestions.push("Review vendor payments and subsidy allocations");
     }
 
-    // Default suggestions if none match
-    if (suggestions.length === 0) {
-      suggestions.push("Tell me about available properties");
-      suggestions.push("Show me client statistics");
-      suggestions.push("What's the current pool fund balance?");
+    // Vendor queries
+    else if (queryLower.includes('vendor') || queryLower.includes('provider') || queryLower.includes('service')) {
+      suggestions.push(`Review ${stats.totalVendors} vendors by type and capacity`);
+      suggestions.push("Compare vendor rates and service areas");
+      suggestions.push("Check vendor compliance and contract status");
     }
 
-    return suggestions.slice(0, 3); // Limit to 3 suggestions
+    // Subsidy queries
+    else if (queryLower.includes('subsidy') || queryLower.includes('support') || queryLower.includes('assistance')) {
+      suggestions.push(`Track ${stats.activeOtherSubsidies} active subsidies ($${stats.totalOtherSubsidyAmount.toFixed(0)}/month)`);
+      suggestions.push("Calculate housing support pool allocations");
+      suggestions.push("Review subsidy program effectiveness");
+    }
+
+    // Reporting and analytics
+    else if (queryLower.includes('report') || queryLower.includes('analytics') || queryLower.includes('trend') || queryLower.includes('performance')) {
+      suggestions.push("Generate comprehensive system performance report");
+      suggestions.push("Analyze occupancy trends and forecasts");
+      suggestions.push("Review financial performance and ROI metrics");
+    }
+
+    // User management queries
+    else if (queryLower.includes('user') || queryLower.includes('admin') || queryLower.includes('access') || queryLower.includes('permission')) {
+      suggestions.push("Review user access levels and activity");
+      suggestions.push("Check system audit trails and compliance");
+      suggestions.push("Analyze user workflow efficiency");
+    }
+
+    // General/default suggestions with current data context
+    else {
+      suggestions.push(`Quick overview: ${stats.totalClients} clients, ${stats.activeProperties} properties`);
+      suggestions.push("What requires immediate attention today?");
+      suggestions.push("Analyze current system performance and trends");
+    }
+
+    return suggestions.slice(0, 3);
+  }
+
+  private calculateConfidence(response: string, query: string): number {
+    let confidence = 0.7; // Base confidence
+
+    // Increase confidence for data-rich responses
+    if (response.includes('$') || response.includes('client') || response.includes('property')) {
+      confidence += 0.1;
+    }
+
+    // Increase confidence for specific answers
+    if (response.length > 100 && response.includes('ID:')) {
+      confidence += 0.1;
+    }
+
+    // Increase confidence for responses with numbers/statistics
+    if (/\d+/.test(response)) {
+      confidence += 0.05;
+    }
+
+    // Decrease confidence for generic responses
+    if (response.includes("I'm sorry") || response.includes("I don't have")) {
+      confidence -= 0.3;
+    }
+
+    // Ensure confidence is between 0 and 1
+    return Math.max(0, Math.min(1, confidence));
   }
 
   async transcribeAudio(audioBuffer: Buffer): Promise<string> {

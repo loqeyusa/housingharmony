@@ -38,7 +38,7 @@ export default function Reports() {
     queryKey: ["/api/pool-fund"],
   });
 
-  const { data: poolFundBalance } = useQuery({
+  const { data: poolFundBalance } = useQuery<{ balance: number }>({
     queryKey: ["/api/pool-fund/balance"],
   });
 
@@ -58,7 +58,7 @@ export default function Reports() {
     totalExpenses: transactions
       .filter(t => ['rent_payment', 'deposit_payment', 'application_fee', 'pool_fund_withdrawal'].includes(t.type))
       .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
-    poolFundBalance: poolFundBalance?.balance || 0,
+    poolFundBalance: poolFundBalance?.balance ?? 0,
   };
 
   const reportSections = [
@@ -164,62 +164,62 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-slate-900">{stats.totalClients}</p>
-            <p className="text-sm text-slate-600">Total Clients</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-3 text-center">
+            <Users className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-slate-900">{stats.totalClients}</p>
+            <p className="text-xs text-slate-600">Total Clients</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Building className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-slate-900">{stats.totalProperties}</p>
-            <p className="text-sm text-slate-600">Properties</p>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-3 text-center">
+            <Building className="w-6 h-6 text-green-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-slate-900">{stats.totalProperties}</p>
+            <p className="text-xs text-slate-600">Properties</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <FileText className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-slate-900">{stats.pendingApplications}</p>
-            <p className="text-sm text-slate-600">Pending Apps</p>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-3 text-center">
+            <FileText className="w-6 h-6 text-orange-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-slate-900">{stats.pendingApplications}</p>
+            <p className="text-xs text-slate-600">Pending Apps</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <PiggyBank className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-slate-900">${stats.poolFundBalance.toFixed(0)}</p>
-            <p className="text-sm text-slate-600">Pool Fund</p>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-3 text-center">
+            <PiggyBank className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
+            <p className="text-xl font-bold text-slate-900">${stats.poolFundBalance.toFixed(0)}</p>
+            <p className="text-xs text-slate-600">Pool Fund</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Report Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {reportSections.map((section, index) => {
           const Icon = section.icon;
           return (
-            <Card key={index}>
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${section.color}`}>
-                    <Icon className="w-5 h-5" />
+            <Card key={index} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${section.color}`}>
+                    <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{section.title}</CardTitle>
-                    <p className="text-sm text-slate-600 mt-1">{section.description}</p>
+                    <CardTitle className="text-base">{section.title}</CardTitle>
+                    <p className="text-xs text-slate-600 mt-0.5">{section.description}</p>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="pt-0">
+                <div className="space-y-2">
                   {section.data.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-b-0">
-                      <span className="text-sm text-slate-600">{item.label}</span>
-                      <span className="font-semibold text-slate-900">{item.value}</span>
+                    <div key={idx} className="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-b-0">
+                      <span className="text-xs text-slate-600">{item.label}</span>
+                      <span className="font-semibold text-sm text-slate-900">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -229,82 +229,86 @@ export default function Reports() {
         })}
       </div>
 
-      {/* Export Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Download className="w-5 h-5" />
-            <span>Export Reports</span>
-          </CardTitle>
-          <p className="text-slate-600">Generate and download comprehensive reports in various formats</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {exportReports.map((report, index) => {
-              const Icon = report.icon;
-              return (
-                <div key={index} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <Icon className="w-8 h-8 text-slate-600" />
-                    <div>
-                      <p className="font-medium text-slate-900">{report.title}</p>
-                      <p className="text-sm text-slate-600">{report.description}</p>
+      {/* Export & Analytics Combined */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Export Section */}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
+              <Download className="w-4 h-4" />
+              <span>Export Reports</span>
+            </CardTitle>
+            <p className="text-xs text-slate-600">Generate and download reports</p>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {exportReports.map((report, index) => {
+                const Icon = report.icon;
+                return (
+                  <div key={index} className="flex items-center justify-between p-2 border border-slate-200 rounded hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center space-x-2">
+                      <Icon className="w-4 h-4 text-slate-600" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">{report.title}</p>
+                        <p className="text-xs text-slate-600">{report.description}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs">{report.format}</Badge>
+                      <Button
+                        size="sm"
+                        onClick={() => handleExport(report.action)}
+                        className="h-7 text-xs"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Export
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="outline">{report.format}</Badge>
-                    <Button
-                      size="sm"
-                      onClick={() => handleExport(report.action)}
-                      className="bg-primary text-white hover:bg-primary/90"
-                    >
-                      <Download className="w-4 h-4 mr-1" />
-                      Export
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Analytics Insights */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <BarChart3 className="w-5 h-5" />
-            <span>Key Performance Insights</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <TrendingUp className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-              <p className="text-2xl font-bold text-blue-900">
-                {stats.totalApplications > 0 ? ((stats.approvedApplications / stats.totalApplications) * 100).toFixed(1) : 0}%
-              </p>
-              <p className="text-sm text-blue-700">Application Approval Rate</p>
+        {/* Analytics Insights */}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
+              <BarChart3 className="w-4 h-4" />
+              <span>Key Performance Insights</span>
+            </CardTitle>
+            <p className="text-xs text-slate-600">Critical performance metrics</p>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="text-center p-3 bg-blue-50 rounded">
+                <TrendingUp className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                <p className="text-xl font-bold text-blue-900">
+                  {stats.totalApplications > 0 ? ((stats.approvedApplications / stats.totalApplications) * 100).toFixed(1) : 0}%
+                </p>
+                <p className="text-xs text-blue-700">Application Approval Rate</p>
+              </div>
+              
+              <div className="text-center p-3 bg-green-50 rounded">
+                <DollarSign className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                <p className="text-xl font-bold text-green-900">
+                  ${stats.totalApplications > 0 ? (stats.totalRevenue / stats.totalApplications).toFixed(0) : 0}
+                </p>
+                <p className="text-xs text-green-700">Average Reimbursement</p>
+              </div>
+              
+              <div className="text-center p-3 bg-emerald-50 rounded">
+                <PiggyBank className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
+                <p className="text-xl font-bold text-emerald-900">
+                  {stats.totalRevenue > 0 ? ((stats.poolFundBalance / stats.totalRevenue) * 100).toFixed(1) : 0}%
+                </p>
+                <p className="text-xs text-emerald-700">Pool Fund Ratio</p>
+              </div>
             </div>
-            
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <DollarSign className="w-8 h-8 text-green-600 mx-auto mb-3" />
-              <p className="text-2xl font-bold text-green-900">
-                ${stats.totalApplications > 0 ? (stats.totalRevenue / stats.totalApplications).toFixed(0) : 0}
-              </p>
-              <p className="text-sm text-green-700">Average Reimbursement</p>
-            </div>
-            
-            <div className="text-center p-4 bg-emerald-50 rounded-lg">
-              <PiggyBank className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
-              <p className="text-2xl font-bold text-emerald-900">
-                {stats.totalRevenue > 0 ? ((stats.poolFundBalance / stats.totalRevenue) * 100).toFixed(1) : 0}%
-              </p>
-              <p className="text-sm text-emerald-700">Pool Fund Ratio</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

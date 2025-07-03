@@ -18,7 +18,8 @@ import {
   MapPin,
   Calendar,
   Phone,
-  Bot
+  Bot,
+  BarChart3
 } from "lucide-react";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
@@ -27,7 +28,7 @@ import PoolFundForm from "@/components/pool-fund-form";
 import AIAssistant from "@/components/ai-assistant";
 import type { Client, Property, Application, Transaction } from "@shared/schema";
 
-type TabType = 'dashboard' | 'clients' | 'properties' | 'applications' | 'pool-fund';
+type TabType = 'dashboard' | 'clients' | 'properties' | 'applications' | 'pool-fund' | 'reports';
 
 export default function Mobile() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -194,7 +195,7 @@ export default function Mobile() {
         </Button>
       </div>
 
-      {recentClients.length === 0 ? (
+      {clients.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center">
             <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -383,6 +384,71 @@ export default function Mobile() {
     </div>
   );
 
+  const ReportsTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold">Reports</h2>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+            <p className="text-xl font-bold text-slate-900">{stats?.totalClients || 0}</p>
+            <p className="text-xs text-slate-600">Total Clients</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Building className="w-8 h-8 text-green-600 mx-auto mb-2" />
+            <p className="text-xl font-bold text-slate-900">{stats?.activeProperties || 0}</p>
+            <p className="text-xs text-slate-600">Active Properties</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <FileText className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+            <p className="text-xl font-bold text-slate-900">{stats?.pendingApplications || 0}</p>
+            <p className="text-xs text-slate-600">Pending Apps</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <PiggyBank className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+            <p className="text-xl font-bold text-slate-900">${stats?.poolFundBalance?.toFixed(0) || 0}</p>
+            <p className="text-xs text-slate-600">Pool Fund</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-medium text-sm mb-3">Quick Stats</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-600">Approval Rate</span>
+              <span className="text-xs font-medium">
+                {applications.length > 0 ? ((applications.filter(a => a.status === 'approved').length / applications.length) * 100).toFixed(1) : 0}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-600">Occupied Properties</span>
+              <span className="text-xs font-medium">
+                {properties.filter(p => p.status === 'occupied').length} of {properties.length}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-600">Average Rent</span>
+              <span className="text-xs font-medium">
+                ${properties.length > 0 ? (properties.reduce((sum, p) => sum + parseFloat(p.rentAmount.toString()), 0) / properties.length).toFixed(0) : 0}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -395,6 +461,8 @@ export default function Mobile() {
         return <ApplicationsTab />;
       case 'pool-fund':
         return <PoolFundTab />;
+      case 'reports':
+        return <ReportsTab />;
       default:
         return <DashboardTab />;
     }
@@ -406,6 +474,7 @@ export default function Mobile() {
     { id: 'properties', label: 'Properties', icon: Building },
     { id: 'applications', label: 'Apps', icon: FileText },
     { id: 'pool-fund', label: 'Fund', icon: PiggyBank },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
   ];
 
   return (

@@ -155,15 +155,34 @@ Always be helpful, accurate, and professional. If you don't have specific inform
 
   async transcribeAudio(audioBuffer: Buffer): Promise<string> {
     try {
+      // Determine file extension based on buffer content or default to webm
+      let fileExtension = "webm";
+      let mimeType = "audio/webm";
+      
+      // Check for common audio file signatures
+      const bufferStart = audioBuffer.subarray(0, 12).toString('hex');
+      if (bufferStart.startsWith('52494646') && bufferStart.includes('57415645')) {
+        fileExtension = "wav";
+        mimeType = "audio/wav";
+      } else if (bufferStart.startsWith('1a45dfa3')) {
+        fileExtension = "webm";
+        mimeType = "audio/webm";
+      }
+
+      console.log(`Processing audio file: ${fileExtension}, size: ${audioBuffer.length} bytes`);
+
       const response = await openai.audio.transcriptions.create({
-        file: new File([audioBuffer], "audio.wav", { type: "audio/wav" }),
+        file: new File([audioBuffer], `audio.${fileExtension}`, { type: mimeType }),
         model: "whisper-1",
+        language: "en", // Specify language for better accuracy
+        temperature: 0.2, // Lower temperature for more focused transcription
       });
 
+      console.log('Transcription successful:', response.text);
       return response.text;
     } catch (error) {
       console.error('Audio transcription error:', error);
-      throw new Error('Failed to transcribe audio');
+      throw new Error(`Failed to transcribe audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

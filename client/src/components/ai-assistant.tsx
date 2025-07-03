@@ -223,16 +223,49 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        }
+      });
+      
+      // Use supported MIME type for better compatibility
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/wav';
+        
+      const recorder = new MediaRecorder(stream, { mimeType });
+      
+      const chunks: Blob[] = [];
       
       recorder.ondataavailable = (event) => {
-        setAudioChunks(prev => [...prev, event.data]);
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
       };
       
       recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        speechToTextMutation.mutate(audioBlob);
+        // Create blob with the recorded MIME type
+        const audioBlob = new Blob(chunks, { type: mimeType });
+        
+        // Convert to a more standard format if needed
+        if (audioBlob.size > 0) {
+          speechToTextMutation.mutate(audioBlob);
+        } else {
+          toast({
+            title: "Recording Error",
+            description: "No audio data recorded. Please try again.",
+            variant: "destructive",
+          });
+        }
+        
+        // Clean up
+        chunks.length = 0;
         setAudioChunks([]);
         
         // Stop all audio tracks
@@ -240,12 +273,19 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
       };
       
       setMediaRecorder(recorder);
-      recorder.start();
+      recorder.start(1000); // Record in 1-second chunks
       setIsRecording(true);
-    } catch (error) {
+      
       toast({
-        title: "Error",
-        description: "Failed to access microphone. Please check permissions.",
+        title: "Recording Started",
+        description: "Speak clearly into your microphone",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      toast({
+        title: "Microphone Error",
+        description: "Failed to access microphone. Please check permissions and try again.",
         variant: "destructive",
       });
     }

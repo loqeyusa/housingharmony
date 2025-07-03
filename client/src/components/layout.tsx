@@ -10,11 +10,14 @@ import {
   Calculator,
   Bell,
   Plus,
-  User
+  User,
+  Bot,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import ClientForm from "./client-form";
+import AIAssistant from "./ai-assistant";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -34,6 +37,7 @@ const navigationItems = [
 export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const getPageTitle = () => {
     const item = navigationItems.find(item => item.path === location);
@@ -134,6 +138,17 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
+      {/* Floating AI Assistant Button */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <Button
+          onClick={() => setShowAIAssistant(true)}
+          className="w-14 h-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
+          size="sm"
+        >
+          <Bot className="w-6 h-6 text-white" />
+        </Button>
+      </div>
+
       {/* Client Form Modal */}
       {showClientForm && (
         <ClientForm 
@@ -142,6 +157,13 @@ export default function Layout({ children }: LayoutProps) {
             setShowClientForm(false);
             // Refresh data if needed
           }}
+        />
+      )}
+
+      {/* AI Assistant Modal */}
+      {showAIAssistant && (
+        <AIAssistant 
+          onClose={() => setShowAIAssistant(false)}
         />
       )}
     </div>

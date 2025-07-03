@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema } from "@shared/schema";
+import { propertyAssistant } from "./ai-assistant";
+import multer from 'multer';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard
@@ -405,6 +407,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to set global credit limit" });
+    }
+  });
+
+  // AI Assistant Routes
+  const upload = multer({ storage: multer.memoryStorage() });
+
+  // Chat with AI Assistant
+  app.post("/api/assistant/chat", async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      const response = await propertyAssistant.processQuery({ message, context });
+      res.json(response);
+    } catch (error) {
+      console.error('Assistant chat error:', error);
+      res.status(500).json({ error: "Failed to process your request" });
+    }
+  });
+
+  // Voice input - speech to text
+  app.post("/api/assistant/speech-to-text", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Audio file is required" });
+      }
+
+      const transcription = await propertyAssistant.transcribeAudio(req.file.buffer);
+      res.json({ transcription });
+    } catch (error) {
+      console.error('Speech to text error:', error);
+      res.status(500).json({ error: "Failed to transcribe audio" });
+    }
+  });
+
+  // Text to speech
+  app.post("/api/assistant/text-to-speech", async (req, res) => {
+    try {
+      const { text } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      const audioBuffer = await propertyAssistant.textToSpeech(text);
+      
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', audioBuffer.length);
+      res.send(audioBuffer);
+    } catch (error) {
+      console.error('Text to speech error:', error);
+      res.status(500).json({ error: "Failed to generate speech" });
     }
   });
 

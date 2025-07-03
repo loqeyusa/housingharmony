@@ -129,10 +129,26 @@ The application manages five main entities:
 - Migration system for database version control
 - Connection pooling for optimal performance
 
+## Key Features
+
+### AI Assistant with Chat and Voice
+- **Intelligent Property Assistant**: AI-powered assistant that can answer questions about properties, clients, applications, and financial data using OpenAI GPT-4
+- **Chat Interface**: Full conversational interface with message history and smart suggestions
+- **Voice Capabilities**: 
+  - Speech-to-text for voice input using OpenAI Whisper
+  - Text-to-speech for audio responses
+  - Real-time voice recording with visual feedback
+- **Contextual Intelligence**: AI has access to all system data including property details, client information, applications, and financial records
+- **Accessible Integration**: Floating assistant button available on all pages (desktop and mobile)
+- **Smart Suggestions**: AI provides relevant follow-up questions based on user queries
+
 ## Changelog
 
 ```
 Changelog:
+- July 03, 2025. Added AI Assistant with chat and voice capabilities using OpenAI GPT-4, Whisper, and TTS
+- July 03, 2025. Fixed critical housing support pool fund calculations to match real-world formula
+- July 03, 2025. Enhanced dashboard to count both available and occupied properties as active
 - July 03, 2025. Initial setup
 ```
 

@@ -17,12 +17,14 @@ import {
   DollarSign,
   MapPin,
   Calendar,
-  Phone
+  Phone,
+  Bot
 } from "lucide-react";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
 import ApplicationForm from "@/components/application-form";
 import PoolFundForm from "@/components/pool-fund-form";
+import AIAssistant from "@/components/ai-assistant";
 import type { Client, Property, Application, Transaction } from "@shared/schema";
 
 type TabType = 'dashboard' | 'clients' | 'properties' | 'applications' | 'pool-fund';
@@ -33,6 +35,7 @@ export default function Mobile() {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -465,6 +468,24 @@ export default function Mobile() {
       )}
       {showPoolFundForm && (
         <PoolFundForm onClose={() => setShowPoolFundForm(false)} />
+      )}
+
+      {/* Floating AI Assistant Button */}
+      <div className="fixed bottom-20 right-4 z-40">
+        <Button
+          onClick={() => setShowAIAssistant(true)}
+          className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
+          size="sm"
+        >
+          <Bot className="w-5 h-5 text-white" />
+        </Button>
+      </div>
+
+      {/* AI Assistant Modal */}
+      {showAIAssistant && (
+        <AIAssistant 
+          onClose={() => setShowAIAssistant(false)}
+        />
       )}
     </div>
   );

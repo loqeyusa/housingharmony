@@ -65,6 +65,10 @@ export default function Layout({ children }: LayoutProps) {
   );
 
   const getPageTitle = () => {
+    // Handle root path and dashboard path
+    if (location === "/" || location === "/dashboard") {
+      return "Dashboard";
+    }
     const item = navigationItems.find(item => item.path === location);
     return item ? item.label : "Page Not Found";
   };
@@ -72,6 +76,7 @@ export default function Layout({ children }: LayoutProps) {
   const getPageDescription = () => {
     const descriptions: Record<string, string> = {
       "/": "Housing Program Management Overview",
+      "/dashboard": "Housing Program Management Overview",
       "/clients": "Manage client information and KYC data",
       "/properties": "Track available properties and landlord details",
       "/applications": "Monitor county application status",
@@ -108,15 +113,13 @@ export default function Layout({ children }: LayoutProps) {
             const isActive = location === item.path;
             
             return (
-              <Link key={item.path} href={item.path}>
-                <a className={`flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
+              <Link key={item.path} href={item.path} className={`flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
                   isActive 
                     ? "bg-primary/10 text-primary" 
                     : "text-slate-600 hover:bg-slate-100"
                 }`}>
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </a>
+                <Icon className="w-5 h-5" />
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -128,8 +131,12 @@ export default function Layout({ children }: LayoutProps) {
               <User className="text-slate-600 w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">Admin User</p>
-              <p className="text-xs text-slate-500 truncate">System Administrator</p>
+              <p className="text-sm font-medium text-slate-900 truncate">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs text-slate-500 truncate">
+                {user?.isSuperAdmin ? 'Super Admin' : 'Staff'}
+              </p>
             </div>
           </div>
         </div>

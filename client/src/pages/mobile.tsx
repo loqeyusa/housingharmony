@@ -37,6 +37,7 @@ export default function Mobile() {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   const { data: stats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -65,6 +66,17 @@ export default function Mobile() {
   const recentClients = clients.slice(0, 3);
   const pendingApplications = applications.filter(app => app.status === "pending").slice(0, 3);
   const recentTransactions = transactions.slice(0, 3);
+
+  // Function to get clients for a specific property
+  const getClientsForProperty = (propertyId: number) => {
+    const propertyApplications = applications.filter(app => 
+      app.propertyId === propertyId && app.status === 'approved'
+    );
+    return propertyApplications.map(app => {
+      const client = clients.find(c => c.id === app.clientId);
+      return client ? { ...client, application: app } : null;
+    }).filter(Boolean);
+  };
 
   const DashboardTab = () => (
     <div className="space-y-4">
@@ -259,42 +271,59 @@ export default function Mobile() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {properties.slice(0, 10).map((property) => (
-            <Card key={property.id}>
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start space-x-2">
-                        <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                        <p className="font-medium text-sm">{property.address}</p>
+          {properties.slice(0, 10).map((property) => {
+            const propertyClients = getClientsForProperty(property.id);
+            return (
+              <Card 
+                key={property.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setSelectedProperty(property)}
+              >
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start space-x-2">
+                          <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                          <p className="font-medium text-sm">{property.address}</p>
+                        </div>
+                      </div>
+                      <Badge className={`text-xs ${
+                        property.status === 'available' ? 'bg-green-100 text-green-800' :
+                        property.status === 'occupied' ? 'bg-blue-100 text-blue-800' :
+                        'bg-orange-100 text-orange-800'
+                      }`}>
+                        {property.status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-slate-600">{property.bedrooms}BR • {property.bathrooms}BA • {property.squareFootage}sqft</p>
+                      <p className="font-semibold text-sm">${parseFloat(property.rentAmount.toString()).toFixed(0)}/mo</p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-slate-700 font-medium">{property.landlordName}</p>
+                          <p className="text-xs text-slate-500">{property.landlordPhone}</p>
+                        </div>
+                        <p className="text-xs text-slate-600">Deposit: ${parseFloat(property.depositAmount.toString()).toFixed(0)}</p>
                       </div>
                     </div>
-                    <Badge className={`text-xs ${
-                      property.status === 'available' ? 'bg-green-100 text-green-800' :
-                      property.status === 'occupied' ? 'bg-blue-100 text-blue-800' :
-                      'bg-orange-100 text-orange-800'
-                    }`}>
-                      {property.status}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-slate-600">{property.bedrooms}BR • {property.bathrooms}BA • {property.squareFootage}sqft</p>
-                    <p className="font-semibold text-sm">${parseFloat(property.rentAmount.toString()).toFixed(0)}/mo</p>
-                  </div>
-                  <div className="mt-2 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-700 font-medium">{property.landlordName}</p>
-                        <p className="text-xs text-slate-500">{property.landlordPhone}</p>
+                    {propertyClients.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-100">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-slate-600">
+                            {propertyClients.length} tenant{propertyClients.length > 1 ? 's' : ''}
+                          </p>
+                          <p className="text-xs text-blue-600 font-medium">Tap to view details</p>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-600">Deposit: ${parseFloat(property.depositAmount.toString()).toFixed(0)}</p>
-                    </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
@@ -729,6 +758,126 @@ export default function Mobile() {
           <Bot className="w-5 h-5 text-white" />
         </Button>
       </div>
+
+      {/* Property Detail Modal */}
+      {selectedProperty && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{selectedProperty.address}</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedProperty(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <Badge className={`w-fit text-xs ${
+                selectedProperty.status === 'available' ? 'bg-green-100 text-green-800' :
+                selectedProperty.status === 'occupied' ? 'bg-blue-100 text-blue-800' :
+                'bg-orange-100 text-orange-800'
+              }`}>
+                {selectedProperty.status}
+              </Badge>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Property Details */}
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Bedrooms</p>
+                    <p className="font-medium">{selectedProperty.bedrooms}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Bathrooms</p>
+                    <p className="font-medium">{selectedProperty.bathrooms}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Square Feet</p>
+                    <p className="font-medium">{selectedProperty.squareFootage}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Monthly Rent</p>
+                    <p className="font-medium">${parseFloat(selectedProperty.rentAmount.toString()).toFixed(0)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Landlord Info */}
+              <div className="space-y-2">
+                <h3 className="font-medium text-sm">Landlord Information</h3>
+                <div className="text-sm">
+                  <p className="font-medium">{selectedProperty.landlordName}</p>
+                  <p className="text-slate-600">{selectedProperty.landlordPhone}</p>
+                  <p className="text-slate-600">{selectedProperty.landlordEmail}</p>
+                </div>
+              </div>
+
+              {/* Current Tenants */}
+              <div className="space-y-2">
+                <h3 className="font-medium text-sm">Current Tenants</h3>
+                {(() => {
+                  const propertyClients = getClientsForProperty(selectedProperty.id);
+                  return propertyClients.length > 0 ? (
+                    <div className="space-y-2">
+                      {propertyClients.map((clientData: any) => (
+                        <div key={clientData.id} className="p-3 bg-slate-50 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <span className="text-primary font-medium text-xs">
+                                {clientData.firstName.charAt(0)}{clientData.lastName.charAt(0)}
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{clientData.firstName} {clientData.lastName}</p>
+                              <p className="text-xs text-slate-600">{clientData.email}</p>
+                              <p className="text-xs text-slate-500">{clientData.phone}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Application Status:</span>
+                              <Badge variant="default" className="text-xs">
+                                {clientData.application.status}
+                              </Badge>
+                            </div>
+                            <div className="flex justify-between mt-1">
+                              <span className="text-slate-500">Move-in Date:</span>
+                              <span className="font-medium">
+                                {new Date(clientData.application.submittedAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No current tenants</p>
+                  );
+                })()}
+              </div>
+
+              {/* Financial Details */}
+              <div className="space-y-2">
+                <h3 className="font-medium text-sm">Financial Details</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="text-slate-500">Security Deposit</p>
+                    <p className="font-medium">${parseFloat(selectedProperty.depositAmount.toString()).toFixed(0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Status</p>
+                    <p className="font-medium capitalize">{selectedProperty.status}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* AI Assistant Modal */}
       {showAIAssistant && (

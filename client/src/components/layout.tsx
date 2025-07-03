@@ -14,10 +14,12 @@ import {
   Bot,
   MessageCircle,
   Building2,
-  Shield
+  Shield,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import ClientForm from "./client-form";
 import AIAssistant from "./ai-assistant";
 
@@ -43,6 +45,15 @@ export default function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [showClientForm, setShowClientForm] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const getPageTitle = () => {
     const item = navigationItems.find(item => item.path === location);
@@ -135,6 +146,21 @@ export default function Layout({ children }: LayoutProps) {
               <div className="relative">
                 <Bell className="text-slate-400 w-5 h-5 cursor-pointer hover:text-slate-600 transition-colors" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full"></span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-slate-900">{user?.firstName} {user?.lastName}</p>
+                  <p className="text-xs text-slate-500">{user?.isSuperAdmin ? 'Super Admin' : 'User'}</p>
+                </div>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  size="sm"
+                  className="text-slate-600 hover:text-red-600 hover:border-red-300"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
               </div>
             </div>
           </div>

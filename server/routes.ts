@@ -1089,6 +1089,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const user = await storage.authenticateUser(username, password);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      if (!user.isEnabled) {
+        return res.status(403).json({ error: "Account is disabled" });
+      }
+
+      // Update last login
+      await storage.updateLastLogin(user.id);
+
+      // Store user in session
+      req.session.user = user;
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (userId) {
+        // Log audit event
+        await storage.createAuditLog({
+          userId,
+          action: "logout",
+          details: "User logged out"
+        });
+      }
+
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Session destruction error:", err);
+        }
+        res.clearCookie('connect.sid');
+        res.json({ success: true });
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/auth/session", (req, res) => {
+    if (req.session.user) {
+      res.json({ user: req.session.user });
+    } else {
+      res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
   // System Setup Routes
   app.get("/api/system/permissions", async (req, res) => {
     try {

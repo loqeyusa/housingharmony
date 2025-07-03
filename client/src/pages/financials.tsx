@@ -13,7 +13,8 @@ import {
   Download,
   ArrowUpCircle,
   ArrowDownCircle,
-  File
+  File,
+  Users
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -28,6 +29,7 @@ import type { Transaction, Application, Client } from "@shared/schema";
 export default function Financials() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [selectedClient, setSelectedClient] = useState<string>("all");
 
   const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
@@ -42,18 +44,26 @@ export default function Financials() {
   });
 
   const getClientNameFromApplication = (applicationId: number | null) => {
-    if (!applicationId) return null;
+    if (!applicationId) return "Pool Fund Operations";
     const application = applications.find(app => app.id === applicationId);
-    if (!application) return null;
+    if (!application) return "Pool Fund Operations";
     const client = clients.find(c => c.id === application.clientId);
-    return client ? `${client.firstName} ${client.lastName}` : null;
+    return client ? `${client.firstName} ${client.lastName}` : "Pool Fund Operations";
   };
 
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.type.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === "all" || transaction.type === filterType;
-    return matchesSearch && matchesFilter;
+    
+    // Client filter
+    let matchesClient = true;
+    if (selectedClient !== "all") {
+      const clientName = getClientNameFromApplication(transaction.applicationId);
+      matchesClient = clientName === selectedClient;
+    }
+    
+    return matchesSearch && matchesFilter && matchesClient;
   });
 
   const getTransactionIcon = (type: string) => {
@@ -88,16 +98,27 @@ export default function Financials() {
     return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Calculate summary statistics
-  const totalIncome = transactions
+  // Calculate summary statistics based on filtered transactions
+  const totalIncome = filteredTransactions
     .filter(t => t.type === 'county_reimbursement')
     .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
-  const totalExpenses = transactions
+  const totalExpenses = filteredTransactions
     .filter(t => ['rent_payment', 'deposit_payment', 'application_fee', 'pool_fund_withdrawal'].includes(t.type))
     .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+    
+  const totalDeposits = filteredTransactions
+    .filter(t => t.type === 'pool_fund_deposit')
+    .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
-  const netCashFlow = totalIncome - totalExpenses;
+  // Get unique clients who have transactions
+  const clientsWithTransactions = Array.from(new Set(
+    transactions
+      .map(t => getClientNameFromApplication(t.applicationId))
+      .filter(name => name !== null && name !== "Pool Fund Operations")
+  )) as string[];
+
+  const netCashFlow = totalIncome + totalDeposits - totalExpenses;
 
   if (isLoading) {
     return (
@@ -218,6 +239,21 @@ export default function Financials() {
                   <SelectItem value="deposit_payment">Deposit Payments</SelectItem>
                   <SelectItem value="application_fee">Application Fees</SelectItem>
                   <SelectItem value="pool_fund_withdrawal">Pool Fund Withdrawals</SelectItem>
+                  <SelectItem value="pool_fund_deposit">Pool Fund Deposits</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedClient} onValueChange={setSelectedClient}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Users className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filter by client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clients</SelectItem>
+                  {clientsWithTransactions.map((clientName) => (
+                    <SelectItem key={clientName} value={clientName}>
+                      {clientName}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button variant="outline">
@@ -227,6 +263,34 @@ export default function Financials() {
             </div>
           </div>
         </CardHeader>
+        
+        {/* Active Filters Indicator */}
+        {(filterType !== "all" || selectedClient !== "all" || searchTerm.trim() !== "") && (
+          <div className="px-6 py-2 border-t bg-slate-50">
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-slate-600">Active filters:</span>
+              {searchTerm.trim() !== "" && (
+                <Badge variant="secondary" className="text-xs">
+                  Search: "{searchTerm}"
+                </Badge>
+              )}
+              {filterType !== "all" && (
+                <Badge variant="secondary" className="text-xs">
+                  Type: {formatTransactionType(filterType)}
+                </Badge>
+              )}
+              {selectedClient !== "all" && (
+                <Badge variant="secondary" className="text-xs">
+                  Client: {selectedClient}
+                </Badge>
+              )}
+              <span className="text-sm text-slate-500">
+                ({filteredTransactions.length} of {transactions.length} transactions)
+              </span>
+            </div>
+          </div>
+        )}
+        
         <CardContent>
           {filteredTransactions.length === 0 ? (
             <div className="text-center py-12">

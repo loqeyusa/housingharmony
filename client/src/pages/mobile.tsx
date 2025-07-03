@@ -220,6 +220,7 @@ export default function Mobile() {
                     <div>
                       <p className="font-medium text-sm">{client.firstName} {client.lastName}</p>
                       <p className="text-xs text-slate-600">{client.email}</p>
+                      <p className="text-xs text-slate-500">{client.phone}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -278,8 +279,17 @@ export default function Mobile() {
                     </Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <p className="text-xs text-slate-600">{property.bedrooms}BR • {property.bathrooms}BA</p>
+                    <p className="text-xs text-slate-600">{property.bedrooms}BR • {property.bathrooms}BA • {property.squareFootage}sqft</p>
                     <p className="font-semibold text-sm">${parseFloat(property.rentAmount.toString()).toFixed(0)}/mo</p>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-slate-700 font-medium">{property.landlordName}</p>
+                        <p className="text-xs text-slate-500">{property.landlordPhone}</p>
+                      </div>
+                      <p className="text-xs text-slate-600">Deposit: ${parseFloat(property.depositAmount.toString()).toFixed(0)}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -331,13 +341,23 @@ export default function Mobile() {
                     <p className="text-xs text-slate-600">
                       {client ? `${client.firstName} ${client.lastName}` : 'Unknown Client'}
                     </p>
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs text-slate-500">
-                        {new Date(application.submittedAt).toLocaleDateString()}
-                      </p>
-                      <p className="font-semibold text-sm">
-                        ${parseFloat(application.rentPaid.toString()).toFixed(2)}
-                      </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <p className="text-slate-500">Submitted:</p>
+                        <p className="font-medium">{new Date(application.submittedAt).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Rent Paid:</p>
+                        <p className="font-medium">${parseFloat(application.rentPaid.toString()).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">County Reimbursement:</p>
+                        <p className="font-medium">${parseFloat((application.countyReimbursement || 0).toString()).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-500">Deposit:</p>
+                        <p className="font-medium">${parseFloat(application.depositPaid.toString()).toFixed(2)}</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -366,6 +386,29 @@ export default function Mobile() {
             ${(poolFundBalance?.balance || 0).toFixed(2)}
           </p>
           <p className="text-sm text-emerald-700">Available Balance</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            <h3 className="font-medium text-sm">Recent Transactions</h3>
+            <div className="space-y-2">
+              {transactions.filter(t => t.type === 'pool_fund').slice(0, 5).map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                  <div>
+                    <p className="text-xs font-medium">{transaction.description}</p>
+                    <p className="text-xs text-slate-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <p className={`text-xs font-medium ${
+                    parseFloat(transaction.amount.toString()) > 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {parseFloat(transaction.amount.toString()) > 0 ? '+' : ''}${parseFloat(transaction.amount.toString()).toFixed(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

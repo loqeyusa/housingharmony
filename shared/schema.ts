@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, decimal, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, timestamp, boolean, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -100,12 +100,22 @@ export const vendors = pgTable("vendors", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // county_hopwa, group_homes, other_subsidies, lth_pool, healthcare, residential_care
+  registrationNumber: text("registration_number"), // License or registration number
+  grhType: text("grh_type"), // Group Residential Housing type classification
   contactPerson: text("contact_person"),
+  keyPerson: text("key_person"), // Primary key contact for contracts
   phone: text("phone"),
   email: text("email"),
   address: text("address"),
   website: text("website"),
   services: text("services").array(),
+  serviceArea: text("service_area"), // Geographic coverage area
+  capacity: integer("capacity"), // Number of beds/units available
+  dailyRate: decimal("daily_rate", { precision: 10, scale: 2 }), // Daily reimbursement rate
+  contractStartDate: date("contract_start_date"), // Contract/agreement start date
+  contractEndDate: date("contract_end_date"), // Contract/agreement end date
+  licenseStatus: text("license_status").default("active"), // active, expired, pending, suspended
+  licenseExpirationDate: date("license_expiration_date"), // License expiration
   status: text("status").notNull().default("active"), // active, inactive
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

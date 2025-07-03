@@ -244,9 +244,11 @@ export default function VendorsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Vendor</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Type/GRH</TableHead>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Services</TableHead>
+                  <TableHead>Capacity/Rate</TableHead>
+                  <TableHead>Contract</TableHead>
+                  <TableHead>License</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -257,15 +259,23 @@ export default function VendorsPage() {
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-medium">{vendor.name}</div>
+                        {vendor.registrationNumber && (
+                          <div className="text-xs text-gray-500">Reg: {vendor.registrationNumber}</div>
+                        )}
                         {vendor.contactPerson && (
                           <div className="text-sm text-gray-600">{vendor.contactPerson}</div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getTypeIcon(vendor.type)}
-                        <span>{getTypeLabel(vendor.type)}</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          {getTypeIcon(vendor.type)}
+                          <span className="text-sm">{getTypeLabel(vendor.type)}</span>
+                        </div>
+                        {vendor.grhType && (
+                          <div className="text-xs text-gray-500">GRH: {vendor.grhType}</div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -279,30 +289,58 @@ export default function VendorsPage() {
                         {vendor.email && (
                           <div className="flex items-center space-x-1 text-sm">
                             <Mail className="h-3 w-3" />
-                            <span>{vendor.email}</span>
+                            <span className="truncate max-w-32">{vendor.email}</span>
                           </div>
                         )}
-                        {vendor.website && (
-                          <div className="flex items-center space-x-1 text-sm">
-                            <Globe className="h-3 w-3" />
-                            <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                              Website
-                            </a>
+                        {vendor.keyPerson && (
+                          <div className="text-xs text-gray-500">Key: {vendor.keyPerson}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {vendor.capacity && (
+                          <div className="text-sm">
+                            <Users className="h-3 w-3 inline mr-1" />
+                            {vendor.capacity} beds
+                          </div>
+                        )}
+                        {vendor.dailyRate && (
+                          <div className="text-sm text-green-600">
+                            ${vendor.dailyRate}/day
+                          </div>
+                        )}
+                        {vendor.serviceArea && (
+                          <div className="text-xs text-gray-500">{vendor.serviceArea}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {vendor.contractStartDate && (
+                          <div className="text-xs">
+                            Start: {new Date(vendor.contractStartDate).toLocaleDateString()}
+                          </div>
+                        )}
+                        {vendor.contractEndDate && (
+                          <div className="text-xs">
+                            End: {new Date(vendor.contractEndDate).toLocaleDateString()}
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {vendor.services?.slice(0, 3).map((service, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {service}
-                          </Badge>
-                        ))}
-                        {vendor.services && vendor.services.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{vendor.services.length - 3} more
-                          </Badge>
+                      <div className="space-y-1">
+                        <Badge 
+                          variant={vendor.licenseStatus === "active" ? "default" : "destructive"}
+                          className="text-xs"
+                        >
+                          {vendor.licenseStatus}
+                        </Badge>
+                        {vendor.licenseExpirationDate && (
+                          <div className="text-xs text-gray-500">
+                            Exp: {new Date(vendor.licenseExpirationDate).toLocaleDateString()}
+                          </div>
                         )}
                       </div>
                     </TableCell>

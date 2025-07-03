@@ -449,7 +449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vendor = await storage.createVendor(vendorData);
       res.status(201).json(vendor);
     } catch (error) {
-      res.status(400).json({ error: "Invalid vendor data" });
+      console.error("Vendor validation error:", error);
+      res.status(400).json({ error: "Invalid vendor data", details: error.message });
     }
   });
 

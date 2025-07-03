@@ -51,12 +51,22 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
     defaultValues: {
       name: "",
       type: "other_subsidies",
+      registrationNumber: "",
+      grhType: "",
       contactPerson: "",
+      keyPerson: "",
       phone: "",
       email: "",
       address: "",
       website: "",
       services: [],
+      serviceArea: "",
+      capacity: undefined,
+      dailyRate: undefined,
+      contractStartDate: undefined,
+      contractEndDate: undefined,
+      licenseStatus: "active",
+      licenseExpirationDate: undefined,
       status: "active",
       notes: "",
     },
@@ -151,6 +161,36 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
+                name="registrationNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Registration Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter license/registration number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="grhType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GRH Type</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter GRH classification" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="contactPerson"
                 render={({ field }) => (
                   <FormItem>
@@ -165,12 +205,42 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
 
               <FormField
                 control={form.control}
+                name="keyPerson"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Key Person</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter key contract person" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="serviceArea"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Service Area</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter geographic coverage area" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -232,14 +302,137 @@ export default function VendorForm({ onClose, onSuccess }: VendorFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="status"
+                name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Capacity</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Number of beds/units"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dailyRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Daily Rate ($)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="Daily reimbursement rate"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="contractStartDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contract Start Date</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contractEndDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contract End Date</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="licenseStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>License Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
+                          <SelectValue placeholder="Select license status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="expired">Expired</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="licenseExpirationDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>License Expiration Date</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vendor Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vendor status" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

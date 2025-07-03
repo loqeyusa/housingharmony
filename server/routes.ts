@@ -365,6 +365,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client Balance routes
+  app.get("/api/clients/:id/balance", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const balance = await storage.getClientBalance(clientId);
+      res.json({ balance });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch client balance" });
+    }
+  });
+
+  app.put("/api/clients/:id/balance", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const { amount } = req.body;
+      await storage.updateClientBalance(clientId, parseFloat(amount));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update client balance" });
+    }
+  });
+
+  app.put("/api/clients/:id/credit-limit", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const { limit } = req.body;
+      await storage.updateClientCreditLimit(clientId, parseFloat(limit));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update client credit limit" });
+    }
+  });
+
+  app.put("/api/clients/credit-limit/global", async (req, res) => {
+    try {
+      const { limit } = req.body;
+      await storage.setGlobalCreditLimit(parseFloat(limit));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to set global credit limit" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

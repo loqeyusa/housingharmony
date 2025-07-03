@@ -1,3 +1,4 @@
+import React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +40,7 @@ interface PoolFundFormProps {
 export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedClientId, setSelectedClientId] = React.useState<number | null>(null);
   
   console.log("PoolFundForm component mounted");
 
@@ -52,6 +54,11 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
 
   const { data: poolFundBalance } = useQuery({
     queryKey: ["/api/pool-fund/balance"],
+  });
+
+  const { data: clientBalance } = useQuery({
+    queryKey: ["/api/clients", selectedClientId, "balance"],
+    enabled: !!selectedClientId,
   });
 
   const form = useForm<InsertPoolFund>({
@@ -131,6 +138,8 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
   };
 
   const currentBalance = (poolFundBalance as any)?.balance || 0;
+  const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : null;
+  const clientBalanceAmount = (clientBalance as any)?.balance || 0;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -144,16 +153,43 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
           </div>
         </DialogHeader>
 
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-slate-600">Current Pool Fund Balance</p>
-              <p className="text-2xl font-bold text-green-600">
-                ${currentBalance.toFixed(2)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm text-slate-600">Current Pool Fund Balance</p>
+                <p className="text-2xl font-bold text-green-600">
+                  ${currentBalance.toFixed(2)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {selectedClient && (
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-sm text-slate-600">
+                    {selectedClient.firstName} {selectedClient.lastName} Balance
+                  </p>
+                  <p className={`text-2xl font-bold ${clientBalanceAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${clientBalanceAmount.toFixed(2)}
+                  </p>
+                  {selectedClient.creditLimit && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Credit Limit: ${parseFloat(selectedClient.creditLimit.toString()).toFixed(2)}
+                    </p>
+                  )}
+                  {clientBalanceAmount < parseFloat(selectedClient.creditLimit?.toString() || "-100") && (
+                    <p className="text-xs text-red-500 mt-1 font-medium">
+                      ⚠️ Below credit limit
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -209,7 +245,16 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
                 <FormItem>
                   <FormLabel>Beneficiary Client (Optional)</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                    onValueChange={(value) => {
+                      if (value === "none") {
+                        field.onChange(undefined);
+                        setSelectedClientId(null);
+                      } else {
+                        const clientId = parseInt(value);
+                        field.onChange(clientId);
+                        setSelectedClientId(clientId);
+                      }
+                    }} 
                     defaultValue={field.value?.toString() || "none"}
                   >
                     <FormControl>

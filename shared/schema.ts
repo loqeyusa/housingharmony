@@ -22,6 +22,8 @@ export const clients = pgTable("clients", {
   grhStatus: text("grh_status").default("pending"), // pending, approved, denied
   maxHousingPayment: decimal("max_housing_payment", { precision: 10, scale: 2 }).default("1220.00"),
   clientObligationPercent: decimal("client_obligation_percent", { precision: 5, scale: 2 }).default("30.00"),
+  currentBalance: decimal("current_balance", { precision: 10, scale: 2 }).default("0.00"),
+  creditLimit: decimal("credit_limit", { precision: 10, scale: 2 }).default("-100.00"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

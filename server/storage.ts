@@ -61,6 +61,12 @@ export interface IStorage {
     poolFundBalance: number;
   }>;
 
+  // Client balance operations
+  getClientBalance(clientId: number): Promise<number>;
+  updateClientBalance(clientId: number, amount: number): Promise<void>;
+  updateClientCreditLimit(clientId: number, limit: number): Promise<void>;
+  setGlobalCreditLimit(limit: number): Promise<void>;
+
   // Housing Support operations
   getHousingSupportRecords(): Promise<HousingSupport[]>;
   getHousingSupportByClient(clientId: number): Promise<HousingSupport[]>;
@@ -336,6 +342,30 @@ export class DatabaseStorage implements IStorage {
     return sortedRecords.reduce((total, record) => {
       return total + parseFloat(record.monthPoolTotal.toString());
     }, 0);
+  }
+
+  async getClientBalance(clientId: number): Promise<number> {
+    const [client] = await db.select({ balance: clients.currentBalance })
+      .from(clients)
+      .where(eq(clients.id, clientId));
+    return parseFloat(client?.balance?.toString() || "0");
+  }
+
+  async updateClientBalance(clientId: number, amount: number): Promise<void> {
+    await db.update(clients)
+      .set({ currentBalance: amount.toString() })
+      .where(eq(clients.id, clientId));
+  }
+
+  async updateClientCreditLimit(clientId: number, limit: number): Promise<void> {
+    await db.update(clients)
+      .set({ creditLimit: limit.toString() })
+      .where(eq(clients.id, clientId));
+  }
+
+  async setGlobalCreditLimit(limit: number): Promise<void> {
+    await db.update(clients)
+      .set({ creditLimit: limit.toString() });
   }
 }
 

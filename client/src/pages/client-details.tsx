@@ -203,20 +203,20 @@ export default function ClientDetails() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
               <span className="text-primary font-medium text-lg">
-                {client.firstName.charAt(0)}{client.lastName.charAt(0)}
+                {client?.firstName?.charAt(0)}{client?.lastName?.charAt(0)}
               </span>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                {client.firstName} {client.lastName}
+                {client?.firstName} {client?.lastName}
               </h1>
-              <p className="text-gray-600">Client ID: {client.id}</p>
+              <p className="text-gray-600">Client ID: {client?.id}</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-            {client.status}
+          <Badge variant={client?.status === 'active' ? 'default' : 'secondary'}>
+            {client?.status}
           </Badge>
           {isEditing ? (
             <div className="flex gap-2">

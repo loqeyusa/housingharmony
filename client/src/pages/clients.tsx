@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Mail, Phone, Calendar, DollarSign } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import ClientForm from "@/components/client-form";
 import type { Client } from "@shared/schema";
 
 export default function Clients() {
   const [showClientForm, setShowClientForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [, setLocation] = useLocation();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -81,7 +83,11 @@ export default function Clients() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
-            <Card key={client.id} className="hover:shadow-md transition-shadow">
+            <Card 
+              key={client.id} 
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setLocation(`/clients/${client.id}`)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">

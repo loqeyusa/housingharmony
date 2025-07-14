@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/protected-route";
 import MobileRedirect from "@/components/mobile-redirect";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
+import ClientDetails from "@/pages/client-details";
 import Properties from "@/pages/properties";
 import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
@@ -33,6 +34,7 @@ function AuthenticatedRouter() {
           <Switch>
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/" component={Dashboard} />
+            <Route path="/clients/:clientId" component={ClientDetails} />
             <Route path="/clients" component={Clients} />
             <Route path="/properties" component={Properties} />
             <Route path="/applications" component={Applications} />

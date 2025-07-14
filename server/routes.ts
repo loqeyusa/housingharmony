@@ -174,10 +174,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Applications
-  app.get("/api/applications", async (_req, res) => {
+  app.get("/api/applications", async (req, res) => {
     try {
-      const applications = await storage.getApplications();
-      res.json(applications);
+      const { clientId } = req.query;
+      if (clientId) {
+        const applications = await storage.getApplicationsByClient(parseInt(clientId as string));
+        res.json(applications);
+      } else {
+        const applications = await storage.getApplications();
+        res.json(applications);
+      }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch applications" });
     }
@@ -283,10 +289,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transactions
-  app.get("/api/transactions", async (_req, res) => {
+  app.get("/api/transactions", async (req, res) => {
     try {
-      const transactions = await storage.getTransactions();
-      res.json(transactions);
+      const { clientId } = req.query;
+      if (clientId) {
+        const transactions = await storage.getTransactionsByClient(parseInt(clientId as string));
+        res.json(transactions);
+      } else {
+        const transactions = await storage.getTransactions();
+        res.json(transactions);
+      }
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch transactions" });
     }

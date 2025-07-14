@@ -60,6 +60,7 @@ export interface IStorage {
   // Applications
   getApplications(): Promise<Application[]>;
   getApplication(id: number): Promise<Application | undefined>;
+  getApplicationsByClient(clientId: number): Promise<Application[]>;
   createApplication(application: InsertApplication): Promise<Application>;
   updateApplication(id: number, application: Partial<InsertApplication>): Promise<Application | undefined>;
   deleteApplication(id: number): Promise<boolean>;
@@ -67,6 +68,7 @@ export interface IStorage {
   // Transactions
   getTransactions(): Promise<Transaction[]>;
   getTransaction(id: number): Promise<Transaction | undefined>;
+  getTransactionsByClient(clientId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
 
   // Pool Fund
@@ -256,6 +258,15 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
+  async getApplicationsByClient(clientId: number): Promise<Application[]> {
+    const result = await db
+      .select()
+      .from(applications)
+      .where(eq(applications.clientId, clientId))
+      .orderBy(applications.submittedAt);
+    return result.reverse();
+  }
+
   async getTransactions(): Promise<Transaction[]> {
     const result = await db.select().from(transactions).orderBy(transactions.createdAt);
     return result.reverse();
@@ -272,6 +283,24 @@ export class DatabaseStorage implements IStorage {
       .values(insertTransaction)
       .returning();
     return transaction;
+  }
+
+  async getTransactionsByClient(clientId: number): Promise<Transaction[]> {
+    // Get transactions through applications belonging to this client
+    const result = await db
+      .select({
+        id: transactions.id,
+        applicationId: transactions.applicationId,
+        type: transactions.type,
+        amount: transactions.amount,
+        description: transactions.description,
+        createdAt: transactions.createdAt,
+      })
+      .from(transactions)
+      .leftJoin(applications, eq(transactions.applicationId, applications.id))
+      .where(eq(applications.clientId, clientId))
+      .orderBy(transactions.createdAt);
+    return result.reverse();
   }
 
   async getPoolFundEntries(): Promise<PoolFund[]> {

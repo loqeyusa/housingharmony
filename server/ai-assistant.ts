@@ -263,12 +263,79 @@ Always be professional, accurate, and solution-oriented. Leverage the complete s
       };
     } catch (error) {
       console.error('AI Assistant error:', error);
+      
+      // Check if it's a quota/billing issue
+      if (error.status === 429 || error.code === 'insufficient_quota') {
+        return {
+          response: "The AI assistant is currently unavailable due to API quota limits. Please check your OpenAI billing and usage limits, or try again later. In the meantime, you can navigate through the system using the menu options.",
+          confidence: 0.0,
+          suggestions: [
+            "Check Dashboard for system overview",
+            "Browse Clients section for client management", 
+            "View Properties for available housing",
+            "Review Applications for status updates"
+          ],
+        };
+      }
+      
+      // Provide helpful fallback response based on query content
+      const fallbackResponse = this.generateFallbackResponse(query.message);
       return {
-        response: "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
-        confidence: 0.0,
-        suggestions: ["Try asking about specific properties", "Check property availability", "Ask about client applications"],
+        response: fallbackResponse.response,
+        confidence: 0.1,
+        suggestions: fallbackResponse.suggestions,
       };
     }
+  }
+
+  private generateFallbackResponse(query: string): { response: string; suggestions: string[] } {
+    const queryLower = query.toLowerCase();
+    
+    // Property-related queries
+    if (queryLower.includes('property') || queryLower.includes('house') || queryLower.includes('apartment')) {
+      return {
+        response: "I can help you with property information! While the AI assistant is temporarily unavailable, you can check the Properties section to view available housing units, landlord contacts, and rental details.",
+        suggestions: ["Go to Properties section", "View property availability", "Check rental rates", "Contact landlord information"]
+      };
+    }
+    
+    // Client-related queries
+    if (queryLower.includes('client') || queryLower.includes('applicant') || queryLower.includes('participant')) {
+      return {
+        response: "For client information and management, you can access the Clients section where you can view client details, KYC information, and account balances.",
+        suggestions: ["Go to Clients section", "View client balances", "Check client status", "Update client information"]
+      };
+    }
+    
+    // Application-related queries
+    if (queryLower.includes('application') || queryLower.includes('apply') || queryLower.includes('approval')) {
+      return {
+        response: "Application information is available in the Applications section, where you can track application status, approvals, and payment details.",
+        suggestions: ["Go to Applications section", "Check application status", "View pending applications", "Process approvals"]
+      };
+    }
+    
+    // Financial/transaction queries
+    if (queryLower.includes('money') || queryLower.includes('payment') || queryLower.includes('transaction') || queryLower.includes('balance')) {
+      return {
+        response: "Financial information can be found in the Financials section, including transaction history, payment tracking, and account balances.",
+        suggestions: ["Go to Financials section", "View transaction history", "Check account balances", "Track payments"]
+      };
+    }
+    
+    // Pool fund queries
+    if (queryLower.includes('pool') || queryLower.includes('fund') || queryLower.includes('supply')) {
+      return {
+        response: "Pool fund information is available in the Pool Fund section, where you can track fund allocations and client supply distributions.",
+        suggestions: ["Go to Pool Fund section", "View fund balance", "Check allocations", "Track distributions"]
+      };
+    }
+    
+    // Default response
+    return {
+      response: "I'm currently unable to process your request, but I can guide you to the right section of the system. Use the navigation menu to access different modules like Dashboard, Clients, Properties, Applications, or Financials.",
+      suggestions: ["Visit Dashboard for overview", "Browse system sections", "Check recent activities", "Access help documentation"]
+    };
   }
 
   private async generateSuggestions(query: string): Promise<string[]> {

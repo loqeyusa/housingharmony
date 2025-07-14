@@ -48,9 +48,10 @@ export default function ClientDetails() {
 
   console.log('ClientDetails loaded with clientId:', clientId);
 
-  const { data: client, isLoading } = useQuery<Client>({
+  const { data: client, isLoading, error } = useQuery<Client>({
     queryKey: ["/api/clients", clientId],
     queryFn: () => apiRequest(`/api/clients/${clientId}`),
+    enabled: !!clientId,
   });
 
   const { data: applications = [] } = useQuery<Application[]>({
@@ -70,6 +71,8 @@ export default function ClientDetails() {
     queryFn: () => apiRequest(`/api/housing-support?clientId=${clientId}`),
     enabled: !!clientId,
   });
+
+  console.log('Client data:', client, 'Loading:', isLoading, 'Error:', error);
 
   const updateClientMutation = useMutation({
     mutationFn: (data: Partial<Client>) => 
@@ -161,7 +164,18 @@ export default function ClientDetails() {
     );
   }
 
-  if (!client) {
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error loading client</h2>
+          <p className="text-gray-600">There was an error loading the client details: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!client && !isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">

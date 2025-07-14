@@ -46,6 +46,8 @@ export default function ClientDetails() {
   const [newDocument, setNewDocument] = useState({ name: "", type: "id", file: null as File | null });
   const { toast } = useToast();
 
+  console.log('ClientDetails loaded with clientId:', clientId);
+
   const { data: client, isLoading } = useQuery<Client>({
     queryKey: ["/api/clients", clientId],
     queryFn: () => apiRequest(`/api/clients/${clientId}`),

@@ -86,7 +86,10 @@ export default function Clients() {
             <Card 
               key={client.id} 
               className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => setLocation(`/clients/${client.id}`)}
+              onClick={() => {
+                console.log('Navigating to client:', client.id);
+                setLocation(`/clients/${client.id}`);
+              }}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">

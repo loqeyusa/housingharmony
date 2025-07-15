@@ -55,7 +55,6 @@ function AuthenticatedRouter() {
               </ProtectedRoute>
             </Route>
             <Route path="/reports" component={Reports} />
-            <Route component={NotFound} />
           </Switch>
         </Layout>
       </Route>

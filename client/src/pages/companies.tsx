@@ -24,10 +24,13 @@ export default function Companies() {
   // Debug: Log component mounting
   console.log("Companies component mounted");
 
-  const { data: companies, isLoading } = useQuery<Company[]>({
+  const { data: companies, isLoading, error } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Debug logging
+  console.log("Companies query state:", { isLoading, error, companies });
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertCompany) => {
@@ -96,6 +99,19 @@ export default function Companies() {
       });
     },
   });
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center">
+          <p className="text-red-600">Error loading companies: {error.message}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredCompanies = companies?.filter(company =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

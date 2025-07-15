@@ -119,6 +119,25 @@ export default function UserManagement() {
     queryKey: ["/api/audit-logs"],
   });
 
+  // Clear data mutation
+  const clearDataMutation = useMutation({
+    mutationFn: () => apiRequest("/api/admin/clear-data", { method: "POST" }),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "All data has been cleared successfully",
+      });
+      queryClient.invalidateQueries();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to clear data",
+        variant: "destructive",
+      });
+    },
+  });
+
   // User form
   const userForm = useForm({
     resolver: zodResolver(userFormSchema),
@@ -328,7 +347,7 @@ export default function UserManagement() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Users
@@ -344,6 +363,10 @@ export default function UserManagement() {
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <History className="h-4 w-4" />
             Audit Log
+          </TabsTrigger>
+          <TabsTrigger value="admin" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Admin
           </TabsTrigger>
         </TabsList>
 
@@ -790,6 +813,95 @@ export default function UserManagement() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Admin Tab */}
+        <TabsContent value="admin" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                System Administration
+              </CardTitle>
+              <CardDescription>
+                Critical system administration functions. Use with extreme caution.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-red-800">Clear All Data</h3>
+                      <p className="text-sm text-red-700">
+                        This action will permanently delete all clients, properties, applications, 
+                        transactions, and other data from the system. This cannot be undone.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-red-800">What will be deleted:</p>
+                      <ul className="text-sm text-red-700 space-y-1 ml-4">
+                        <li>• All client records and personal information</li>
+                        <li>• All properties and landlord information</li>
+                        <li>• All housing applications and status records</li>
+                        <li>• All financial transactions and pool fund entries</li>
+                        <li>• All housing support records and vendor data</li>
+                        <li>• All other subsidies and payment records</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-red-800">What will be preserved:</p>
+                      <ul className="text-sm text-red-700 space-y-1 ml-4">
+                        <li>• Admin user accounts (admin, maya)</li>
+                        <li>• System roles and permissions</li>
+                        <li>• System configuration and settings</li>
+                      </ul>
+                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          className="bg-red-600 hover:bg-red-700"
+                          disabled={clearDataMutation.isPending}
+                        >
+                          {clearDataMutation.isPending ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Clearing Data...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Clear All Data
+                            </>
+                          )}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="text-red-800">Confirm Data Deletion</DialogTitle>
+                          <DialogDescription className="text-red-700">
+                            Are you absolutely sure you want to delete all data? This action cannot be undone.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline">Cancel</Button>
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => clearDataMutation.mutate()}
+                            disabled={clearDataMutation.isPending}
+                          >
+                            Yes, Delete All Data
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

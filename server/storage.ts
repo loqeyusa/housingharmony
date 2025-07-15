@@ -40,7 +40,7 @@ import {
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, and, or, ilike, sum, count, asc, inArray, ne } from "drizzle-orm";
 
 export interface IStorage {
   // Clients
@@ -154,6 +154,9 @@ export interface IStorage {
   isSuperAdmin(userId: number): Promise<boolean>;
   canUserCreateUsers(userId: number): Promise<boolean>;
   canUserAssignRole(userId: number, roleId: number): Promise<boolean>;
+  
+  // Admin operations
+  clearAllData(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -837,6 +840,31 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return false;
+  }
+
+  async clearAllData(): Promise<void> {
+    // Clear all data from all tables (in proper order to handle foreign key constraints)
+    await db.delete(auditLogs);
+    await db.delete(userRoles);
+    await db.delete(housingSupport);
+    await db.delete(otherSubsidies);
+    await db.delete(poolFund);
+    await db.delete(transactions);
+    await db.delete(applications);
+    await db.delete(properties);
+    await db.delete(clients);
+    
+    // Keep only essential admin users and roles
+    await db.delete(users).where(and(
+      ne(users.username, 'admin'),
+      ne(users.username, 'maya')
+    ));
+    
+    await db.delete(roles).where(and(
+      ne(roles.name, 'Administrator'),
+      ne(roles.name, 'Manager'),
+      ne(roles.name, 'Staff')
+    ));
   }
 }
 

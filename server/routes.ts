@@ -53,6 +53,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin - Clear all data
+  app.post("/api/admin/clear-data", async (req, res) => {
+    try {
+      // Check if user is authenticated and has admin permissions
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const hasPermission = await storage.hasPermission(req.session.user.id, PERMISSIONS.MANAGE_USERS);
+      if (!hasPermission) {
+        return res.status(403).json({ error: "Insufficient permissions" });
+      }
+
+      // Clear all data using storage methods
+      await storage.clearAllData();
+      
+      // Log the action
+      await storage.createAuditLog({
+        userId: req.session.user.id,
+        action: "CLEAR_ALL_DATA",
+        resource: "database",
+        details: { cleared_by: req.session.user.username },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+
+      res.json({ success: true, message: "All data cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing data:", error);
+      res.status(500).json({ error: "Failed to clear data" });
+    }
+  });
+
   // Clients
   app.get("/api/clients", async (_req, res) => {
     try {

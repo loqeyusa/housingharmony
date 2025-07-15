@@ -35,7 +35,7 @@ function AuthenticatedRouter() {
           <Switch>
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/" component={Dashboard} />
-            <Route path="/clients/:clientId" component={TestClientDetails} />
+            <Route path="/clients/:clientId" component={ClientDetails} />
             <Route path="/clients" component={Clients} />
             <Route path="/properties" component={Properties} />
             <Route path="/applications" component={Applications} />

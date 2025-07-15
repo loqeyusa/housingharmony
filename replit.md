@@ -155,6 +155,7 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 14, 2025. Added comprehensive data clear functionality with admin button in User Management → Admin tab for secure database clearing while preserving essential admin users and system roles
 - July 03, 2025. Implemented comprehensive Progressive Web App (PWA) for mobile interface with offline support, app installation, service worker caching, push notifications, and native mobile features
 - July 03, 2025. Added PWA manifest, service worker, app icons, and mobile-optimized UI with network status indicators, share API, and touch-friendly interface
 - July 03, 2025. Enhanced AI Assistant with comprehensive system data access including all transactions, housing support records, pool fund entries, and user data for faster, more accurate responses

@@ -7,6 +7,7 @@ import {
   housingSupport,
   vendors,
   otherSubsidies,
+  companies,
   users,
   roles,
   userRoles,
@@ -27,6 +28,8 @@ import {
   type InsertVendor,
   type OtherSubsidy,
   type InsertOtherSubsidy,
+  type Company,
+  type InsertCompany,
   type User,
   type InsertUser,
   type UpdateUser,
@@ -43,15 +46,30 @@ import { db } from "./db";
 import { eq, sql, desc, and, or, ilike, sum, count, asc, inArray, ne } from "drizzle-orm";
 
 export interface IStorage {
-  // Clients
-  getClients(): Promise<Client[]>;
+  // Companies
+  getCompanies(): Promise<Company[]>;
+  getCompany(id: number): Promise<Company | undefined>;
+  createCompany(company: InsertCompany): Promise<Company>;
+  updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company | undefined>;
+  deleteCompany(id: number): Promise<boolean>;
+  approveCompany(id: number, approvedBy: number): Promise<Company | undefined>;
+  suspendCompany(id: number): Promise<Company | undefined>;
+  getCompanyStats(companyId: number): Promise<{
+    totalClients: number;
+    activeProperties: number;
+    totalUsers: number;
+    monthlyRevenue: number;
+  }>;
+
+  // Clients (company-scoped)
+  getClients(companyId?: number): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: number): Promise<boolean>;
 
-  // Properties
-  getProperties(): Promise<Property[]>;
+  // Properties (company-scoped)
+  getProperties(companyId?: number): Promise<Property[]>;
   getProperty(id: number): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined>;
@@ -160,8 +178,105 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getClients(): Promise<Client[]> {
-    const result = await db.select().from(clients).orderBy(clients.createdAt);
+  // Company Management
+  async getCompanies(): Promise<Company[]> {
+    const result = await db.select().from(companies).orderBy(companies.createdAt);
+    return result.reverse();
+  }
+
+  async getCompany(id: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company || undefined;
+  }
+
+  async createCompany(insertCompany: InsertCompany): Promise<Company> {
+    const [company] = await db
+      .insert(companies)
+      .values(insertCompany)
+      .returning();
+    return company;
+  }
+
+  async updateCompany(id: number, updateData: Partial<InsertCompany>): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(companies.id, id))
+      .returning();
+    return company || undefined;
+  }
+
+  async deleteCompany(id: number): Promise<boolean> {
+    const result = await db.delete(companies).where(eq(companies.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async approveCompany(id: number, approvedBy: number): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set({ 
+        status: 'active',
+        approvedAt: new Date(),
+        approvedBy: approvedBy,
+        updatedAt: new Date()
+      })
+      .where(eq(companies.id, id))
+      .returning();
+    return company || undefined;
+  }
+
+  async suspendCompany(id: number): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set({ 
+        status: 'suspended',
+        updatedAt: new Date()
+      })
+      .where(eq(companies.id, id))
+      .returning();
+    return company || undefined;
+  }
+
+  async getCompanyStats(companyId: number): Promise<{
+    totalClients: number;
+    activeProperties: number;
+    totalUsers: number;
+    monthlyRevenue: number;
+  }> {
+    const [clientStats] = await db
+      .select({ count: count() })
+      .from(clients)
+      .where(eq(clients.companyId, companyId));
+
+    const [propertyStats] = await db
+      .select({ count: count() })
+      .from(properties)
+      .where(and(
+        eq(properties.companyId, companyId),
+        eq(properties.status, 'available')
+      ));
+
+    const [userStats] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.companyId, companyId));
+
+    return {
+      totalClients: clientStats.count,
+      activeProperties: propertyStats.count,
+      totalUsers: userStats.count,
+      monthlyRevenue: 0 // TODO: Calculate from transactions
+    };
+  }
+
+  async getClients(companyId?: number): Promise<Client[]> {
+    const query = db.select().from(clients);
+    
+    if (companyId) {
+      query.where(eq(clients.companyId, companyId));
+    }
+    
+    const result = await query.orderBy(clients.createdAt);
     return result.reverse();
   }
 
@@ -192,8 +307,14 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  async getProperties(): Promise<Property[]> {
-    const result = await db.select().from(properties).orderBy(properties.createdAt);
+  async getProperties(companyId?: number): Promise<Property[]> {
+    const query = db.select().from(properties);
+    
+    if (companyId) {
+      query.where(eq(properties.companyId, companyId));
+    }
+    
+    const result = await query.orderBy(properties.createdAt);
     return result.reverse();
   }
 

@@ -3,11 +3,40 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Companies - Housing organizations that manage their own clients and funds
+export const companies = pgTable("companies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  displayName: text("display_name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  website: text("website"),
+  contactPersonName: text("contact_person_name").notNull(),
+  contactPersonEmail: text("contact_person_email").notNull(),
+  contactPersonPhone: text("contact_person_phone").notNull(),
+  registrationNumber: text("registration_number"), // Business registration number
+  taxId: text("tax_id"), // Tax identification number
+  licenseNumber: text("license_number"), // Housing license number
+  licenseExpirationDate: date("license_expiration_date"),
+  status: text("status").notNull().default("pending"), // pending, active, suspended, disabled
+  subscriptionPlan: text("subscription_plan").notNull().default("basic"), // basic, premium, enterprise
+  maxClients: integer("max_clients").default(100), // Client limit based on plan
+  maxUsers: integer("max_users").default(5), // User limit based on plan
+  settings: json("settings"), // Company-specific settings
+  notes: text("notes"),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: integer("approved_by"), // User ID who approved
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").notNull(),
   phone: text("phone").notNull(),
   dateOfBirth: text("date_of_birth").notNull(),
   ssn: text("ssn").notNull(),
@@ -30,6 +59,7 @@ export const clients = pgTable("clients", {
 
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
   address: text("address").notNull(),
   landlordName: text("landlord_name").notNull(),
   landlordPhone: text("landlord_phone").notNull(),
@@ -191,6 +221,17 @@ export const insertOtherSubsidySchema = createInsertSchema(otherSubsidies).omit(
   updatedAt: true,
 });
 
+export const insertCompanySchema = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  approvedAt: true,
+  approvedBy: true,
+});
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
+
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
 
@@ -218,6 +259,7 @@ export type InsertOtherSubsidy = z.infer<typeof insertOtherSubsidySchema>;
 // User Management Schema
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  companyId: integer("company_id"), // null for super admin users
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),

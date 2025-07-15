@@ -14,6 +14,7 @@ import ClientDetails from "@/pages/client-details";
 import TestClientDetails from "@/pages/test-client-details";
 import Counties from "@/pages/counties";
 import CountyDetails from "@/pages/county-details";
+import Companies from "@/pages/companies";
 import Properties from "@/pages/properties";
 import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
@@ -42,6 +43,11 @@ function AuthenticatedRouter() {
             <Route path="/clients" component={Clients} />
             <Route path="/counties" component={Counties} />
             <Route path="/county/:countyName" component={CountyDetails} />
+            <Route path="/companies">
+              <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                <Companies />
+              </ProtectedRoute>
+            </Route>
             <Route path="/properties" component={Properties} />
             <Route path="/applications" component={Applications} />
             <Route path="/financials" component={Financials} />

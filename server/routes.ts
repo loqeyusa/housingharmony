@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -50,6 +50,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Companies
+  app.get("/api/companies", async (_req, res) => {
+    try {
+      const companies = await storage.getCompanies();
+      res.json(companies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch companies" });
+    }
+  });
+
+  app.get("/api/companies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const company = await storage.getCompany(id);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch company" });
+    }
+  });
+
+  app.post("/api/companies", async (req, res) => {
+    try {
+      const companyData = insertCompanySchema.parse(req.body);
+      const company = await storage.createCompany(companyData);
+      res.status(201).json(company);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid company data" });
+    }
+  });
+
+  app.put("/api/companies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updateData = insertCompanySchema.partial().parse(req.body);
+      const company = await storage.updateCompany(id, updateData);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid company data" });
+    }
+  });
+
+  app.delete("/api/companies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteCompany(id);
+      if (!success) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete company" });
+    }
+  });
+
+  app.post("/api/companies/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const approvedBy = req.session.user?.id;
+      
+      if (!approvedBy) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const company = await storage.approveCompany(id, approvedBy);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to approve company" });
+    }
+  });
+
+  app.post("/api/companies/:id/suspend", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const company = await storage.suspendCompany(id);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to suspend company" });
+    }
+  });
+
+  app.get("/api/companies/:id/stats", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const stats = await storage.getCompanyStats(id);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch company stats" });
     }
   });
 

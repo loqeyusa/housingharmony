@@ -849,6 +849,7 @@ export default function UserManagement() {
                         <li>• All housing applications and status records</li>
                         <li>• All financial transactions and pool fund entries</li>
                         <li>• All housing support records and vendor data</li>
+                        <li>• All vendor organizations and contact information</li>
                         <li>• All other subsidies and payment records</li>
                       </ul>
                     </div>

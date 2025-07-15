@@ -853,6 +853,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(applications);
     await db.delete(properties);
     await db.delete(clients);
+    await db.delete(vendors);
     
     // Keep only essential admin users and roles
     await db.delete(users).where(and(

@@ -1,0 +1,128 @@
+Client 	Properties Management 	Rental Office Address 	Rent Amount 	County Amount 	Notes 
+ Abdikarim Omar	Huntington Place Apts 	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		
+Aarion Durand 	Konstantin Ginzburg	18261 68th Place N Mineapolis, MN 55311	$1,200.00		
+Abdi Gure 	Abyssinia LLC 	1617 East 24th Street Mpls MN 55404	$1,150.00		rent is 1150 
+Abdiaziz Abokar	Lake Street Dwelling 	410 W Lake St Minneapolis MN 55408	$1,130.00		Check in with hafsa
+Abdikadir Warfa	Sernee LLC 	2233 Hamline Ave #550, Roseville MN 55113	$950.00		
+Abdimahad Kariye 	Rental Minnesota LLC	3401 Nevada ave n Minneapolis MN 55427	$855.00		Banked Bed
+Abdimujiib Aideed	Blaisdell apartment	2200 Blaisdell ave s, Minneapolis MN 55404	$1,100.00		
+Abdullahi Hayder 	410 West Lake Street Apartments 	410 West Lake Street Mpls NN 55408 	$1,115.00		
+Abdulrahman Mohamud	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$1,164.00		
+Abdurahman Osman	Blaisdell apartment	2200 Blaisdell ave s, Minneapolis MN 55404	$765.00		rent is 900, grh 765
+Adrianna Mixon 	Blaisdell apartment	2200 Blaisdell ave s, Minneapolis MN 55404	$1,095.00		rent is 1095
+Ahmed Farah 	Rental Minnesota LLC 	1425 LaSalle ave s Minneapolis MN 55403	$1,150.00		
+Alexander Brooks	Blaisdell apartment	2200 Blaisdell ave s, Minneapolis MN 55404	$1,100.00		LTH
+Alexander Johnson 	Lake st dwelling	410 W Lake St Minneapolis MN 55408	$1,130.00		New Location Rent is 1130
+Amanda Thomas	Edith Property Management	6640 lyndale ave s #203 Richfield Mn 55423	Moved Out		
+Amelia Lacplese-Martin 	Malcolm Housing Project LLC	505 Malcolm Ave SE Mpls MN 55414	$1,128.00		
+Amina Musse	Aeon 	901 N 3rd St Mpls MN 55401	$1,095.00		Rent is 1700
+Amina Rabi 	Mill City Quater	322 S 2nd St Mpls MN 55401	$1,095.00		
+Andre Davenport	Trellis Management 	618 9th Ave Minneapolis MN 55415	$930.00		
+Andre Johnson	Blaisdell apartment	2200 Blaisdell ave s, Minneapolis MN 55404	$1,100.00		
+Andrew Howard 	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$828.00		999
+Andrew JR Vaughn 	Oak Grove 	116 Oak Grove St Mpls MN 55403	$890.00		
+Angeligue Hudson 	Blaisdell apartment	2200 Blaisdell ave s, Minneapolis MN 55404	$1,095.00		
+Aniya Hill 	Mint Properties LLC 	2100 Pillsbury Ave S Minneapolis, MN 55404.	$21.00		rent is 1060 - grh is 21.00
+Anthony Frelix 	Buzza Lofts of Uptown	1006 W lake st Minneapolis MN 55408	$1,220.00		
+Antoine Dunn	Broadway Flats 	2505 Penn Ave N Mpls MN 55411	$1,010.00		
+Atende Kabandilwa	Mint Properties LLC 	2100 Pillsbury Ave S Minneapolis, MN 55404.	$860.00		930.00 grh
+Brandon Wright	Dominium	1006 W Lake Street Minneapolis MN 55408	$1,185.00		
+Calvin Howard 	Buzza Lofts of Uptown	1006 W lake st Minneapolis MN 55408	$1,095.00		
+Cameron Durand	Malcolm Housing Project LLC	505 Malcolm Ave SE Mpls MN 55414	$1,128.00		
+Carl Hunter 	Sernee LLC 	2233 Hamline Ave #550, Roseville MN 55113	$1,050.00		rent is 1050 grh is 1098.00
+Che'von Taylor 	West River Rd LLP 	2035 W River Rd Mpls MN 55411	$997.50		Rent is 1995
+Colette Cupery 	M and A Rentals LLC	3577 woodland ct Eagan MN 55123	$1,180.00		
+Cortez Drones	Blooming Meadows	1910 E 86th #237 Bloomington MN 55425 	$1,186.00		
+Craig Tidwell	Tyrone Hutchins	3511 Queen ave n Minneapolis MN 55412	$1,100.00		
+Cyrus Nimene	Lake Street Dwelling 	410 West Lake St Minneapolis MN 55408	$1,099.00		
+Da'Shiya Jackson 	MSA Properties	2947 Bent Tree Hills Dr. New Brighton MN 55112	$1,095.00		
+Daenija Robinson Boston	Lake Street Dwelling 	410 W Lake St Minneapolis MN 55408	$1,095.00		
+Danellie Mack 	410 West Lake St LP 	410 West Lake St Minneapolis MN 55408	$1,200.00		$1,200.00
+Darius Branson 	New Orleans Court	PO Box 24777 Edina MN 55424	$1,080.00		
+Daryl Evans	Tyrone Hutchins	3511 Queen aave n Minneapolis MN 55412	$850.00		
+Davis L. Richardson	Nicollet Court	9000 Nicollet Ave Bloomington, MN 55420	$1,050.00		
+Dayib Idd	Mint Properties LLC 	2100 Pillsbury Ave S Minneapolis, MN 55404.	$935.00		
+Destiny Beaton 	Rental Minnesota LLC	3401 Nevada ave n Minneapolis MN 55427			
+Deunta Burton 	Charles Ward(owner)	4905 chicago ave Minneapolis MN 55417-1010	$1,166.00		
+Duane Brooks 	Step Of Strategy 	713 Minnhaha Ave #217  St.Paul MN 55106	$1,050.00		
+Dujwan Shabazz	Trellis Management 	618 9th Ave Mpls MN 55415 	$1,050.00		$1,050.00
+Elijah Powell	Lake street Dwelling 	410 W Lake St Minneapolis MN 55408	$1,130.00		
+Faduma Hassan	Longfellow Station LLC 	3845 Hiawatha Ave Mpls MN 55406	$990.00		Check gets picked up
+Farah Mohamud 	Rental Minnesota LLC 	1425 lasalle ave s Minneapolis mn 55403	has income		Banked Bed$945.00
+Fatma Mohamed	Everlake Apartments 	2615 E 29th Street Minneapolis,MN 55406	$1,095.00		rent is 1060 Check gets picked up
+Fatuma Osman	Seven Property Management	2177 Youngman ave Saint Paul MN 55116	$995.00		grh is 1203
+Fenesse Mills 	600 Investment Company	1401 6th st se Mpls MN	$1,095.00		
+Geesi Abdi 	Mint Properties LLC 	2100 Pillsbury Ave S Minneapolis, MN 55404.	$975.00		
+Georgio Wright 	Trellis Management 	618 9th Ave Mpls MN 55415 	Working		
+Hadam Sukuna 	Beam Apartment	1820 West Broadway Mpls MN 55411	$998.00		GRH is $1098
+Hadija Tambwe	Rental Minnesota LLC 	1425 lasalle ave s Minneapolis mn 55403	$1,095.00		
+Hafsa Haji	Cromwell Commons	10 E 15th st Minneapolis MN 55403	$988.28		rent is 967 - 21.28 balance add to may rent
+Hani Dahir 	West River Rd LLP 	2035 W River Rd Mpls MN 55411	$1,115.00		Rent is 1111
+Harvey Kelley	Aeon Properties 	901 N 3rd St Suite 150 Minneapolis MN 55401	$1,150.00		Rent is 1150
+Hinok Yacob	Charles K-Ward	4905 chicago ave Minneapolis MN 55417-1010	$1,091.00		LTH 
+Hope Diorio	Hui Chen	6501 Nicollet Ave Richfield MN 55423	$750.00		
+Ibrahim Yusuf	Pillsbury Duo, LLC	333 N Washington Ave Suite 412 minneopolis ,MN 55401	$1,045.00		LTH
+Ismail Aynanshe	Blaisdell apartment	2200 Blaisdell Ave S Mpls MN 55404	$858.00		starting march 1 grh is 858 rent is 1100
+Jahaud Brown	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$1,095.00		Check gets picked up
+Jared Aurelius Terrel 	Malcolm Housing Project LLC	505 Malcolm Ave SE Mpls MN 55414	$1,128.00		1128
+Jerea Morgan	East Town Apartments	618 s 9th ave Minneapolis MN 55415	$1,082.00		rent is 1082 grh is 1098
+Jessica Johnson 	 R&G Housing	7040 Lakeland Ave N #110 Brooklyn Park, MN 55428	$575.00		
+Joann Loveland	Deborah Quist	5251 Irving Ave n Minneapolis MN 55430	$750.00		rent is 750 Check gets picked up (deborah -612-261-6793) LTH
+Jose Arriaga	2216 Pleasant LLC	333 N Washington ave suite 412 Minneapolis MN 55401	$688.00		rent is 975 - grh is 688 LTH
+Kamal Ali	Doub Investments	3750 Cedar ave s Minneapolis MN 55407	$1,528.00		rent is 1028 Add $500 each month til june to pay off
+Kevin Brown	Lasalle Apartments	36 south 9th street Minneapolis MN 55402	$1,100.00		
+Kevin Simmons 	MA Rentals	3577 woodland ct Eagan MN 55123	$1,200.00		For month of july write check for 2,400
+Khadira Farah 	Mukanya Properties LLC 	P.O Box 28490 Crystal MN 55428	$1,095.00		Rent is 1200
+Kiro Musse	Fit Apartments 	515 Grant St Mpls MN 55404	$1,095.00		Rent is 1735
+Kylijuan McDowell	The Redwell LLLP 	1020 North 3rd street Minneapolis MN 55401	$1,120.00		
+Lamarco Bell	Blue Line Flats	2340 E 32nd street Minneapolis MN 55406	$1,170.00		
+Lamon Mason	Hook & Ladder Apartments	Office 640 24th ave ne  Mpls Mn 55418	$998.00		Rent is 998 Property number - 612-886-3696
+Lanis Hutchins	520 second st apts LP	520 2nd st se Minneapolis MN 55414	$1,100.00		
+Liban Ahmed 	Huntington Place Apts 	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		rent is 899
+Lionell  pointer	Huntington Place Apts 	5805 73rd Ave N. Brooklyn Park MN 55429	$925.00		rent is 925 
+Liya Gessesse	Rental Minnesota LLC	3401 Nevada ave n Minneapolis MN 55427	$920.00		BANKED BED - Check gets picked up
+Loulo Ahmed	Schafer Richardson	900 14th Ave Ne Mpls Mn 55418	$1,200.00		
+Maleko Hassan 	Jim Bern Co LLC 	8162 Bloomington ave s Bloomington MN 55425	$1,220.00		
+Marc Smith	Property Solutions & Services Inc	901 23rd ave ne ste #1 MPLS MN 55418	$1,113.00		
+Marcus Milon 	Trellis Management 	618 9th Ave Mpls MN 55415 	$1,050.00		grh is 1098
+Mario Williams	Doub Investments	3750 Cedar ave s Minneapolis MN 55407	$1,620.00		rent is 1120 Add $500 each month til june to pay off
+Mariyah Barnes 	Blue Goose Group	1808 Riverside Ave #209 Mpls MN 55454	$1,175.00		
+Marquel singleton	Sernee LLC	2233 Hamline Ave #550 Roseville Mn 55113	$1,185.00		
+Melissa Kovarik	Rental Minnesota LLC	1425 lasalle ave s Minneapolis mn 55403	$1,060.00		rent is 1000 plus 60 for parking plus 60 from march
+Michael Johnson 	 R&G Housing	7040 Lakeland Ave N #110 Brooklyn Park, MN 55428	$575.00		
+Mikia Madison 	Blaisdell apartment	2200 Blaisdell Ave S Mpls MN 55404	no remittance		1100 ( grh is 545 )
+Mohamed Hamza 	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$1,164.00		$1,100.00
+Mohamedamin Hayder	Aeon The Balmoral 	1005 Portland ave Miineapolis MN 55404 	$850.00		rent is $850 property - 612-338-3118
+Mohammed Abdallah	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$1,164.00		
+Montrell Smyers	Charles K-Ward	4905 chicago ave Minneapolis MN 55417-1010	$1,166.00		LTH
+Moses Hubert	PPL Inc	1035 e franklin ave Minneapolis MN 55404	$1,120.00		
+Mowlid Hassan	Rental Minnesota LLC	1425 lasalle ave s Minneapolis mn 55403	$1,150.00		
+Muse Ahmed 	Oak Grove Apts 	116 Oak Grove St Mpls MN 55403	$1,100.00		gets 1129.84
+Mustafe Dirie 	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$1,164.00		check in on client end of march 
+Mwanaisha Mohamed	Jim Bern Co LLC 	8162 Bloomington Ave S Bloomington MN 55425	$1,200.00		
+Najah Abdi	Aeon LLC	1930 e 86th st Bloomington MN 55425	$1,164.00		
+Octivious Doe 	Rental Minnesota LLC	1425 lasalle ave s Minneapolis mn 55403	$1,100.00		
+Omar Diblawe 	Huntington Place Apts 	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		rent is $899
+Paul Demars	Rental Minnesota LLC	1425 lasalle ave s Minneapolis mn 55403	$1,150.00		
+Paula Cooper 	West River Rd LLP 	2035 W River Rd Mpls MN 55411	$997.50		Rent is 1995
+Phillip Jones 	Hui Chen	6501 Nicollet Ave Richfield MN 55423	$750.00		750 LTH
+Precious Hudson	Deluxe Properties LLC	2525 Harriet Ave S, Minneapolis MN 55405	$1,100.00		
+Quentin Durr	Dominium	2905 Northwest Blvd #150 Plymouth Hennepin MN 55441	$1,095.00		grh is 1095
+Quinton Davis 	Harverson and Blaiser Group	7800 Metro Parkway, Bloomington MN 55425	$950.00		$905.00
+Richard Pitman	Mint Properties LLC 	2100 Pillsbury Ave S Minneapolis, MN 55404.	$1,085.00		1010 plus 75 parking plus late fee for March 82.00
+Roosevelt Scott	Rental Minnesota LLC	1425 lasalle ave s Minneapolis mn 55403	$1,060.00		
+Saadia Mohamed	Jim Bern Co LLC 	8162 Bloomington ave s Bloomington MN 55425	$1,095.00		
+Sergio Slaughter	East Town Apartments	618 s 9th ave Minneapolis MN 55415	$1,092.00		
+Shana Ross	Konstantin Ginzburg	18261 68th Place N Minneapolis, MN 55311	$1,098.00		
+Shania Oliver	Rental Minnesota LLC 	1425 LaSalle ave s Minneapolis MN 55403	$1,095.00		grh is 1098
+Shaun Knight	Rachel Labey	601 Jackson st ne Minneapolis MN 55413	$1,200.00		
+Sherrica Campbell	Deluxe Properties LLC	2525 Harriet Ave S, Minneapolis MN 55405	$1,098.00		
+Suhaib Ahmed 	Aeon LLC, Blooming Meadows South 	1930 E 86 Street Bloomington MN 55425	$1,100.00		
+Ta'zhanique	Peregrine Apartments	2035 W. River Rd Minneapolis MN 55411	$1,098.00		
+Terrance Barnes 	Shelby Commons	188 glenwood ave Minneapolis Mn 55405	$1,220.00		
+Thezandrea Sudduth	Deluxe Properties LLC	2525 Harriet ave s unit #211 mgmt office, Minneapolis MN 55405	$1,095.00		rent is 1095(only gets 980 as pf april 24)
+Timothy Thomas	Tranquility Housing	3701 Penn Ave N Minneapolis MN 55411	$1,205.00		
+Travis Darsow	Elite Property Management	7760 France Ave S, Suite #1100, Bloomington MN 55435	$950.00		
+Wesley Reynolds	Huntington Place Apts 	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		
+Yvette Mulumba	Mk2 Property Management	4620 Pleasantwood Rd Minnetonka MN 55343	$1,098.00		
+Zechariah Palmer 	Broadway Flats 	2505 Penn Ave N Mpls MN 55411	$1,030.00		1072.53

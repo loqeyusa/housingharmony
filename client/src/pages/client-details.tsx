@@ -49,26 +49,22 @@ export default function ClientDetails() {
   console.log('ClientDetails loaded with clientId:', clientId);
 
   const { data: client, isLoading, error } = useQuery<Client>({
-    queryKey: ["/api/clients", clientId],
-    queryFn: () => apiRequest(`/api/clients/${clientId}`),
+    queryKey: [`/api/clients/${clientId}`],
     enabled: !!clientId,
   });
 
   const { data: applications = [] } = useQuery<Application[]>({
-    queryKey: ["/api/applications", "client", clientId],
-    queryFn: () => apiRequest(`/api/applications?clientId=${clientId}`),
+    queryKey: [`/api/applications?clientId=${clientId}`],
     enabled: !!clientId,
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
-    queryKey: ["/api/transactions", "client", clientId],
-    queryFn: () => apiRequest(`/api/transactions?clientId=${clientId}`),
+    queryKey: [`/api/transactions?clientId=${clientId}`],
     enabled: !!clientId,
   });
 
   const { data: housingSupport = [] } = useQuery<HousingSupport[]>({
-    queryKey: ["/api/housing-support", "client", clientId],
-    queryFn: () => apiRequest(`/api/housing-support?clientId=${clientId}`),
+    queryKey: [`/api/housing-support?clientId=${clientId}`],
     enabled: !!clientId,
   });
 
@@ -76,12 +72,9 @@ export default function ClientDetails() {
 
   const updateClientMutation = useMutation({
     mutationFn: (data: Partial<Client>) => 
-      apiRequest(`/api/clients/${clientId}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+      apiRequest("PUT", `/api/clients/${clientId}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/clients", clientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
         title: "Success",

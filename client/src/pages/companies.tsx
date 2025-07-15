@@ -21,6 +21,9 @@ export default function Companies() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debug: Log component mounting
+  console.log("Companies component mounted");
+
   const { data: companies, isLoading } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
     staleTime: 5 * 60 * 1000, // 5 minutes

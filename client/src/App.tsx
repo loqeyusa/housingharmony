@@ -44,7 +44,7 @@ function AuthenticatedRouter() {
             <Route path="/counties" component={Counties} />
             <Route path="/county/:countyName" component={CountyDetails} />
             <Route path="/companies">
-              <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+              <ProtectedRoute requireSuperAdmin={true}>
                 <Companies />
               </ProtectedRoute>
             </Route>

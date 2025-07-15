@@ -40,7 +40,7 @@ export function usePermissions() {
       { path: '/', permission: null }, // Dashboard accessible to all
       { path: '/clients', permission: PERMISSIONS.VIEW_CLIENTS },
       { path: '/counties', permission: PERMISSIONS.VIEW_CLIENTS },
-      { path: '/companies', permission: PERMISSIONS.MANAGE_USERS }, // Company management requires admin access
+      { path: '/companies', permission: null }, // Company management for super admins
       { path: '/properties', permission: PERMISSIONS.VIEW_PROPERTIES },
       { path: '/applications', permission: PERMISSIONS.VIEW_APPLICATIONS },
       { path: '/housing-support', permission: PERMISSIONS.VIEW_HOUSING_SUPPORT },
@@ -52,9 +52,14 @@ export function usePermissions() {
       { path: '/reports', permission: PERMISSIONS.VIEW_REPORTS },
     ];
 
-    return pages.filter(page => 
-      page.permission === null || hasPermission(page.permission)
-    );
+    return pages.filter(page => {
+      // Special handling for companies page - only super admins
+      if (page.path === '/companies') {
+        return user?.isSuperAdmin === true;
+      }
+      // All other pages use normal permission check
+      return page.permission === null || hasPermission(page.permission);
+    });
   }, [permissionSet, user?.isSuperAdmin]);
 
   const getAccessiblePages = () => accessiblePages;

@@ -71,6 +71,15 @@ export default function Layout({ children }: LayoutProps) {
     if (location === "/" || location === "/dashboard") {
       return "Dashboard";
     }
+    
+    // Handle dynamic routes
+    if (location.startsWith("/clients/") && location !== "/clients") {
+      return "Client Details";
+    }
+    if (location.startsWith("/county/")) {
+      return "County Details";
+    }
+    
     const item = navigationItems.find(item => item.path === location);
     return item ? item.label : "Page Not Found";
   };
@@ -91,6 +100,15 @@ export default function Layout({ children }: LayoutProps) {
       "/user-management": "Manage users, roles, and system permissions",
       "/reports": "Generate reports and analytics",
     };
+    
+    // Handle dynamic routes
+    if (location.startsWith("/clients/") && location !== "/clients") {
+      return "View and manage detailed client information";
+    }
+    if (location.startsWith("/county/")) {
+      return "View clients and statistics for this county";
+    }
+    
     return descriptions[location] || "Page not found";
   };
 

@@ -15,7 +15,8 @@ import {
   MessageCircle,
   Building2,
   Shield,
-  LogOut
+  LogOut,
+  MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -32,6 +33,7 @@ interface LayoutProps {
 const navigationItems = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/clients", label: "Clients", icon: Users },
+  { path: "/counties", label: "Counties", icon: MapPin },
   { path: "/properties", label: "Properties", icon: Building },
   { path: "/applications", label: "Applications", icon: FileText },
   { path: "/housing-support", label: "Housing Support", icon: Calculator },
@@ -78,6 +80,7 @@ export default function Layout({ children }: LayoutProps) {
       "/": "Housing Program Management Overview",
       "/dashboard": "Housing Program Management Overview",
       "/clients": "Manage client information and KYC data",
+      "/counties": "View clients organized by county",
       "/properties": "Track available properties and landlord details",
       "/applications": "Monitor county application status",
       "/financials": "View financial transactions and payments",

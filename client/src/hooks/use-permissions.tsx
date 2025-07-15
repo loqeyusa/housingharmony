@@ -39,6 +39,7 @@ export function usePermissions() {
     const pages = [
       { path: '/', permission: null }, // Dashboard accessible to all
       { path: '/clients', permission: PERMISSIONS.VIEW_CLIENTS },
+      { path: '/counties', permission: PERMISSIONS.VIEW_CLIENTS },
       { path: '/properties', permission: PERMISSIONS.VIEW_PROPERTIES },
       { path: '/applications', permission: PERMISSIONS.VIEW_APPLICATIONS },
       { path: '/housing-support', permission: PERMISSIONS.VIEW_HOUSING_SUPPORT },

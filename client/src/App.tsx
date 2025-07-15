@@ -12,6 +12,8 @@ import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import ClientDetails from "@/pages/client-details";
 import TestClientDetails from "@/pages/test-client-details";
+import Counties from "@/pages/counties";
+import CountyDetails from "@/pages/county-details";
 import Properties from "@/pages/properties";
 import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
@@ -36,7 +38,10 @@ function AuthenticatedRouter() {
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/" component={Dashboard} />
             <Route path="/clients/:clientId" component={ClientDetails} />
+            <Route path="/client/:clientId" component={ClientDetails} />
             <Route path="/clients" component={Clients} />
+            <Route path="/counties" component={Counties} />
+            <Route path="/county/:countyName" component={CountyDetails} />
             <Route path="/properties" component={Properties} />
             <Route path="/applications" component={Applications} />
             <Route path="/financials" component={Financials} />

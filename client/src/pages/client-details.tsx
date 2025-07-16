@@ -41,9 +41,11 @@ import type { Client, Application, Transaction, HousingSupport } from "@shared/s
 import ClientTransactionForm from "@/components/client-transaction-form";
 import { ClientNotesDisplay } from "@/components/client-notes-display";
 import { ClientNotesForm } from "@/components/client-notes-form";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function ClientDetails() {
   const { clientId } = useParams<{ clientId: string }>();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<Partial<Client>>({});
   const [showAddDocument, setShowAddDocument] = useState(false);
@@ -926,11 +928,11 @@ export default function ClientDetails() {
       )}
 
       {/* Notes Form Modal */}
-      {showNotesForm && (
+      {showNotesForm && user && (
         <ClientNotesForm
           clientId={parseInt(clientId!)}
           clientName={`${client.firstName} ${client.lastName}`}
-          currentUserId={1} // TODO: Get from authentication context
+          currentUserId={user.id}
           onClose={() => setShowNotesForm(false)}
           onSuccess={() => {
             // Refresh notes data

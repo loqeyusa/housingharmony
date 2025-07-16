@@ -12,6 +12,7 @@ import {
   roles,
   userRoles,
   auditLogs,
+  clientNotes,
   type Client, 
   type InsertClient,
   type Property,
@@ -39,7 +40,9 @@ import {
   type InsertUserRole,
   type AuditLog,
   type InsertAuditLog,
-  type Permission
+  type Permission,
+  type ClientNote,
+  type InsertClientNote
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
@@ -172,6 +175,12 @@ export interface IStorage {
   isSuperAdmin(userId: number): Promise<boolean>;
   canUserCreateUsers(userId: number): Promise<boolean>;
   canUserAssignRole(userId: number, roleId: number): Promise<boolean>;
+  
+  // Client Notes operations
+  getClientNotes(clientId: number): Promise<ClientNote[]>;
+  createClientNote(note: InsertClientNote): Promise<ClientNote>;
+  updateClientNote(id: number, note: Partial<InsertClientNote>): Promise<ClientNote | undefined>;
+  deleteClientNote(id: number): Promise<boolean>;
   
   // Admin operations
   clearAllData(): Promise<void>;
@@ -963,10 +972,63 @@ export class DatabaseStorage implements IStorage {
     return false;
   }
 
+  // Client Notes operations
+  async getClientNotes(clientId: number): Promise<ClientNote[]> {
+    const notes = await db
+      .select({
+        id: clientNotes.id,
+        clientId: clientNotes.clientId,
+        userId: clientNotes.userId,
+        content: clientNotes.content,
+        noteDate: clientNotes.noteDate,
+        createdAt: clientNotes.createdAt,
+        updatedAt: clientNotes.updatedAt,
+        userName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`.as('userName')
+      })
+      .from(clientNotes)
+      .leftJoin(users, eq(clientNotes.userId, users.id))
+      .where(eq(clientNotes.clientId, clientId))
+      .orderBy(desc(clientNotes.noteDate), desc(clientNotes.createdAt));
+    
+    return notes.map(note => ({
+      id: note.id,
+      clientId: note.clientId,
+      userId: note.userId,
+      content: note.content,
+      noteDate: note.noteDate,
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+      userName: note.userName || 'Unknown User'
+    })) as ClientNote[];
+  }
+
+  async createClientNote(insertNote: InsertClientNote): Promise<ClientNote> {
+    const [note] = await db
+      .insert(clientNotes)
+      .values(insertNote)
+      .returning();
+    return note;
+  }
+
+  async updateClientNote(id: number, updateData: Partial<InsertClientNote>): Promise<ClientNote | undefined> {
+    const [note] = await db
+      .update(clientNotes)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(clientNotes.id, id))
+      .returning();
+    return note || undefined;
+  }
+
+  async deleteClientNote(id: number): Promise<boolean> {
+    const result = await db.delete(clientNotes).where(eq(clientNotes.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   async clearAllData(): Promise<void> {
     // Clear all data from all tables (in proper order to handle foreign key constraints)
     await db.delete(auditLogs);
     await db.delete(userRoles);
+    await db.delete(clientNotes);
     await db.delete(housingSupport);
     await db.delete(otherSubsidies);
     await db.delete(poolFund);

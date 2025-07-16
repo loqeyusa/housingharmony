@@ -57,6 +57,17 @@ export const clients = pgTable("clients", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Client Notes - timestamped notes for each client
+export const clientNotes = pgTable("client_notes", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  userId: integer("user_id").notNull(), // User who created the note
+  content: text("content").notNull(),
+  noteDate: date("note_date").notNull(), // Date the note refers to (can be different from created date)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
@@ -229,6 +240,12 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
   approvedBy: true,
 });
 
+export const insertClientNoteSchema = createInsertSchema(clientNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 
@@ -255,6 +272,9 @@ export type InsertVendor = z.infer<typeof insertVendorSchema>;
 
 export type OtherSubsidy = typeof otherSubsidies.$inferSelect;
 export type InsertOtherSubsidy = z.infer<typeof insertOtherSubsidySchema>;
+
+export type ClientNote = typeof clientNotes.$inferSelect;
+export type InsertClientNote = z.infer<typeof insertClientNoteSchema>;
 
 // User Management Schema
 export const users = pgTable("users", {

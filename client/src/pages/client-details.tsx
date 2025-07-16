@@ -39,6 +39,8 @@ import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import type { Client, Application, Transaction, HousingSupport } from "@shared/schema";
 import ClientTransactionForm from "@/components/client-transaction-form";
+import { ClientNotesDisplay } from "@/components/client-notes-display";
+import { ClientNotesForm } from "@/components/client-notes-form";
 
 export default function ClientDetails() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -46,6 +48,7 @@ export default function ClientDetails() {
   const [editedClient, setEditedClient] = useState<Partial<Client>>({});
   const [showAddDocument, setShowAddDocument] = useState(false);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [showNotesForm, setShowNotesForm] = useState(false);
   const [newDocument, setNewDocument] = useState({ name: "", type: "id", file: null as File | null });
   const { toast } = useToast();
 
@@ -264,7 +267,7 @@ export default function ClientDetails() {
         {/* Left Column - Main Details */}
         <div className="lg:col-span-2 space-y-6">
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid grid-cols-5 w-full">
+            <TabsList className="grid grid-cols-6 w-full">
               <TabsTrigger value="personal" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Personal
@@ -280,6 +283,10 @@ export default function ClientDetails() {
               <TabsTrigger value="applications" className="flex items-center gap-2">
                 <ClipboardList className="h-4 w-4" />
                 Applications
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Notes
               </TabsTrigger>
               <TabsTrigger value="history" className="flex items-center gap-2">
                 <History className="h-4 w-4" />
@@ -665,6 +672,13 @@ export default function ClientDetails() {
               </Card>
             </TabsContent>
 
+            <TabsContent value="notes" className="space-y-6">
+              <ClientNotesDisplay
+                clientId={parseInt(clientId!)}
+                onAddNote={() => setShowNotesForm(true)}
+              />
+            </TabsContent>
+
             <TabsContent value="history" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -848,6 +862,14 @@ export default function ClientDetails() {
                 <DollarSign className="h-4 w-4 mr-2" />
                 Add Transaction
               </Button>
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={() => setShowNotesForm(true)}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Add Note
+              </Button>
               <Button className="w-full justify-start" variant="outline">
                 <Mail className="h-4 w-4 mr-2" />
                 Send Message
@@ -898,6 +920,22 @@ export default function ClientDetails() {
             // Refresh transaction data
             queryClient.invalidateQueries({ 
               queryKey: [`/api/transactions?clientId=${clientId}`] 
+            });
+          }}
+        />
+      )}
+
+      {/* Notes Form Modal */}
+      {showNotesForm && (
+        <ClientNotesForm
+          clientId={parseInt(clientId!)}
+          clientName={`${client.firstName} ${client.lastName}`}
+          currentUserId={1} // TODO: Get from authentication context
+          onClose={() => setShowNotesForm(false)}
+          onSuccess={() => {
+            // Refresh notes data
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/clients/${clientId}/notes`] 
             });
           }}
         />

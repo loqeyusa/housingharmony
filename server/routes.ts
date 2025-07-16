@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -1495,6 +1495,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('System initialization error:', error);
       res.status(500).json({ error: "Failed to initialize system" });
+    }
+  });
+
+  // Client Notes Routes
+  app.get("/api/clients/:id/notes", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const notes = await storage.getClientNotes(clientId);
+      res.json(notes);
+    } catch (error) {
+      console.error('Get client notes error:', error);
+      res.status(500).json({ error: "Failed to fetch client notes" });
+    }
+  });
+
+  app.post("/api/clients/:id/notes", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const noteData = insertClientNoteSchema.parse({
+        ...req.body,
+        clientId
+      });
+      
+      const note = await storage.createClientNote(noteData);
+      res.status(201).json(note);
+    } catch (error) {
+      console.error('Create client note error:', error);
+      res.status(500).json({ error: "Failed to create client note" });
+    }
+  });
+
+  app.put("/api/notes/:id", async (req, res) => {
+    try {
+      const noteId = parseInt(req.params.id);
+      const noteData = req.body;
+      
+      const note = await storage.updateClientNote(noteId, noteData);
+      if (!note) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+      
+      res.json(note);
+    } catch (error) {
+      console.error('Update client note error:', error);
+      res.status(500).json({ error: "Failed to update client note" });
+    }
+  });
+
+  app.delete("/api/notes/:id", async (req, res) => {
+    try {
+      const noteId = parseInt(req.params.id);
+      const deleted = await storage.deleteClientNote(noteId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Note not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete client note error:', error);
+      res.status(500).json({ error: "Failed to delete client note" });
     }
   });
 

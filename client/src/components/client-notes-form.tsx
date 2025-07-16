@@ -49,6 +49,8 @@ export function ClientNotesForm({
 
   const createNoteMutation = useMutation({
     mutationFn: async (noteData: ClientNoteData) => {
+      console.log("Making API request with data:", noteData);
+      console.log("API endpoint:", `/api/clients/${clientId}/notes`);
       return await apiRequest(`/api/clients/${clientId}/notes`, {
         method: "POST",
         body: noteData,
@@ -64,15 +66,21 @@ export function ClientNotesForm({
       onClose();
     },
     onError: (error: any) => {
+      console.error("Mutation error:", error);
+      console.error("Error details:", error.response?.data || error.message);
       toast({
         title: "Error",
-        description: error.message || "Failed to add client note",
+        description: error.response?.data?.error || error.message || "Failed to add client note",
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = async (data: ClientNoteData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Client ID:", clientId);
+    console.log("Current User ID:", currentUserId);
+    
     setIsSubmitting(true);
     try {
       await createNoteMutation.mutateAsync(data);

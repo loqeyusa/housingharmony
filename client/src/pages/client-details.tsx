@@ -31,18 +31,21 @@ import {
   CreditCard,
   Home,
   ClipboardList,
-  History
+  History,
+  Wallet
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import type { Client, Application, Transaction, HousingSupport } from "@shared/schema";
+import ClientTransactionForm from "@/components/client-transaction-form";
 
 export default function ClientDetails() {
   const { clientId } = useParams<{ clientId: string }>();
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<Partial<Client>>({});
   const [showAddDocument, setShowAddDocument] = useState(false);
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [newDocument, setNewDocument] = useState({ name: "", type: "id", file: null as File | null });
   const { toast } = useToast();
 
@@ -233,14 +236,25 @@ export default function ClientDetails() {
               </Button>
             </div>
           ) : (
-            <Button
-              size="sm"
-              onClick={() => setIsEditing(true)}
-              className="bg-primary text-white hover:bg-primary/90"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Client
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => setShowTransactionForm(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Wallet className="h-4 w-4" />
+                Add Transaction
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="bg-primary text-white hover:bg-primary/90"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Client
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -826,7 +840,11 @@ export default function ClientDetails() {
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Create Application
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={() => setShowTransactionForm(true)}
+              >
                 <DollarSign className="h-4 w-4 mr-2" />
                 Add Transaction
               </Button>
@@ -869,6 +887,21 @@ export default function ClientDetails() {
           </Card>
         </div>
       </div>
+
+      {/* Transaction Form Modal */}
+      {showTransactionForm && (
+        <ClientTransactionForm
+          clientId={parseInt(clientId!)}
+          clientName={`${client.firstName} ${client.lastName}`}
+          onClose={() => setShowTransactionForm(false)}
+          onSuccess={() => {
+            // Refresh transaction data
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/transactions?clientId=${clientId}`] 
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

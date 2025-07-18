@@ -609,31 +609,29 @@ export class DatabaseStorage implements IStorage {
 
   async getPoolFundEntries(companyId?: number): Promise<PoolFund[]> {
     if (companyId) {
-      // Get all counties where this company has clients
-      const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
-      const companyCounties = new Set(companyClients.map(c => c.county).filter(Boolean));
+      // Use raw SQL for company-filtered pool fund entries
+      const result = await db.execute(sql`
+        SELECT pf.* 
+        FROM pool_fund pf
+        INNER JOIN clients c ON pf.client_id = c.id
+        WHERE c.company_id = ${companyId}
+        ORDER BY pf.created_at DESC
+      `);
       
-      if (companyCounties.size === 0) {
-        return []; // No clients, no pool fund entries
-      }
-      
-      // Get pool fund entries for the company's counties
-      let entries: PoolFund[] = [];
-      if (companyCounties.size === 1) {
-        entries = await db.select().from(poolFund)
-          .where(eq(poolFund.county, Array.from(companyCounties)[0]))
-          .orderBy(poolFund.createdAt);
-      } else if (companyCounties.size > 1) {
-        entries = await db.select().from(poolFund)
-          .where(inArray(poolFund.county, Array.from(companyCounties)))
-          .orderBy(poolFund.createdAt);
-      }
-      
-      return entries.reverse();
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        transactionId: row.transaction_id,
+        amount: row.amount,
+        type: row.type,
+        description: row.description,
+        clientId: row.client_id,
+        county: row.county,
+        createdAt: new Date(row.created_at)
+      }));
     } else {
       // Global pool fund entries
-      const result = await db.select().from(poolFund).orderBy(poolFund.createdAt);
-      return result.reverse();
+      const result = await db.select().from(poolFund).orderBy(desc(poolFund.createdAt));
+      return result;
     }
   }
 
@@ -653,28 +651,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPoolFundBalance(companyId?: number): Promise<number> {
-    // Pool fund entries are tied to clients through county information
-    // For company-specific calculation, we need to get entries only for counties where the company has clients
+    // Pool fund entries are filtered by company through client relationship
     if (companyId) {
-      // Get all counties where this company has clients
-      const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
-      const companyCounts = new Set(companyClients.map(c => c.county).filter(Boolean));
+      // Use proper Drizzle ORM syntax with raw SQL import
+      const result = await db.execute(sql`
+        SELECT pf.amount, pf.type 
+        FROM pool_fund pf
+        INNER JOIN clients c ON pf.client_id = c.id
+        WHERE c.company_id = ${companyId}
+      `);
       
-      if (companyCounts.size === 0) {
-        return 0; // No clients, no pool fund balance
-      }
-      
-      // Get pool fund entries for the company's counties
-      let entries: any[] = [];
-      if (companyCounts.size === 1) {
-        entries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounts)[0]));
-      } else if (companyCounts.size > 1) {
-        entries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounts)));
-      }
-      
-      return entries.reduce((balance, entry) => {
-        const amount = parseFloat(entry.amount.toString());
-        if (entry.type === 'deposit') {
+      return result.rows.reduce((balance: number, row: any) => {
+        const amount = parseFloat(row.amount.toString());
+        if (row.type === 'deposit') {
           return balance + amount;
         } else {
           // Both 'withdrawal' and 'allocation' reduce the balance
@@ -782,6 +771,7 @@ export class DatabaseStorage implements IStorage {
     activeProperties: number;
     pendingApplications: number;
     poolFundBalance: number;
+    poolFundByCounty: { county: string; balance: number; }[];
     totalVendors: number;
     activeOtherSubsidies: number;
     totalOtherSubsidyAmount: number;
@@ -820,6 +810,25 @@ export class DatabaseStorage implements IStorage {
       }
       
       const poolFundBalance = await this.getPoolFundBalance(companyId);
+
+      // Get pool fund balance by county
+      let poolFundByCounty: { county: string; balance: number; }[] = [];
+      if (companyId) {
+        const countyResult = await db.execute(sql`
+          SELECT pf.county, 
+                 SUM(CASE WHEN pf.type = 'deposit' THEN pf.amount ELSE -pf.amount END) as balance
+          FROM pool_fund pf
+          INNER JOIN clients c ON pf.client_id = c.id
+          WHERE c.company_id = ${companyId}
+          GROUP BY pf.county
+          ORDER BY pf.county
+        `);
+        
+        poolFundByCounty = countyResult.rows.map((row: any) => ({
+          county: row.county,
+          balance: parseFloat(row.balance.toString())
+        }));
+      }
 
       // Get vendor statistics (vendors are global, not company-specific)
       const allVendors = await db.select().from(vendors);
@@ -870,6 +879,7 @@ export class DatabaseStorage implements IStorage {
       activeProperties,
       pendingApplications,
       poolFundBalance,
+      poolFundByCounty,
       totalVendors,
       activeOtherSubsidies,
       totalOtherSubsidyAmount,

@@ -32,6 +32,7 @@ interface DashboardStats {
   activeProperties: number;
   pendingApplications: number;
   poolFundBalance: number;
+  poolFundByCounty?: { county: string; balance: number; }[];
   totalVendors: number;
   activeOtherSubsidies: number;
   totalOtherSubsidyAmount: number;

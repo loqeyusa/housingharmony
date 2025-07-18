@@ -832,9 +832,13 @@ interface UserWithCompany extends User {
 function UserManagement() {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   
-  const { data: systemUsers = [], isLoading: usersLoading } = useQuery<UserWithCompany[]>({
+  const { data: systemUsers = [], isLoading: usersLoading, error } = useQuery<UserWithCompany[]>({
     queryKey: ["/api/system/users"],
   });
+
+  console.log("System Users:", systemUsers);
+  console.log("Users Loading:", usersLoading);
+  console.log("Users Error:", error);
 
   const filteredUsers = systemUsers.filter(user =>
     user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||

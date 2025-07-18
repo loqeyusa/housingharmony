@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient, clearUserCache } from '@/lib/queryClient';
 
 interface User {
   id: number;
@@ -48,10 +48,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userData = await response.json();
 
       if (userData.user) {
+        const previousUserId = localStorage.getItem('currentUserId');
+        
+        console.log('Login: Previous user ID:', previousUserId);
+        console.log('Login: New user ID:', userData.user.id);
+        
+        // Clear all cached data before setting new user
+        queryClient.clear();
+        queryClient.getMutationCache().clear();
+        queryClient.getQueryCache().clear();
+        
+        // If different user, ensure complete cache isolation
+        if (previousUserId && previousUserId !== userData.user.id.toString()) {
+          console.log('Different user detected, clearing all caches');
+          // Force cache recreation for complete isolation
+          queryClient.invalidateQueries();
+          queryClient.resetQueries();
+        }
+        
         setUser(userData.user);
         localStorage.setItem('authUser', JSON.stringify(userData.user));
-        // Clear all cached data to ensure fresh data for new user
-        queryClient.clear();
+        localStorage.setItem('currentUserId', userData.user.id.toString());
+        
+        console.log('Login complete for user:', userData.user.username);
       } else {
         throw new Error('Login failed');
       }
@@ -75,8 +94,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setUser(null);
       localStorage.removeItem('authUser');
+      localStorage.removeItem('currentUserId');
       // Clear all cached data when logging out
       queryClient.clear();
+      queryClient.getMutationCache().clear();
+      queryClient.getQueryCache().clear();
     }
   };
 
@@ -90,18 +112,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (response.ok) {
           const userData = await response.json();
+          const previousUserId = localStorage.getItem('currentUserId');
+          
+          // If different user, clear cache completely
+          if (previousUserId && previousUserId !== userData.id.toString()) {
+            queryClient.clear();
+            queryClient.getMutationCache().clear();
+            queryClient.getQueryCache().clear();
+          }
+          
           setUser(userData);
           localStorage.setItem('authUser', JSON.stringify(userData));
+          localStorage.setItem('currentUserId', userData.id.toString());
         } else {
           // Clear any stale localStorage data and cache
           localStorage.removeItem('authUser');
+          localStorage.removeItem('currentUserId');
           setUser(null);
           queryClient.clear();
         }
       } catch (error) {
         console.error('Auth check error:', error);
         localStorage.removeItem('authUser');
+        localStorage.removeItem('currentUserId');
         setUser(null);
+        queryClient.clear();
       } finally {
         setLoading(false);
       }

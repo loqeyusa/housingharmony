@@ -63,3 +63,18 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Helper function to clear cache for a specific user
+export const clearUserCache = (userId?: number) => {
+  if (!userId) {
+    queryClient.clear();
+    return;
+  }
+  
+  // Clear all queries that contain the user ID
+  queryClient.getQueryCache().getAll().forEach(query => {
+    if (query.queryKey.includes(userId.toString())) {
+      queryClient.removeQueries({ queryKey: query.queryKey });
+    }
+  });
+};

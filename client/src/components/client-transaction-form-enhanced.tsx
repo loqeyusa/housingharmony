@@ -131,7 +131,8 @@ export default function ClientTransactionFormEnhanced({
   });
 
   const { data: poolFundBalance } = useQuery({
-    queryKey: ["/api/pool-fund/balance"],
+    queryKey: client?.site ? ["/api/pool-fund/balance", client.site] : ["/api/pool-fund/balance"],
+    enabled: !!client,
   });
 
   const { data: clientBalance } = useQuery({
@@ -217,6 +218,11 @@ export default function ClientTransactionFormEnhanced({
     onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ["/api/pool-fund"] });
       queryClient.invalidateQueries({ queryKey: ["/api/pool-fund/balance"] });
+      if (client?.site) {
+        queryClient.invalidateQueries({ queryKey: ["/api/pool-fund/balance", client.site] });
+        queryClient.invalidateQueries({ queryKey: ["/api/pool-fund/county", client.site] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/pool-fund/summary/counties"] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}`] });
@@ -304,6 +310,9 @@ export default function ClientTransactionFormEnhanced({
               <CardContent className="pt-0">
                 <div className="text-2xl font-bold text-green-600">
                   ${currentBalance.toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  {client?.site ? `${client.site} County` : "No County Assigned"}
                 </div>
               </CardContent>
             </Card>

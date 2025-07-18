@@ -53,7 +53,7 @@ export default function Dashboard() {
   });
 
   const { data: company } = useQuery<Company>({
-    queryKey: ["/api/companies", user?.companyId],
+    queryKey: [`/api/companies/${user?.companyId}`],
     enabled: !!user?.companyId,
   });
 

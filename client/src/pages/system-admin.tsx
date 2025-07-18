@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
-import type { Company, InsertCompany } from "@shared/schema";
+import type { Company, InsertCompany, User } from "@shared/schema";
 import { CompanyForm } from "@/components/company-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -277,12 +277,13 @@ export default function SystemAdmin() {
           </Button>
         </div>
 
-        {/* Companies Tabs */}
+        {/* Management Tabs */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="pending">Pending ({pendingCompanies.length})</TabsTrigger>
             <TabsTrigger value="approved">Approved ({approvedCompanies.length})</TabsTrigger>
             <TabsTrigger value="rejected">Rejected ({rejectedCompanies.length})</TabsTrigger>
+            <TabsTrigger value="users">User Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
@@ -476,6 +477,10 @@ export default function SystemAdmin() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-4">
+            <UserManagement />
           </TabsContent>
         </Tabs>
 
@@ -815,5 +820,163 @@ function CompanyFormModal({ onClose, onSuccess }: CompanyFormModalProps) {
         />
       </DialogContent>
     </Dialog>
+  );
+}
+
+// User Management Component
+interface UserWithCompany extends User {
+  companyName?: string;
+  companyStatus?: string;
+}
+
+function UserManagement() {
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  
+  const { data: systemUsers = [], isLoading: usersLoading } = useQuery<UserWithCompany[]>({
+    queryKey: ["/api/system/users"],
+  });
+
+  const filteredUsers = systemUsers.filter(user =>
+    user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.firstName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.lastName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+    user.companyName?.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
+
+  const getUserRoleBadge = (user: UserWithCompany) => {
+    if (user.isSuperAdmin) {
+      return (
+        <Badge className="bg-purple-100 text-purple-800">
+          <UserCheck className="h-3 w-3 mr-1" />
+          Super Admin
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline">
+        <Users className="h-3 w-3 mr-1" />
+        Company Admin
+      </Badge>
+    );
+  };
+
+  const getCompanyStatusBadge = (status?: string) => {
+    if (!status) return null;
+    
+    const colors = {
+      approved: "bg-green-100 text-green-800",
+      pending: "bg-yellow-100 text-yellow-800",
+      rejected: "bg-red-100 text-red-800",
+    };
+    
+    return (
+      <Badge className={colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
+        {status}
+      </Badge>
+    );
+  };
+
+  if (usersLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-40"></div>
+                    <div className="h-3 bg-gray-200 rounded w-60"></div>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <div className="h-6 bg-gray-200 rounded w-20"></div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* User Search */}
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search users by name, email, username, or company..."
+            value={userSearchTerm}
+            onChange={(e) => setUserSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="text-sm text-gray-500">
+          {filteredUsers.length} of {systemUsers.length} users
+        </div>
+      </div>
+
+      {/* User List */}
+      {filteredUsers.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">
+              {userSearchTerm ? 'No users found matching your search' : 'No users found'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {filteredUsers.map((user) => (
+            <Card key={user.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h3 className="font-semibold text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </h3>
+                        {getUserRoleBadge(user)}
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span><strong>Username:</strong> {user.username}</span>
+                        <span><strong>Email:</strong> {user.email}</span>
+                        {user.companyName && (
+                          <span><strong>Company:</strong> {user.companyName}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                        <span>Created: {new Date(user.createdAt).toLocaleDateString()}</span>
+                        {user.lastLogin && (
+                          <span>Last Login: {new Date(user.lastLogin).toLocaleDateString()}</span>
+                        )}
+                        <span>Status: {user.isEnabled ? 'Active' : 'Inactive'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end space-y-2">
+                    {getCompanyStatusBadge(user.companyStatus)}
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <span>User ID: {user.id}</span>
+                      {user.companyId && <span>Company ID: {user.companyId}</span>}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

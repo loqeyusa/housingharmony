@@ -196,6 +196,7 @@ export interface IStorage {
   // Admin operations
   clearAllData(): Promise<void>;
   getTotalUsers(): Promise<number>;
+  getSystemUsers(): Promise<Array<User & { companyName?: string; companyStatus?: string }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1285,6 +1286,31 @@ export class DatabaseStorage implements IStorage {
       .select({ count: count() })
       .from(users);
     return result.count;
+  }
+
+  async getSystemUsers(): Promise<Array<User & { companyName?: string; companyStatus?: string }>> {
+    const usersWithCompanies = await db
+      .select({
+        id: users.id,
+        companyId: users.companyId,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        isEnabled: users.isEnabled,
+        isSuperAdmin: users.isSuperAdmin,
+        lastLogin: users.lastLogin,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        createdById: users.createdById,
+        companyName: companies.name,
+        companyStatus: companies.status
+      })
+      .from(users)
+      .leftJoin(companies, eq(users.companyId, companies.id))
+      .orderBy(desc(users.createdAt));
+
+    return usersWithCompanies;
   }
 }
 

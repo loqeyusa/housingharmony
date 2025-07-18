@@ -188,6 +188,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/system/users", async (_req, res) => {
+    try {
+      const users = await storage.getSystemUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching system users:", error);
+      res.status(500).json({ error: "Failed to fetch system users" });
+    }
+  });
+
   app.get("/api/companies/:id/stats", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

@@ -144,6 +144,9 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
   const currentBalance = (poolFundBalance as any)?.balance || 0;
   const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : null;
   const clientBalanceAmount = (clientBalance as any)?.balance || 0;
+  
+  const transactionType = form.watch("type");
+  const isDeposit = transactionType === "deposit";
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -210,6 +213,7 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="deposit">Deposit (Funds Received)</SelectItem>
                       <SelectItem value="withdrawal">Withdrawal (Purchase Supplies)</SelectItem>
                     </SelectContent>
                   </Select>
@@ -257,7 +261,8 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
                         step="0.01"
                         placeholder="0.00" 
                         className="pl-8"
-                        max={currentBalance}
+                        max={isDeposit ? undefined : currentBalance}
+                        min="0"
                         {...field} 
                       />
                     </div>

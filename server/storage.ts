@@ -469,7 +469,12 @@ export class DatabaseStorage implements IStorage {
     const entries = await db.select().from(poolFund);
     return entries.reduce((balance, entry) => {
       const amount = parseFloat(entry.amount.toString());
-      return entry.type === 'deposit' ? balance + amount : balance - amount;
+      if (entry.type === 'deposit') {
+        return balance + amount;
+      } else {
+        // Both 'withdrawal' and 'allocation' reduce the balance
+        return balance - amount;
+      }
     }, 0);
   }
 
@@ -477,7 +482,12 @@ export class DatabaseStorage implements IStorage {
     const entries = await db.select().from(poolFund).where(eq(poolFund.county, county));
     return entries.reduce((balance, entry) => {
       const amount = parseFloat(entry.amount.toString());
-      return entry.type === 'deposit' ? balance + amount : balance - amount;
+      if (entry.type === 'deposit') {
+        return balance + amount;
+      } else {
+        // Both 'withdrawal' and 'allocation' reduce the balance
+        return balance - amount;
+      }
     }, 0);
   }
 
@@ -519,6 +529,7 @@ export class DatabaseStorage implements IStorage {
         summary.balance += amount;
         summary.totalDeposits += amount;
       } else {
+        // Both 'withdrawal' and 'allocation' reduce the balance
         summary.balance -= amount;
         summary.totalWithdrawals += amount;
       }

@@ -39,6 +39,7 @@ import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 import type { Client, Application, Transaction, HousingSupport } from "@shared/schema";
 import ClientTransactionForm from "@/components/client-transaction-form";
+import ClientTransactionFormEnhanced from "@/components/client-transaction-form-enhanced";
 import { ClientNotesDisplay } from "@/components/client-notes-display";
 import { ClientNotesForm } from "@/components/client-notes-form";
 import { useAuth } from "@/contexts/auth-context";
@@ -914,7 +915,7 @@ export default function ClientDetails() {
 
       {/* Transaction Form Modal */}
       {showTransactionForm && (
-        <ClientTransactionForm
+        <ClientTransactionFormEnhanced
           clientId={parseInt(clientId!)}
           clientName={`${client.firstName} ${client.lastName}`}
           onClose={() => setShowTransactionForm(false)}

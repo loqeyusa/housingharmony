@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface User {
   id: number;
@@ -50,6 +50,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (userData.user) {
         setUser(userData.user);
         localStorage.setItem('authUser', JSON.stringify(userData.user));
+        // Clear all cached data to ensure fresh data for new user
+        queryClient.clear();
       } else {
         throw new Error('Login failed');
       }
@@ -73,6 +75,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setUser(null);
       localStorage.removeItem('authUser');
+      // Clear all cached data when logging out
+      queryClient.clear();
     }
   };
 
@@ -89,9 +93,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(userData);
           localStorage.setItem('authUser', JSON.stringify(userData));
         } else {
-          // Clear any stale localStorage data
+          // Clear any stale localStorage data and cache
           localStorage.removeItem('authUser');
           setUser(null);
+          queryClient.clear();
         }
       } catch (error) {
         console.error('Auth check error:', error);

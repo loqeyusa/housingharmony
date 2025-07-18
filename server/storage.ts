@@ -393,13 +393,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClients(companyId?: number): Promise<Client[]> {
-    const query = db.select().from(clients);
+    let result: Client[];
     
     if (companyId) {
-      query.where(eq(clients.companyId, companyId));
+      result = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.companyId, companyId))
+        .orderBy(clients.createdAt);
+    } else {
+      result = await db
+        .select()
+        .from(clients)
+        .orderBy(clients.createdAt);
     }
     
-    const result = await query.orderBy(clients.createdAt);
     return result.reverse();
   }
 
@@ -431,13 +439,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProperties(companyId?: number): Promise<Property[]> {
-    const query = db.select().from(properties);
+    let result: Property[];
     
     if (companyId) {
-      query.where(eq(properties.companyId, companyId));
+      result = await db
+        .select()
+        .from(properties)
+        .where(eq(properties.companyId, companyId))
+        .orderBy(properties.createdAt);
+    } else {
+      result = await db
+        .select()
+        .from(properties)
+        .orderBy(properties.createdAt);
     }
     
-    const result = await query.orderBy(properties.createdAt);
     return result.reverse();
   }
 

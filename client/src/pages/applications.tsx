@@ -31,18 +31,21 @@ export default function Applications() {
   const { user } = useAuth();
 
   const { data: applications = [], isLoading } = useQuery<Application[]>({
-    queryKey: ["/api/applications", user?.id],
+    queryKey: ["/api/applications"],
     enabled: !!user,
+    refetchInterval: 15000, // Refresh every 15 seconds for real-time updates
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
-    queryKey: ["/api/clients", user?.id],
+    queryKey: ["/api/clients"],
     enabled: !!user,
+    refetchInterval: 20000, // Refresh every 20 seconds
   });
 
   const { data: properties = [] } = useQuery<Property[]>({
-    queryKey: ["/api/properties", user?.id],
+    queryKey: ["/api/properties"],
     enabled: !!user,
+    refetchInterval: 25000, // Refresh every 25 seconds
   });
 
   const updateApplicationMutation = useMutation({

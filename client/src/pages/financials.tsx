@@ -33,14 +33,17 @@ export default function Financials() {
 
   const { data: transactions = [], isLoading } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
+    refetchInterval: 15000, // Refresh every 15 seconds for real-time financial data
   });
 
   const { data: applications = [] } = useQuery<Application[]>({
     queryKey: ["/api/applications"],
+    refetchInterval: 20000, // Refresh every 20 seconds
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const getClientNameFromApplication = (applicationId: number | null) => {

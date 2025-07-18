@@ -48,18 +48,22 @@ export default function PoolFundPage() {
 
   const { data: poolFundEntries = [], isLoading } = useQuery<PoolFund[]>({
     queryKey: selectedCounty === "all" ? ["/api/pool-fund"] : ["/api/pool-fund/county", selectedCounty],
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time pool fund updates
   });
 
   const { data: poolFundBalance } = useQuery({
     queryKey: selectedCounty === "all" ? ["/api/pool-fund/balance"] : ["/api/pool-fund/balance", selectedCounty],
+    refetchInterval: 10000, // Refresh balance every 10 seconds
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
+    refetchInterval: 30000, // Refresh clients every 30 seconds
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
+    refetchInterval: 15000, // Refresh transactions every 15 seconds
   });
 
   // Get unique counties from clients

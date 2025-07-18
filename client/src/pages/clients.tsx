@@ -19,8 +19,9 @@ export default function Clients() {
   const { user } = useAuth();
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
-    queryKey: ["/api/clients", user?.id],
+    queryKey: ["/api/clients"],
     enabled: !!user,
+    refetchInterval: 15000, // Refresh every 15 seconds for real-time updates
   });
 
   const filteredClients = clients.filter(client =>

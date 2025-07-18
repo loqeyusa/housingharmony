@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { apiRequest, queryClient, clearUserCache } from '@/lib/queryClient';
+import { apiRequest, queryClient, clearUserCache, forceRefreshAllData } from '@/lib/queryClient';
 
 interface User {
   id: number;
@@ -70,7 +70,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.setItem('authUser', JSON.stringify(userData.user));
         localStorage.setItem('currentUserId', userData.user.id.toString());
         
-        console.log('Login complete for user:', userData.user.username);
+        // Force refresh all data after successful login
+        setTimeout(() => {
+          forceRefreshAllData();
+        }, 100);
+        
+        console.log('Login complete for user:', userData.user.username, 'Company ID:', userData.user.companyId);
       } else {
         throw new Error('Login failed');
       }

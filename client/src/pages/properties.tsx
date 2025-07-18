@@ -16,8 +16,9 @@ export default function Properties() {
   const { user } = useAuth();
 
   const { data: properties = [], isLoading } = useQuery<Property[]>({
-    queryKey: ["/api/properties", user?.id],
+    queryKey: ["/api/properties"],
     enabled: !!user,
+    refetchInterval: 20000, // Refresh every 20 seconds for real-time updates
   });
 
   const filteredProperties = properties.filter(property =>

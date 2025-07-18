@@ -45,9 +45,11 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: 0, // Always fetch fresh data to ensure proper multi-tenancy
+      refetchInterval: 30000, // Refetch every 30 seconds for real-time data
+      refetchOnWindowFocus: true, // Refetch when user comes back to tab
+      refetchOnMount: true, // Always refetch when component mounts
+      refetchOnReconnect: true, // Refetch when network reconnects
+      staleTime: 0, // Data is immediately stale, always fetch fresh
       gcTime: 0, // Immediately garbage collect to prevent cross-user data leakage
       retry: (failureCount, error: any) => {
         // Don't retry on auth errors
@@ -64,17 +66,35 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Helper function to clear cache for a specific user
+// Helper function to clear cache for fresh data loading
 export const clearUserCache = (userId?: number) => {
-  if (!userId) {
-    queryClient.clear();
-    return;
-  }
-  
-  // Clear all queries that contain the user ID
-  queryClient.getQueryCache().getAll().forEach(query => {
-    if (query.queryKey.includes(userId.toString())) {
-      queryClient.removeQueries({ queryKey: query.queryKey });
-    }
+  // Always clear all cache to ensure fresh data
+  queryClient.clear();
+  console.log('Cache cleared for fresh data loading');
+};
+
+// Helper function to invalidate specific data types
+export const invalidateQueries = (queryTypes: string[]) => {
+  queryTypes.forEach(queryType => {
+    queryClient.invalidateQueries({ queryKey: [queryType] });
   });
+};
+
+// Helper function to force refresh all critical data
+export const forceRefreshAllData = () => {
+  const criticalQueries = [
+    '/api/clients',
+    '/api/properties', 
+    '/api/applications',
+    '/api/transactions',
+    '/api/pool-fund',
+    '/api/dashboard/stats'
+  ];
+  
+  criticalQueries.forEach(queryKey => {
+    queryClient.invalidateQueries({ queryKey: [queryKey] });
+    queryClient.refetchQueries({ queryKey: [queryKey] });
+  });
+  
+  console.log('Force refresh triggered for all critical data');
 };

@@ -50,8 +50,9 @@ export default function Dashboard() {
   };
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats", user?.id],
+    queryKey: ["/api/dashboard/stats"],
     enabled: !!user,
+    refetchInterval: 10000, // Refresh stats every 10 seconds
   });
 
   const { data: company } = useQuery<Company>({
@@ -60,18 +61,21 @@ export default function Dashboard() {
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
-    queryKey: ["/api/clients", user?.id],
+    queryKey: ["/api/clients"],
     enabled: !!user,
+    refetchInterval: 15000, // Refresh clients every 15 seconds
   });
 
   const { data: applications = [] } = useQuery<Application[]>({
-    queryKey: ["/api/applications", user?.id],
+    queryKey: ["/api/applications"],
     enabled: !!user,
+    refetchInterval: 20000, // Refresh applications every 20 seconds
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
-    queryKey: ["/api/transactions", user?.id],
+    queryKey: ["/api/transactions"],
     enabled: !!user,
+    refetchInterval: 25000, // Refresh transactions every 25 seconds
   });
 
   const { data: poolFundSummaryByCounty = [] } = useQuery<Array<{

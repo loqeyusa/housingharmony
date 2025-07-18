@@ -784,10 +784,8 @@ function CompanyFormModal({ onClose, onSuccess }: CompanyFormModalProps) {
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: InsertCompany) => {
-      return apiRequest("/api/companies", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/companies", data);
+      return response.json();
     },
     onSuccess: () => {
       toast({

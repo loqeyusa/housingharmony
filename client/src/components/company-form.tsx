@@ -55,7 +55,11 @@ export function CompanyForm({ onSubmit, isLoading, defaultValues }: CompanyFormP
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit((data) => {
+      console.log('Form submitted with data:', data);
+      console.log('Form errors:', errors);
+      onSubmit(data);
+    })} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Company Information */}
         <Card>

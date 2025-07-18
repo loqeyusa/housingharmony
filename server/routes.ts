@@ -232,11 +232,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Clients
-  app.get("/api/clients", async (_req, res) => {
+  app.get("/api/clients", async (req, res) => {
     try {
-      const clients = await storage.getClients();
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Filter clients by company ID for multi-tenant isolation
+      const clients = await storage.getClients(user.companyId);
       res.json(clients);
     } catch (error) {
+      console.error("Error in clients API:", error);
       res.status(500).json({ error: "Failed to fetch clients" });
     }
   });
@@ -256,10 +263,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", async (req, res) => {
     try {
-      const clientData = insertClientSchema.parse(req.body);
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Add company ID from user's session for multi-tenant isolation
+      const clientData = insertClientSchema.parse({
+        ...req.body,
+        companyId: user.companyId
+      });
       const client = await storage.createClient(clientData);
       res.status(201).json(client);
     } catch (error) {
+      console.error("Error creating client:", error);
       res.status(400).json({ error: "Invalid client data" });
     }
   });
@@ -292,9 +309,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Properties
-  app.get("/api/properties", async (_req, res) => {
+  app.get("/api/properties", async (req, res) => {
     try {
-      const properties = await storage.getProperties();
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Filter properties by company ID for multi-tenant isolation
+      const properties = await storage.getProperties(user.companyId);
       res.json(properties);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch properties" });
@@ -316,10 +339,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/properties", async (req, res) => {
     try {
-      const propertyData = insertPropertySchema.parse(req.body);
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Add company ID from user's session for multi-tenant isolation
+      const propertyData = insertPropertySchema.parse({
+        ...req.body,
+        companyId: user.companyId
+      });
       const property = await storage.createProperty(propertyData);
       res.status(201).json(property);
     } catch (error) {
+      console.error("Error creating property:", error);
       res.status(400).json({ error: "Invalid property data" });
     }
   });
@@ -354,12 +387,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Applications
   app.get("/api/applications", async (req, res) => {
     try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
       const { clientId } = req.query;
       if (clientId) {
         const applications = await storage.getApplicationsByClient(parseInt(clientId as string));
         res.json(applications);
       } else {
-        const applications = await storage.getApplications();
+        // Filter applications by company ID for multi-tenant isolation
+        const applications = await storage.getApplications(user.companyId);
         res.json(applications);
       }
     } catch (error) {
@@ -474,12 +513,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transactions
   app.get("/api/transactions", async (req, res) => {
     try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
       const { clientId } = req.query;
       if (clientId) {
         const transactions = await storage.getTransactionsByClient(parseInt(clientId as string));
         res.json(transactions);
       } else {
-        const transactions = await storage.getTransactions();
+        // Filter transactions by company ID for multi-tenant isolation
+        const transactions = await storage.getTransactions(user.companyId);
         res.json(transactions);
       }
     } catch (error) {

@@ -81,7 +81,7 @@ export interface IStorage {
   deleteProperty(id: number): Promise<boolean>;
 
   // Applications
-  getApplications(): Promise<Application[]>;
+  getApplications(companyId?: number): Promise<Application[]>;
   getApplication(id: number): Promise<Application | undefined>;
   getApplicationsByClient(clientId: number): Promise<Application[]>;
   createApplication(application: InsertApplication): Promise<Application>;
@@ -89,7 +89,7 @@ export interface IStorage {
   deleteApplication(id: number): Promise<boolean>;
 
   // Transactions
-  getTransactions(): Promise<Transaction[]>;
+  getTransactions(companyId?: number): Promise<Transaction[]>;
   getTransaction(id: number): Promise<Transaction | undefined>;
   getTransactionsByClient(clientId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
@@ -467,9 +467,34 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  async getApplications(): Promise<Application[]> {
-    const result = await db.select().from(applications).orderBy(applications.submittedAt);
-    return result.reverse();
+  async getApplications(companyId?: number): Promise<Application[]> {
+    if (companyId) {
+      // Join with clients table to filter by company
+      const result = await db
+        .select({
+          id: applications.id,
+          clientId: applications.clientId,
+          propertyId: applications.propertyId,
+          status: applications.status,
+          submittedAt: applications.submittedAt,
+          approvedAt: applications.approvedAt,
+          notes: applications.notes,
+          rentAmount: applications.rentAmount,
+          depositAmount: applications.depositAmount,
+          applicationFee: applications.applicationFee,
+          countyReimbursement: applications.countyReimbursement,
+          createdAt: applications.createdAt,
+          updatedAt: applications.updatedAt,
+        })
+        .from(applications)
+        .innerJoin(clients, eq(applications.clientId, clients.id))
+        .where(eq(clients.companyId, companyId))
+        .orderBy(applications.submittedAt);
+      return result.reverse();
+    } else {
+      const result = await db.select().from(applications).orderBy(applications.submittedAt);
+      return result.reverse();
+    }
   }
 
   async getApplication(id: number): Promise<Application | undefined> {
@@ -513,9 +538,28 @@ export class DatabaseStorage implements IStorage {
     return result.reverse();
   }
 
-  async getTransactions(): Promise<Transaction[]> {
-    const result = await db.select().from(transactions).orderBy(transactions.createdAt);
-    return result.reverse();
+  async getTransactions(companyId?: number): Promise<Transaction[]> {
+    if (companyId) {
+      // Join with applications and clients to filter by company
+      const result = await db
+        .select({
+          id: transactions.id,
+          applicationId: transactions.applicationId,
+          type: transactions.type,
+          amount: transactions.amount,
+          description: transactions.description,
+          createdAt: transactions.createdAt,
+        })
+        .from(transactions)
+        .innerJoin(applications, eq(transactions.applicationId, applications.id))
+        .innerJoin(clients, eq(applications.clientId, clients.id))
+        .where(eq(clients.companyId, companyId))
+        .orderBy(transactions.createdAt);
+      return result.reverse();
+    } else {
+      const result = await db.select().from(transactions).orderBy(transactions.createdAt);
+      return result.reverse();
+    }
   }
 
   async getTransaction(id: number): Promise<Transaction | undefined> {

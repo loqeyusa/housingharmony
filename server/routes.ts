@@ -6,8 +6,38 @@ import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import session from 'express-session';
+import MemoryStore from 'memorystore';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure session middleware with memory store
+  const MemoryStoreSession = MemoryStore(session);
+  app.use(session({
+    store: new MemoryStoreSession({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
+    secret: process.env.SESSION_SECRET || 'default-session-secret-change-in-production',
+    name: 'connect.sid',
+    resave: false,
+    saveUninitialized: true, // Changed to true to ensure session is saved
+    cookie: {
+      secure: false, // Set to false for development
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
+  }));
+
+  // Debug session endpoint
+  app.get('/api/debug/session', (req, res) => {
+    console.log('Session ID:', req.sessionID);
+    console.log('Session data:', req.session);
+    res.json({ 
+      sessionID: req.sessionID, 
+      session: req.session,
+      hasUser: !!req.session.user
+    });
+  });
+
   // PWA Routes
   app.get('/manifest.json', (_req, res) => {
     res.setHeader('Content-Type', 'application/manifest+json');
@@ -1429,8 +1459,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Store user in session
       req.session.user = user;
-
-      res.json({ user });
+      
+      // Save session explicitly and wait for it to complete
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ error: "Failed to save session" });
+        }
+        res.json({ user });
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Internal server error" });

@@ -394,12 +394,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const surplus = reimbursement - totalPaid;
 
         if (surplus > 0) {
+          // Get client information to determine county
+          const client = await storage.getClient(application.clientId);
+          const county = client?.site || 'Unknown';
+          
           await storage.createPoolFundEntry({
             transactionId: transaction.id,
             amount: surplus.toString(),
             type: "deposit",
             description: `Surplus from application ${id}`,
             clientId: null,
+            county: county,
           });
         }
       }
@@ -459,12 +464,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/pool-fund/county/:county", async (req, res) => {
+    try {
+      const county = decodeURIComponent(req.params.county);
+      const entries = await storage.getPoolFundEntriesByCounty(county);
+      res.json(entries);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch county pool fund entries" });
+    }
+  });
+
   app.get("/api/pool-fund/balance", async (_req, res) => {
     try {
       const balance = await storage.getPoolFundBalance();
       res.json({ balance });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pool fund balance" });
+    }
+  });
+
+  app.get("/api/pool-fund/balance/:county", async (req, res) => {
+    try {
+      const county = decodeURIComponent(req.params.county);
+      const balance = await storage.getPoolFundBalanceByCounty(county);
+      res.json({ balance });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch county pool fund balance" });
+    }
+  });
+
+  app.get("/api/pool-fund/summary/counties", async (_req, res) => {
+    try {
+      const summary = await storage.getPoolFundSummaryByCounty();
+      res.json(summary);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch county pool fund summary" });
     }
   });
 

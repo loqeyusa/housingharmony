@@ -13,22 +13,31 @@ import {
   User,
   DollarSign,
   TrendingUp,
-  Wallet
+  Wallet,
+  Filter
 } from "lucide-react";
 import { useState } from "react";
 import PoolFundForm from "@/components/pool-fund-form";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import type { PoolFund, Client, Transaction } from "@shared/schema";
 
 export default function PoolFundPage() {
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCounty, setSelectedCounty] = useState<string>("all");
 
   const { data: poolFundEntries = [], isLoading } = useQuery<PoolFund[]>({
-    queryKey: ["/api/pool-fund"],
+    queryKey: selectedCounty === "all" ? ["/api/pool-fund"] : ["/api/pool-fund/county", selectedCounty],
   });
 
   const { data: poolFundBalance } = useQuery({
-    queryKey: ["/api/pool-fund/balance"],
+    queryKey: selectedCounty === "all" ? ["/api/pool-fund/balance"] : ["/api/pool-fund/balance", selectedCounty],
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
@@ -38,6 +47,9 @@ export default function PoolFundPage() {
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
   });
+
+  // Get unique counties from clients
+  const counties = [...new Set(clients.map(client => client.site || 'Unknown'))].sort();
 
   const getClientName = (clientId: number | null) => {
     if (!clientId) return null;
@@ -175,14 +187,29 @@ export default function PoolFundPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle>Pool Fund Activity</CardTitle>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder="Search entries..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
-                />
+              <div className="flex gap-2">
+                <Select value={selectedCounty} onValueChange={setSelectedCounty}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select County" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Counties</SelectItem>
+                    {counties.map((county) => (
+                      <SelectItem key={county} value={county}>
+                        {county}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search entries..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                  />
+                </div>
               </div>
               <Button 
                 onClick={() => setShowPoolFundForm(true)}

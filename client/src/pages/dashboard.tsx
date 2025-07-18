@@ -56,6 +56,16 @@ export default function Dashboard() {
     queryKey: ["/api/transactions"],
   });
 
+  const { data: poolFundSummaryByCounty = [] } = useQuery<Array<{
+    county: string;
+    balance: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    entryCount: number;
+  }>>({
+    queryKey: ["/api/pool-fund/summary/counties"],
+  });
+
   const recentClients = clients.slice(0, 3);
   const pendingApplications = applications.filter(app => app.status === "pending").slice(0, 2);
   const recentTransactions = transactions.slice(0, 3);
@@ -220,6 +230,43 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* County-Based Pool Fund Summary */}
+      {poolFundSummaryByCounty.length > 0 && (
+        <Card>
+          <CardHeader className="border-b border-slate-200">
+            <CardTitle>Pool Fund by County</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {poolFundSummaryByCounty.map((county) => (
+                <div key={county.county} className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-lg">{county.county}</h3>
+                    <Badge variant={county.balance >= 0 ? 'default' : 'destructive'}>
+                      ${county.balance.toFixed(2)}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Deposits:</span>
+                      <span className="text-green-600">${county.totalDeposits.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Withdrawals:</span>
+                      <span className="text-red-600">${county.totalWithdrawals.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Transactions:</span>
+                      <span className="text-slate-900">{county.entryCount}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

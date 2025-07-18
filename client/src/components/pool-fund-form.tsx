@@ -68,8 +68,12 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
       amount: "0.00",
       type: "withdrawal",
       description: "",
+      county: "",
     },
   });
+
+  // Get unique counties from clients
+  const counties = [...new Set(clients.map(client => client.site || 'Unknown'))].sort();
 
   const createPoolFundMutation = useMutation({
     mutationFn: async (data: InsertPoolFund) => {
@@ -207,6 +211,31 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="withdrawal">Withdrawal (Purchase Supplies)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="county"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>County</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select county" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {counties.map((county) => (
+                        <SelectItem key={county} value={county}>
+                          {county}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

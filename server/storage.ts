@@ -94,8 +94,17 @@ export interface IStorage {
 
   // Pool Fund
   getPoolFundEntries(): Promise<PoolFund[]>;
+  getPoolFundEntriesByCounty(county: string): Promise<PoolFund[]>;
   createPoolFundEntry(entry: InsertPoolFund): Promise<PoolFund>;
   getPoolFundBalance(): Promise<number>;
+  getPoolFundBalanceByCounty(county: string): Promise<number>;
+  getPoolFundSummaryByCounty(): Promise<Array<{
+    county: string;
+    balance: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    entryCount: number;
+  }>>;
 
   // Dashboard stats
   getDashboardStats(): Promise<{
@@ -441,6 +450,13 @@ export class DatabaseStorage implements IStorage {
     return result.reverse();
   }
 
+  async getPoolFundEntriesByCounty(county: string): Promise<PoolFund[]> {
+    const result = await db.select().from(poolFund)
+      .where(eq(poolFund.county, county))
+      .orderBy(poolFund.createdAt);
+    return result.reverse();
+  }
+
   async createPoolFundEntry(insertPoolFund: InsertPoolFund): Promise<PoolFund> {
     const [entry] = await db
       .insert(poolFund)
@@ -455,6 +471,60 @@ export class DatabaseStorage implements IStorage {
       const amount = parseFloat(entry.amount.toString());
       return entry.type === 'deposit' ? balance + amount : balance - amount;
     }, 0);
+  }
+
+  async getPoolFundBalanceByCounty(county: string): Promise<number> {
+    const entries = await db.select().from(poolFund).where(eq(poolFund.county, county));
+    return entries.reduce((balance, entry) => {
+      const amount = parseFloat(entry.amount.toString());
+      return entry.type === 'deposit' ? balance + amount : balance - amount;
+    }, 0);
+  }
+
+  async getPoolFundSummaryByCounty(): Promise<Array<{
+    county: string;
+    balance: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    entryCount: number;
+  }>> {
+    const allEntries = await db.select().from(poolFund);
+    
+    const summaryMap = new Map<string, {
+      county: string;
+      balance: number;
+      totalDeposits: number;
+      totalWithdrawals: number;
+      entryCount: number;
+    }>();
+
+    for (const entry of allEntries) {
+      const county = entry.county;
+      const amount = parseFloat(entry.amount.toString());
+      
+      if (!summaryMap.has(county)) {
+        summaryMap.set(county, {
+          county,
+          balance: 0,
+          totalDeposits: 0,
+          totalWithdrawals: 0,
+          entryCount: 0,
+        });
+      }
+
+      const summary = summaryMap.get(county)!;
+      summary.entryCount++;
+      
+      if (entry.type === 'deposit') {
+        summary.balance += amount;
+        summary.totalDeposits += amount;
+      } else {
+        summary.balance -= amount;
+        summary.totalWithdrawals += amount;
+      }
+    }
+
+    return Array.from(summaryMap.values()).sort((a, b) => b.balance - a.balance);
   }
 
   async getDashboardStats(): Promise<{

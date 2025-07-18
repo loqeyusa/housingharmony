@@ -113,6 +113,7 @@ export const poolFund = pgTable("pool_fund", {
   type: text("type").notNull(), // deposit, withdrawal
   description: text("description").notNull(),
   clientId: integer("client_id"), // for withdrawals
+  county: text("county").notNull(), // county/site designation
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

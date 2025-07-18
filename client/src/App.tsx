@@ -24,6 +24,7 @@ import HousingSupport from "@/pages/housing-support";
 import Vendors from "@/pages/vendors";
 import OtherSubsidies from "@/pages/other-subsidies";
 import UserManagement from "@/pages/user-management";
+import ActivityLogs from "@/pages/activity-logs";
 import Mobile from "@/pages/mobile";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -58,6 +59,11 @@ function AuthenticatedRouter() {
               <Route path="/user-management">
                 <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
                   <UserManagement />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/activity-logs">
+                <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                  <ActivityLogs />
                 </ProtectedRoute>
               </Route>
               <Route path="/system-admin">

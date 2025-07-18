@@ -1465,17 +1465,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!user) {
         console.log('Authentication failed');
+        // Log failed login attempt
+        await storage.createAuditLog({
+          userId: null,
+          action: "login_failed",
+          resource: "auth",
+          details: { 
+            username: username,
+            reason: "invalid_credentials"
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
         return res.status(401).json({ error: "Invalid credentials or account disabled" });
       }
 
       if (!user.isEnabled) {
         console.log('User account disabled');
+        // Log disabled account login attempt
+        await storage.createAuditLog({
+          userId: user.id,
+          action: "login_failed",
+          resource: "auth",
+          details: { 
+            username: username,
+            reason: "account_disabled"
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
         return res.status(403).json({ error: "Account is disabled" });
       }
 
       console.log('User authenticated successfully, updating last login...');
       // Update last login
       await storage.updateLastLogin(user.id);
+
+      // Log successful login
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "login",
+        resource: "auth",
+        details: { 
+          username: user.username,
+          loginMethod: "password",
+          success: true
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
 
       // Store user in session - clean user object to avoid Date serialization issues
       const sessionUser = {
@@ -1521,12 +1559,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.body;
       
-      if (userId) {
-        // Log audit event
+      if (userId || req.session.user?.id) {
+        // Log logout event
         await storage.createAuditLog({
-          userId,
+          userId: userId || req.session.user?.id,
           action: "logout",
-          details: "User logged out"
+          resource: "auth",
+          details: { 
+            logoutMethod: "manual",
+            sessionId: req.sessionID 
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
         });
       }
 
@@ -1566,6 +1610,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get permissions error:', error);
       res.status(500).json({ error: "Failed to fetch permissions" });
+    }
+  });
+
+  // System Admin Authentication
+  app.post("/api/system/auth", async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      // System admin password (in production, this should be hashed and stored securely)
+      const SYSTEM_ADMIN_PASSWORD = process.env.SYSTEM_ADMIN_PASSWORD || "admin123!";
+      
+      if (password === SYSTEM_ADMIN_PASSWORD) {
+        // Log system admin access
+        await storage.createAuditLog({
+          userId: req.session.user?.id || null,
+          action: "system_admin_access",
+          resource: "system",
+          details: { access: "granted" },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
+        
+        res.json({ authenticated: true });
+      } else {
+        // Log failed system admin access attempt
+        await storage.createAuditLog({
+          userId: req.session.user?.id || null,
+          action: "system_admin_access_failed",
+          resource: "system",
+          details: { access: "denied", reason: "invalid_password" },
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+        });
+        
+        res.json({ authenticated: false });
+      }
+    } catch (error) {
+      console.error('System auth error:', error);
+      res.status(500).json({ error: "Failed to authenticate" });
     }
   });
 

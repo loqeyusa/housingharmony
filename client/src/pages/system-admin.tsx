@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Plus, 
   Building2, 
@@ -20,7 +21,9 @@ import {
   DollarSign,
   Activity,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Lock,
+  Shield
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -31,10 +34,93 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function SystemAdmin() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPasswordDialog, setShowPasswordDialog] = useState(true);
   const [showCompanyForm, setShowCompanyForm] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  // Check if already authenticated on component mount
+  useEffect(() => {
+    const isAuth = sessionStorage.getItem('systemAdminAuth') === 'true';
+    if (isAuth) {
+      setIsAuthenticated(true);
+      setShowPasswordDialog(false);
+    }
+  }, []);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await apiRequest('POST', '/api/system/auth', { password });
+      const result = await response.json();
+      
+      if (result.authenticated) {
+        setIsAuthenticated(true);
+        setShowPasswordDialog(false);
+        sessionStorage.setItem('systemAdminAuth', 'true');
+        toast({
+          title: "Access Granted",
+          description: "System admin access authenticated successfully",
+        });
+      } else {
+        toast({
+          title: "Access Denied",
+          description: "Invalid system admin password",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to authenticate system admin access",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Show password dialog if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Dialog open={showPasswordDialog} onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-red-500" />
+                System Admin Access
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Admin Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter system admin password"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="submit" className="w-full">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Authenticate
+                </Button>
+              </div>
+            </form>
+            <p className="text-sm text-gray-500 text-center">
+              This area requires system administrator credentials
+            </p>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ["/api/companies"],

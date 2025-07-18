@@ -591,9 +591,34 @@ export class DatabaseStorage implements IStorage {
     return result.reverse();
   }
 
-  async getPoolFundEntries(): Promise<PoolFund[]> {
-    const result = await db.select().from(poolFund).orderBy(poolFund.createdAt);
-    return result.reverse();
+  async getPoolFundEntries(companyId?: number): Promise<PoolFund[]> {
+    if (companyId) {
+      // Get all counties where this company has clients
+      const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
+      const companyCounties = new Set(companyClients.map(c => c.county).filter(Boolean));
+      
+      if (companyCounties.size === 0) {
+        return []; // No clients, no pool fund entries
+      }
+      
+      // Get pool fund entries for the company's counties
+      let entries: PoolFund[] = [];
+      if (companyCounties.size === 1) {
+        entries = await db.select().from(poolFund)
+          .where(eq(poolFund.county, Array.from(companyCounties)[0]))
+          .orderBy(poolFund.createdAt);
+      } else if (companyCounties.size > 1) {
+        entries = await db.select().from(poolFund)
+          .where(inArray(poolFund.county, Array.from(companyCounties)))
+          .orderBy(poolFund.createdAt);
+      }
+      
+      return entries.reverse();
+    } else {
+      // Global pool fund entries
+      const result = await db.select().from(poolFund).orderBy(poolFund.createdAt);
+      return result.reverse();
+    }
   }
 
   async getPoolFundEntriesByCounty(county: string): Promise<PoolFund[]> {

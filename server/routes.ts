@@ -612,9 +612,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pool Fund
-  app.get("/api/pool-fund", async (_req, res) => {
+  app.get("/api/pool-fund", async (req, res) => {
     try {
-      const entries = await storage.getPoolFundEntries();
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Filter pool fund entries by company ID for multi-tenant isolation
+      const entries = await storage.getPoolFundEntries(user.companyId);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pool fund entries" });
@@ -631,9 +637,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/pool-fund/balance", async (_req, res) => {
+  app.get("/api/pool-fund/balance", async (req, res) => {
     try {
-      const balance = await storage.getPoolFundBalance();
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Filter pool fund balance by company ID for multi-tenant isolation
+      const balance = await storage.getPoolFundBalance(user.companyId);
       res.json({ balance });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pool fund balance" });

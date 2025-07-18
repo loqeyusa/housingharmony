@@ -155,6 +155,9 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 18, 2025. Fixed critical pool fund data isolation bug where companies with no clients were seeing global pool fund data instead of $0 balance - implemented proper company-scoped filtering for pool fund entries and balance calculations
+- July 18, 2025. Added comprehensive password protection for system admin page with session-based authentication and detailed activity logging for all security events
+- July 18, 2025. Created comprehensive activity logs monitoring system with IP address tracking, user agent logging, and detailed audit trails for all user actions throughout the system
 - July 18, 2025. Fixed critical multi-tenant security vulnerability by implementing comprehensive company-scoped data isolation for dashboard stats and pool fund APIs - users can now only access their own company's data across all endpoints
 - July 18, 2025. Added company name display to dashboard header for clear multi-tenant identification - users can now see which housing program company they're managing
 - July 18, 2025. Implemented comprehensive multi-tenant data isolation system with company-specific filtering for all API endpoints (clients, properties, applications, transactions)

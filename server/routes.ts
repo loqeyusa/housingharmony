@@ -1537,6 +1537,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/auth/me", (req, res) => {
+    if (req.session.user) {
+      res.json(req.session.user);
+    } else {
+      res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
   // System Setup Routes
   app.get("/api/system/permissions", async (req, res) => {
     try {

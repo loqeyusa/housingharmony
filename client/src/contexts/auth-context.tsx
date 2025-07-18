@@ -78,16 +78,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check for existing session on app start
   useEffect(() => {
-    const checkAuthState = () => {
+    const checkAuthState = async () => {
       try {
-        const storedUser = localStorage.getItem('authUser');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
           setUser(userData);
+          localStorage.setItem('authUser', JSON.stringify(userData));
+        } else {
+          // Clear any stale localStorage data
+          localStorage.removeItem('authUser');
+          setUser(null);
         }
       } catch (error) {
-        console.error('Auth state check error:', error);
+        console.error('Auth check error:', error);
         localStorage.removeItem('authUser');
+        setUser(null);
       } finally {
         setLoading(false);
       }

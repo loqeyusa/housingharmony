@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, User, Phone, Mail, Globe, CreditCard } from "lucide-react";
+import { Building2, User, Phone, Mail, Globe, CreditCard, Shield } from "lucide-react";
 
 interface CompanyFormProps {
   onSubmit: (data: InsertCompany) => void;
@@ -292,6 +292,97 @@ export function CompanyForm({ onSubmit, isLoading, defaultValues }: CompanyFormP
               placeholder="Any additional notes about this company..."
               rows={3}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Super Admin User Creation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Company Super Admin Account
+          </CardTitle>
+          <CardDescription>
+            Create the primary administrator account for this company
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="superAdminUsername">Username</Label>
+              <Input
+                id="superAdminUsername"
+                {...register("superAdminUsername")}
+                placeholder="admin"
+              />
+              {errors.superAdminUsername && (
+                <p className="text-sm text-red-500 mt-1">{errors.superAdminUsername.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="superAdminEmail">Email</Label>
+              <Input
+                id="superAdminEmail"
+                type="email"
+                {...register("superAdminEmail")}
+                placeholder="admin@company.com"
+              />
+              {errors.superAdminEmail && (
+                <p className="text-sm text-red-500 mt-1">{errors.superAdminEmail.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="superAdminFirstName">First Name</Label>
+              <Input
+                id="superAdminFirstName"
+                {...register("superAdminFirstName")}
+                placeholder="John"
+              />
+              {errors.superAdminFirstName && (
+                <p className="text-sm text-red-500 mt-1">{errors.superAdminFirstName.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="superAdminLastName">Last Name</Label>
+              <Input
+                id="superAdminLastName"
+                {...register("superAdminLastName")}
+                placeholder="Doe"
+              />
+              {errors.superAdminLastName && (
+                <p className="text-sm text-red-500 mt-1">{errors.superAdminLastName.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="superAdminPassword">Password</Label>
+              <Input
+                id="superAdminPassword"
+                type="password"
+                {...register("superAdminPassword")}
+                placeholder="Minimum 8 characters"
+              />
+              {errors.superAdminPassword && (
+                <p className="text-sm text-red-500 mt-1">{errors.superAdminPassword.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="superAdminConfirmPassword">Confirm Password</Label>
+              <Input
+                id="superAdminConfirmPassword"
+                type="password"
+                {...register("superAdminConfirmPassword")}
+                placeholder="Confirm password"
+              />
+              {errors.superAdminConfirmPassword && (
+                <p className="text-sm text-red-500 mt-1">{errors.superAdminConfirmPassword.message}</p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

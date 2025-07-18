@@ -53,6 +53,7 @@ export interface IStorage {
   getCompanies(): Promise<Company[]>;
   getCompany(id: number): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
+  createCompanyWithSuperAdmin(company: InsertCompany): Promise<Company>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company | undefined>;
   deleteCompany(id: number): Promise<boolean>;
   approveCompany(id: number, approvedBy: number): Promise<Company | undefined>;
@@ -215,6 +216,64 @@ export class DatabaseStorage implements IStorage {
       .values(insertCompany)
       .returning();
     return company;
+  }
+
+  async createCompanyWithSuperAdmin(insertCompany: InsertCompany): Promise<Company> {
+    return await db.transaction(async (tx) => {
+      // Extract super admin data from company data
+      const {
+        superAdminUsername,
+        superAdminEmail,
+        superAdminFirstName,
+        superAdminLastName,
+        superAdminPassword,
+        superAdminConfirmPassword,
+        ...companyData
+      } = insertCompany as any;
+
+      // Create the company first
+      const [company] = await tx
+        .insert(companies)
+        .values(companyData)
+        .returning();
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
+
+      // Create the super admin user
+      const [superAdmin] = await tx
+        .insert(users)
+        .values({
+          companyId: company.id,
+          username: superAdminUsername,
+          email: superAdminEmail,
+          firstName: superAdminFirstName,
+          lastName: superAdminLastName,
+          passwordHash: hashedPassword,
+          isEnabled: true,
+          isSuperAdmin: false // Company admin, not system super admin
+        })
+        .returning();
+
+      // Get the Administrator role for the company
+      const [adminRole] = await tx
+        .select()
+        .from(roles)
+        .where(eq(roles.name, 'Administrator'))
+        .limit(1);
+
+      // Assign the Administrator role to the super admin
+      if (adminRole) {
+        await tx
+          .insert(userRoles)
+          .values({
+            userId: superAdmin.id,
+            roleId: adminRole.id
+          });
+      }
+
+      return company;
+    });
   }
 
   async updateCompany(id: number, updateData: Partial<InsertCompany>): Promise<Company | undefined> {

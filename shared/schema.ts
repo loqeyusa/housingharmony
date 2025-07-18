@@ -239,6 +239,17 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
   updatedAt: true,
   approvedAt: true,
   approvedBy: true,
+}).extend({
+  // Super admin user fields
+  superAdminUsername: z.string().min(3, "Username must be at least 3 characters"),
+  superAdminEmail: z.string().email("Invalid email address"),
+  superAdminFirstName: z.string().min(1, "First name is required"),
+  superAdminLastName: z.string().min(1, "Last name is required"),
+  superAdminPassword: z.string().min(8, "Password must be at least 8 characters"),
+  superAdminConfirmPassword: z.string(),
+}).refine((data) => data.superAdminPassword === data.superAdminConfirmPassword, {
+  message: "Passwords don't match",
+  path: ["superAdminConfirmPassword"],
 });
 
 export const insertClientNoteSchema = createInsertSchema(clientNotes).omit({

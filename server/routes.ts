@@ -79,10 +79,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/companies", async (req, res) => {
     try {
       const companyData = insertCompanySchema.parse(req.body);
-      const company = await storage.createCompany(companyData);
+      const company = await storage.createCompanyWithSuperAdmin(companyData);
       res.status(201).json(company);
     } catch (error) {
-      res.status(400).json({ error: "Invalid company data" });
+      console.error("Error creating company:", error);
+      res.status(500).json({ error: "Failed to create company" });
     }
   });
 

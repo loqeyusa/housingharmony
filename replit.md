@@ -155,6 +155,8 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 18, 2025. Enhanced company creation system with super admin account creation - includes username, email, password fields, automatic Administrator role assignment, and complete transaction-based user creation workflow
+- July 18, 2025. Fixed company creation API errors by adding proper username/email uniqueness validation, better error handling, and resolved user_roles constraint issues
 - July 18, 2025. Implemented comprehensive county-based pool fund separation system with county-specific API routes, dashboard statistics, and automatic county assignment from client information for accurate financial tracking per county
 - July 18, 2025. Added county selection to pool fund forms, county filtering to pool fund page, and fixed client notes authentication to use proper user context instead of hardcoded user IDs
 - July 15, 2025. Implemented comprehensive multi-tenant company management system with business registration, KYC documentation, subscription plans, and company-scoped data isolation for clients and properties

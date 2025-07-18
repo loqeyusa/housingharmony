@@ -231,6 +231,36 @@ export class DatabaseStorage implements IStorage {
         ...companyData
       } = insertCompany as any;
 
+      // Check if username or email already exists
+      const [existingUser] = await tx
+        .select()
+        .from(users)
+        .where(or(
+          eq(users.username, superAdminUsername),
+          eq(users.email, superAdminEmail)
+        ))
+        .limit(1);
+
+      if (existingUser) {
+        if (existingUser.username === superAdminUsername) {
+          throw new Error(`Username "${superAdminUsername}" is already taken`);
+        }
+        if (existingUser.email === superAdminEmail) {
+          throw new Error(`Email "${superAdminEmail}" is already taken`);
+        }
+      }
+
+      // Check if company email already exists
+      const [existingCompany] = await tx
+        .select()
+        .from(companies)
+        .where(eq(companies.email, companyData.email))
+        .limit(1);
+
+      if (existingCompany) {
+        throw new Error(`Company email "${companyData.email}" is already registered`);
+      }
+
       // Create the company first
       const [company] = await tx
         .insert(companies)
@@ -268,7 +298,8 @@ export class DatabaseStorage implements IStorage {
           .insert(userRoles)
           .values({
             userId: superAdmin.id,
-            roleId: adminRole.id
+            roleId: adminRole.id,
+            assignedById: superAdmin.id // Self-assigned during company creation
           });
       }
 

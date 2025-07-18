@@ -83,6 +83,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(company);
     } catch (error) {
       console.error("Error creating company:", error);
+      
+      // Handle validation errors
+      if (error instanceof Error) {
+        if (error.message.includes("already taken") || error.message.includes("already registered")) {
+          return res.status(400).json({ error: error.message });
+        }
+      }
+      
+      // Handle schema validation errors
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid company data", details: error.issues });
+      }
+      
       res.status(500).json({ error: "Failed to create company" });
     }
   });

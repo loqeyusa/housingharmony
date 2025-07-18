@@ -827,6 +827,12 @@ function CompanyFormModal({ onClose, onSuccess }: CompanyFormModalProps) {
 interface UserWithCompany extends User {
   companyName?: string;
   companyStatus?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  companyAddress?: string;
+  companyWebsite?: string;
+  companyContactPersonName?: string;
+  companyContactPersonEmail?: string;
 }
 
 function UserManagement() {
@@ -836,9 +842,19 @@ function UserManagement() {
     queryKey: ["/api/system/users"],
   });
 
+  const { data: companies = [] } = useQuery<Company[]>({
+    queryKey: ["/api/companies"],
+  });
+
   console.log("System Users:", systemUsers);
   console.log("Users Loading:", usersLoading);
   console.log("Users Error:", error);
+
+  // Helper function to get company details for a user
+  const getCompanyDetails = (user: UserWithCompany): Company | null => {
+    if (!user.companyId) return null;
+    return companies.find(company => company.id === user.companyId) || null;
+  };
 
   const filteredUsers = systemUsers.filter(user =>
     user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
@@ -907,8 +923,101 @@ function UserManagement() {
     );
   }
 
+  // Calculate user statistics by company
+  const usersByCompany = systemUsers.reduce((acc, user) => {
+    const companyName = user.companyName || 'No Company';
+    if (!acc[companyName]) {
+      acc[companyName] = { count: 0, active: 0, superAdmins: 0 };
+    }
+    acc[companyName].count++;
+    if (user.isEnabled) acc[companyName].active++;
+    if (user.isSuperAdmin) acc[companyName].superAdmins++;
+    return acc;
+  }, {} as Record<string, { count: number; active: number; superAdmins: number }>);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* User Statistics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900">{systemUsers.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <UserCheck className="h-8 w-8 text-green-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-600">Active Users</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {systemUsers.filter(u => u.isEnabled).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Building2 className="h-8 w-8 text-purple-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-600">Companies</p>
+                <p className="text-2xl font-bold text-gray-900">{Object.keys(usersByCompany).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-8 w-8 text-orange-600" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-600">Super Admins</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {systemUsers.filter(u => u.isSuperAdmin).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Company Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            User Distribution by Company
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(usersByCompany).map(([companyName, stats]) => (
+              <div key={companyName} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{companyName}</p>
+                  <p className="text-sm text-gray-600">
+                    {stats.count} users ({stats.active} active)
+                    {stats.superAdmins > 0 && ` • ${stats.superAdmins} admin${stats.superAdmins > 1 ? 's' : ''}`}
+                  </p>
+                </div>
+                <Badge variant="outline">{stats.count}</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* User Search */}
       <div className="flex items-center space-x-4">
         <div className="relative flex-1">
@@ -940,39 +1049,147 @@ function UserManagement() {
           {filteredUsers.map((user) => (
             <Card key={user.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Users className="h-5 w-5 text-primary" />
+                <div className="space-y-4">
+                  {/* User Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Users className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {user.firstName} {user.lastName}
+                          </h3>
+                          {getUserRoleBadge(user)}
+                          <Badge variant={user.isEnabled ? "default" : "secondary"}>
+                            {user.isEnabled ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <span><strong>Username:</strong> {user.username}</span>
+                          <span><strong>Email:</strong> {user.email}</span>
+                          <span><strong>User ID:</strong> {user.id}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">
-                          {user.firstName} {user.lastName}
-                        </h3>
-                        {getUserRoleBadge(user)}
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span><strong>Username:</strong> {user.username}</span>
-                        <span><strong>Email:</strong> {user.email}</span>
-                        {user.companyName && (
-                          <span><strong>Company:</strong> {user.companyName}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                        <span>Created: {new Date(user.createdAt).toLocaleDateString()}</span>
-                        {user.lastLogin && (
-                          <span>Last Login: {new Date(user.lastLogin).toLocaleDateString()}</span>
-                        )}
-                        <span>Status: {user.isEnabled ? 'Active' : 'Inactive'}</span>
+                    <div className="flex flex-col items-end space-y-2">
+                      {getCompanyStatusBadge(user.companyStatus)}
+                      <div className="text-xs text-gray-500">
+                        {user.companyId && <span>Company ID: {user.companyId}</span>}
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end space-y-2">
-                    {getCompanyStatusBadge(user.companyStatus)}
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
-                      <span>User ID: {user.id}</span>
-                      {user.companyId && <span>Company ID: {user.companyId}</span>}
+
+                  {/* Company Details Section */}
+                  {user.companyName && (
+                    <div className="border-t pt-4">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                        <h4 className="font-medium text-gray-900">Company Details</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                        <div className="space-y-3">
+                          <div>
+                            <span className="font-medium text-gray-700">Company Name:</span>
+                            <p className="text-gray-600">{user.companyName}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Company Status:</span>
+                            <div className="mt-1">
+                              {getCompanyStatusBadge(user.companyStatus)}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Company ID:</span>
+                            <p className="text-gray-600">{user.companyId}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <span className="font-medium text-gray-700">User Role:</span>
+                            <p className="text-gray-600">
+                              {user.isSuperAdmin ? 'Super Administrator' : 'Company Administrator'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Access Level:</span>
+                            <p className="text-gray-600">
+                              {user.isSuperAdmin ? 'System-wide Access' : 'Company-scoped Access'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Company Email:</span>
+                            <p className="text-gray-600">{getCompanyDetails(user)?.email || 'N/A'}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <span className="font-medium text-gray-700">Phone:</span>
+                            <p className="text-gray-600">{getCompanyDetails(user)?.phone || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Address:</span>
+                            <p className="text-gray-600">{getCompanyDetails(user)?.address || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Website:</span>
+                            <p className="text-gray-600">
+                              {getCompanyDetails(user)?.website ? (
+                                <a 
+                                  href={getCompanyDetails(user)?.website} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  {getCompanyDetails(user)?.website}
+                                </a>
+                              ) : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      {getCompanyDetails(user)?.contactPersonName && (
+                        <div className="mt-4 pt-3 border-t">
+                          <h5 className="font-medium text-gray-700 mb-2">Contact Person:</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-gray-700">Name:</span>
+                              <p className="text-gray-600">{getCompanyDetails(user)?.contactPersonName}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Email:</span>
+                              <p className="text-gray-600">{getCompanyDetails(user)?.contactPersonEmail || 'N/A'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Activity Information */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Activity className="h-4 w-4 text-green-600" />
+                      <h4 className="font-medium text-gray-900">Activity Information</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Created:</span>
+                        <p className="text-gray-600">{new Date(user.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Last Login:</span>
+                        <p className="text-gray-600">
+                          {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Account Status:</span>
+                        <p className="text-gray-600">
+                          {user.isEnabled ? 'Active & Enabled' : 'Inactive/Disabled'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

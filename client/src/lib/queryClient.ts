@@ -70,7 +70,12 @@ export const queryClient = new QueryClient({
 export const clearUserCache = (userId?: number) => {
   // Always clear all cache to ensure fresh data
   queryClient.clear();
-  console.log('Cache cleared for fresh data loading');
+  console.log('Cache cleared for fresh data loading for user:', userId);
+  
+  // Force refresh after clear
+  setTimeout(() => {
+    forceRefreshAllData();
+  }, 100);
 };
 
 // Helper function to invalidate specific data types
@@ -91,10 +96,13 @@ export const forceRefreshAllData = () => {
     '/api/dashboard/stats'
   ];
   
+  console.log('Forcing refresh of all critical data queries...');
+  
   criticalQueries.forEach(queryKey => {
+    console.log(`Invalidating and refetching: ${queryKey}`);
     queryClient.invalidateQueries({ queryKey: [queryKey] });
     queryClient.refetchQueries({ queryKey: [queryKey] });
   });
   
-  console.log('Force refresh triggered for all critical data');
+  console.log('Force refresh completed for all critical data');
 };

@@ -155,6 +155,8 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 18, 2025. Implemented comprehensive county-based pool fund separation system with county-specific API routes, dashboard statistics, and automatic county assignment from client information for accurate financial tracking per county
+- July 18, 2025. Added county selection to pool fund forms, county filtering to pool fund page, and fixed client notes authentication to use proper user context instead of hardcoded user IDs
 - July 15, 2025. Implemented comprehensive multi-tenant company management system with business registration, KYC documentation, subscription plans, and company-scoped data isolation for clients and properties
 - July 15, 2025. Added company approval workflow, statistics tracking, and admin-only company management interface with tabbed view for different company statuses
 - July 15, 2025. Created default company for existing data migration and established multi-tenant architecture with foreign key relationships

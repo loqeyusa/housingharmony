@@ -18,23 +18,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }),
     secret: process.env.SESSION_SECRET || 'default-session-secret-change-in-production',
     name: 'connect.sid',
-    resave: false,
-    saveUninitialized: true, // Changed to true to ensure session is saved
+    resave: false, // Changed to false to prevent race conditions
+    saveUninitialized: false, // Don't save uninitialized sessions
+    rolling: true, // Reset expiration on every request
     cookie: {
       secure: false, // Set to false for development
-      httpOnly: true,
+      httpOnly: false, // Allow JavaScript access for debugging
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax', // Allow cross-site requests
     },
   }));
 
   // Debug session endpoint
   app.get('/api/debug/session', (req, res) => {
-    console.log('Session ID:', req.sessionID);
-    console.log('Session data:', req.session);
+    console.log('Debug: Session ID:', req.sessionID);
+    console.log('Debug: Session data:', req.session);
+    console.log('Debug: User in session:', req.session.user);
     res.json({ 
       sessionID: req.sessionID, 
       session: req.session,
-      hasUser: !!req.session.user
+      hasUser: !!req.session.user,
+      user: req.session.user
     });
   });
 
@@ -1437,35 +1441,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
+    console.log('LOGIN ENDPOINT CALLED');
     try {
       const { username, password } = req.body;
+      console.log('Login attempt for username:', username);
       
       if (!username || !password) {
+        console.log('Missing credentials');
         return res.status(400).json({ error: "Username and password are required" });
       }
 
+      console.log('Attempting to authenticate user...');
       const user = await storage.authenticateUser(username, password);
+      console.log('User found:', user ? 'YES' : 'NO');
       
       if (!user) {
-        return res.status(401).json({ error: "Invalid credentials" });
+        console.log('Authentication failed');
+        return res.status(401).json({ error: "Invalid credentials or account disabled" });
       }
 
       if (!user.isEnabled) {
+        console.log('User account disabled');
         return res.status(403).json({ error: "Account is disabled" });
       }
 
+      console.log('User authenticated successfully, updating last login...');
       // Update last login
       await storage.updateLastLogin(user.id);
 
-      // Store user in session
-      req.session.user = user;
+      // Store user in session - clean user object to avoid Date serialization issues
+      const sessionUser = {
+        id: user.id,
+        companyId: user.companyId,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        isEnabled: user.isEnabled,
+        isSuperAdmin: user.isSuperAdmin,
+        createdById: user.createdById
+      };
+      
+      console.log('Login: Setting user in session:', sessionUser);
+      console.log('Login: Session ID before save:', req.sessionID);
+      req.session.user = sessionUser;
+      
+      // Try saving the session without callback first
+      console.log('Login: User set in session, immediately checking:', req.session.user);
+      
+      // Also try marking the session as touched to force save
+      req.session.touch();
       
       // Save session explicitly and wait for it to complete
-      req.session.save((err) => {
-        if (err) {
-          console.error('Session save error:', err);
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
           return res.status(500).json({ error: "Failed to save session" });
         }
+        console.log('Login: Session saved successfully, sessionID:', req.sessionID);
+        console.log('Login: Session data after save:', req.session);
+        console.log('Login: User in session after save:', req.session.user);
         res.json({ user });
       });
     } catch (error) {

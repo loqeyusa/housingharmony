@@ -98,9 +98,9 @@ export interface IStorage {
   getPoolFundEntries(): Promise<PoolFund[]>;
   getPoolFundEntriesByCounty(county: string): Promise<PoolFund[]>;
   createPoolFundEntry(entry: InsertPoolFund): Promise<PoolFund>;
-  getPoolFundBalance(): Promise<number>;
+  getPoolFundBalance(companyId?: number): Promise<number>;
   getPoolFundBalanceByCounty(county: string): Promise<number>;
-  getPoolFundSummaryByCounty(): Promise<Array<{
+  getPoolFundSummaryByCounty(companyId?: number): Promise<Array<{
     county: string;
     balance: number;
     totalDeposits: number;
@@ -109,7 +109,7 @@ export interface IStorage {
   }>>;
 
   // Dashboard stats
-  getDashboardStats(): Promise<{
+  getDashboardStats(companyId?: number): Promise<{
     totalClients: number;
     activeProperties: number;
     pendingApplications: number;
@@ -470,27 +470,24 @@ export class DatabaseStorage implements IStorage {
 
   async getApplications(companyId?: number): Promise<Application[]> {
     if (companyId) {
-      // Join with clients table to filter by company
+      // First check if there are any clients for this company
+      const clientIds = await db
+        .select({ id: clients.id })
+        .from(clients)
+        .where(eq(clients.companyId, companyId));
+      
+      if (clientIds.length === 0) {
+        // No clients for this company, return empty array
+        return [];
+      }
+      
+      // Get applications for clients that belong to this company
       const result = await db
-        .select({
-          id: applications.id,
-          clientId: applications.clientId,
-          propertyId: applications.propertyId,
-          status: applications.status,
-          submittedAt: applications.submittedAt,
-          approvedAt: applications.approvedAt,
-          notes: applications.notes,
-          rentAmount: applications.rentAmount,
-          depositAmount: applications.depositAmount,
-          applicationFee: applications.applicationFee,
-          countyReimbursement: applications.countyReimbursement,
-          createdAt: applications.createdAt,
-          updatedAt: applications.updatedAt,
-        })
+        .select()
         .from(applications)
-        .innerJoin(clients, eq(applications.clientId, clients.id))
-        .where(eq(clients.companyId, companyId))
+        .where(inArray(applications.clientId, clientIds.map(c => c.id)))
         .orderBy(applications.submittedAt);
+      
       return result.reverse();
     } else {
       const result = await db.select().from(applications).orderBy(applications.submittedAt);
@@ -614,17 +611,48 @@ export class DatabaseStorage implements IStorage {
     return entry;
   }
 
-  async getPoolFundBalance(): Promise<number> {
-    const entries = await db.select().from(poolFund);
-    return entries.reduce((balance, entry) => {
-      const amount = parseFloat(entry.amount.toString());
-      if (entry.type === 'deposit') {
-        return balance + amount;
-      } else {
-        // Both 'withdrawal' and 'allocation' reduce the balance
-        return balance - amount;
+  async getPoolFundBalance(companyId?: number): Promise<number> {
+    // Pool fund entries are tied to clients through county information
+    // For company-specific calculation, we need to get entries only for counties where the company has clients
+    if (companyId) {
+      // Get all counties where this company has clients
+      const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
+      const companyCounts = new Set(companyClients.map(c => c.county).filter(Boolean));
+      
+      if (companyCounts.size === 0) {
+        return 0; // No clients, no pool fund balance
       }
-    }, 0);
+      
+      // Get pool fund entries for the company's counties
+      let entries: any[] = [];
+      if (companyCounts.size === 1) {
+        entries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounts)[0]));
+      } else if (companyCounts.size > 1) {
+        entries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounts)));
+      }
+      
+      return entries.reduce((balance, entry) => {
+        const amount = parseFloat(entry.amount.toString());
+        if (entry.type === 'deposit') {
+          return balance + amount;
+        } else {
+          // Both 'withdrawal' and 'allocation' reduce the balance
+          return balance - amount;
+        }
+      }, 0);
+    } else {
+      // Global pool fund balance
+      const entries = await db.select().from(poolFund);
+      return entries.reduce((balance, entry) => {
+        const amount = parseFloat(entry.amount.toString());
+        if (entry.type === 'deposit') {
+          return balance + amount;
+        } else {
+          // Both 'withdrawal' and 'allocation' reduce the balance
+          return balance - amount;
+        }
+      }, 0);
+    }
   }
 
   async getPoolFundBalanceByCounty(county: string): Promise<number> {
@@ -640,14 +668,35 @@ export class DatabaseStorage implements IStorage {
     }, 0);
   }
 
-  async getPoolFundSummaryByCounty(): Promise<Array<{
+  async getPoolFundSummaryByCounty(companyId?: number): Promise<Array<{
     county: string;
     balance: number;
     totalDeposits: number;
     totalWithdrawals: number;
     entryCount: number;
   }>> {
-    const allEntries = await db.select().from(poolFund);
+    // For company-specific filtering, only show counties where the company has clients
+    let allEntries: any[] = [];
+    
+    if (companyId) {
+      // Get all counties where this company has clients
+      const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
+      const companyCounties = new Set(companyClients.map(c => c.county).filter(Boolean));
+      
+      if (companyCounties.size === 0) {
+        return []; // No clients, no pool fund data
+      }
+      
+      // Get pool fund entries for the company's counties
+      if (companyCounties.size === 1) {
+        allEntries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounties)[0]));
+      } else {
+        allEntries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounties)));
+      }
+    } else {
+      // Global pool fund data
+      allEntries = await db.select().from(poolFund);
+    }
     
     const summaryMap = new Map<string, {
       county: string;
@@ -687,7 +736,7 @@ export class DatabaseStorage implements IStorage {
     return Array.from(summaryMap.values()).sort((a, b) => b.balance - a.balance);
   }
 
-  async getDashboardStats(): Promise<{
+  async getDashboardStats(companyId?: number): Promise<{
     totalClients: number;
     activeProperties: number;
     pendingApplications: number;
@@ -696,36 +745,87 @@ export class DatabaseStorage implements IStorage {
     activeOtherSubsidies: number;
     totalOtherSubsidyAmount: number;
   }> {
-    const [clientsCount] = await db.select().from(clients);
-    const totalClients = await db.select().from(clients);
-    
-    const allProperties = await db.select().from(properties);
-    const activeProperties = allProperties.filter(p => 
-      p.status === 'available' || p.status === 'occupied'
-    ).length;
-    
-    const pendingApplicationsResult = await db.select().from(applications).where(eq(applications.status, 'pending'));
-    const pendingApplications = pendingApplicationsResult.length;
-    
-    const poolFundBalance = await this.getPoolFundBalance();
+    try {
+      // Filter by company ID for multi-tenant isolation
+      const clientsQuery = companyId 
+        ? db.select().from(clients).where(eq(clients.companyId, companyId))
+        : db.select().from(clients);
+      const totalClientsResult = await clientsQuery;
+      const totalClients = totalClientsResult.length;
+      
+      const propertiesQuery = companyId
+        ? db.select().from(properties).where(eq(properties.companyId, companyId))
+        : db.select().from(properties);
+      const allProperties = await propertiesQuery;
+      const activeProperties = allProperties.filter(p => 
+        p.status === 'available' || p.status === 'occupied'
+      ).length;
+      
+      // For applications, we need to join with clients to filter by company
+      let pendingApplications = 0;
+      if (companyId) {
+        const pendingApplicationsResult = await db
+          .select()
+          .from(applications)
+          .innerJoin(clients, eq(applications.clientId, clients.id))
+          .where(and(
+            eq(applications.status, 'pending'),
+            eq(clients.companyId, companyId)
+          ));
+        pendingApplications = pendingApplicationsResult.length;
+      } else {
+        const pendingApplicationsResult = await db.select().from(applications).where(eq(applications.status, 'pending'));
+        pendingApplications = pendingApplicationsResult.length;
+      }
+      
+      const poolFundBalance = await this.getPoolFundBalance(companyId);
 
-    // Get vendor statistics
-    const allVendors = await db.select().from(vendors);
-    const totalVendors = allVendors.length;
+      // Get vendor statistics (vendors are global, not company-specific)
+      const allVendors = await db.select().from(vendors);
+      const totalVendors = allVendors.length;
 
-    // Get other subsidies statistics
-    const allOtherSubsidies = await db.select().from(otherSubsidies);
-    const activeOtherSubsidies = allOtherSubsidies.filter(s => s.status === 'active').length;
+    // Get other subsidies statistics - filter by company through client relationship
+    let activeOtherSubsidies = 0;
+    let totalOtherSubsidyAmount = 0;
     
-    // Calculate total subsidy amount (rent we paid)
-    const totalOtherSubsidyAmount = allOtherSubsidies
-      .filter(s => s.status === 'active' && s.rentWePaid)
-      .reduce((total, subsidy) => {
-        return total + parseFloat(subsidy.rentWePaid?.toString() || "0");
-      }, 0);
+    if (companyId) {
+      // For companies with no clients, return 0 for subsidies
+      if (totalClients === 0) {
+        activeOtherSubsidies = 0;
+        totalOtherSubsidyAmount = 0;
+      } else {
+        // Get client names for this company
+        const companyClientNames = totalClientsResult.map(c => c.name);
+        
+        // Get other subsidies that match client names
+        const allOtherSubsidies = await db.select().from(otherSubsidies);
+        const companyOtherSubsidies = allOtherSubsidies.filter(s => 
+          companyClientNames.includes(s.clientName)
+        );
+        
+        activeOtherSubsidies = companyOtherSubsidies.filter(s => s.status === 'active').length;
+        
+        // Calculate total subsidy amount (rent we paid)
+        totalOtherSubsidyAmount = companyOtherSubsidies
+          .filter(s => s.status === 'active' && s.rentWePaid)
+          .reduce((total, subsidy) => {
+            return total + parseFloat(subsidy.rentWePaid?.toString() || "0");
+          }, 0);
+      }
+    } else {
+      const allOtherSubsidies = await db.select().from(otherSubsidies);
+      activeOtherSubsidies = allOtherSubsidies.filter(s => s.status === 'active').length;
+      
+      // Calculate total subsidy amount (rent we paid)
+      totalOtherSubsidyAmount = allOtherSubsidies
+        .filter(s => s.status === 'active' && s.rentWePaid)
+        .reduce((total, subsidy) => {
+          return total + parseFloat(subsidy.rentWePaid?.toString() || "0");
+        }, 0);
+    }
 
     return {
-      totalClients: totalClients.length,
+      totalClients,
       activeProperties,
       pendingApplications,
       poolFundBalance,
@@ -733,6 +833,9 @@ export class DatabaseStorage implements IStorage {
       activeOtherSubsidies,
       totalOtherSubsidyAmount,
     };
+    } catch (error) {
+      throw error;
+    }
   }
 
   // Housing Support operations

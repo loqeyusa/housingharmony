@@ -58,6 +58,11 @@ function AuthenticatedRouter() {
                 <UserManagement />
               </ProtectedRoute>
             </Route>
+            <Route path="/system-admin">
+              <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                <SystemAdmin />
+              </ProtectedRoute>
+            </Route>
             <Route path="/reports" component={Reports} />
             <Route component={NotFound} />
           </Switch>

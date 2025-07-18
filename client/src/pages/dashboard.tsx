@@ -19,11 +19,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
 import ApplicationForm from "@/components/application-form";
 import PoolFundForm from "@/components/pool-fund-form";
-import type { Client, Application, Transaction } from "@shared/schema";
+import type { Client, Application, Transaction, Company } from "@shared/schema";
 
 interface DashboardStats {
   totalClients: number;
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
   const [, navigate] = useLocation();
+  const { user } = useAuth();
 
   const handleCountyClick = (countyName: string) => {
     navigate(`/pool-fund/${encodeURIComponent(countyName)}`);
@@ -48,6 +50,11 @@ export default function Dashboard() {
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
+  });
+
+  const { data: company } = useQuery<Company>({
+    queryKey: ["/api/companies", user?.companyId],
+    enabled: !!user?.companyId,
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
@@ -94,6 +101,29 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Company Header */}
+      {company && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Building2 className="text-primary w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">{company.displayName || company.name}</h1>
+                <p className="text-slate-600 text-sm">Housing Program Management</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <ShieldCheck className="w-3 h-3 mr-1" />
+                {company.status === 'active' ? 'Active' : company.status}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
         <Card>

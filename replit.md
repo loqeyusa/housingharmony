@@ -155,6 +155,8 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 18, 2025. Added company name display to dashboard header for clear multi-tenant identification - users can now see which housing program company they're managing
+- July 18, 2025. Implemented comprehensive multi-tenant data isolation system with company-specific filtering for all API endpoints (clients, properties, applications, transactions)
 - July 18, 2025. Enhanced company creation system with super admin account creation - includes username, email, password fields, automatic Administrator role assignment, and complete transaction-based user creation workflow
 - July 18, 2025. Fixed company creation API errors by adding proper username/email uniqueness validation, better error handling, and resolved user_roles constraint issues
 - July 18, 2025. Implemented comprehensive county-based pool fund separation system with county-specific API routes, dashboard statistics, and automatic county assignment from client information for accurate financial tracking per county

@@ -49,7 +49,8 @@ export default function Dashboard() {
   };
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", user?.id],
+    enabled: !!user,
   });
 
   const { data: company } = useQuery<Company>({
@@ -58,15 +59,18 @@ export default function Dashboard() {
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+    queryKey: ["/api/clients", user?.id],
+    enabled: !!user,
   });
 
   const { data: applications = [] } = useQuery<Application[]>({
-    queryKey: ["/api/applications"],
+    queryKey: ["/api/applications", user?.id],
+    enabled: !!user,
   });
 
   const { data: transactions = [] } = useQuery<Transaction[]>({
-    queryKey: ["/api/transactions"],
+    queryKey: ["/api/transactions", user?.id],
+    enabled: !!user,
   });
 
   const { data: poolFundSummaryByCounty = [] } = useQuery<Array<{
@@ -76,7 +80,8 @@ export default function Dashboard() {
     totalWithdrawals: number;
     entryCount: number;
   }>>({
-    queryKey: ["/api/pool-fund/summary/counties"],
+    queryKey: ["/api/pool-fund/summary/counties", user?.id],
+    enabled: !!user,
   });
 
   const recentClients = clients.slice(0, 3);

@@ -18,6 +18,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
 import ApplicationForm from "@/components/application-form";
@@ -39,6 +40,11 @@ export default function Dashboard() {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
+  const [, navigate] = useLocation();
+
+  const handleCountyClick = (countyName: string) => {
+    navigate(`/pool-fund/${encodeURIComponent(countyName)}`);
+  };
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -240,7 +246,11 @@ export default function Dashboard() {
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {poolFundSummaryByCounty.map((county) => (
-                <div key={county.county} className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
+                <div 
+                  key={county.county} 
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-primary"
+                  onClick={() => handleCountyClick(county.county)}
+                >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-lg">{county.county}</h3>
                     <Badge variant={county.balance >= 0 ? 'default' : 'destructive'}>
@@ -260,6 +270,9 @@ export default function Dashboard() {
                       <span className="text-slate-600">Transactions:</span>
                       <span className="text-slate-900">{county.entryCount}</span>
                     </div>
+                  </div>
+                  <div className="mt-3 text-xs text-slate-500 text-center">
+                    Click to view pool fund details
                   </div>
                 </div>
               ))}

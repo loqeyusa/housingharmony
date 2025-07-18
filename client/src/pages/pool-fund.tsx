@@ -16,7 +16,8 @@ import {
   Wallet,
   Filter
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "wouter";
 import PoolFundForm from "@/components/pool-fund-form";
 import { 
   Select, 
@@ -31,6 +32,19 @@ export default function PoolFundPage() {
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCounty, setSelectedCounty] = useState<string>("all");
+  const { county: routeCounty } = useParams();
+  const [, navigate] = useLocation();
+
+  // Set selected county from route parameter
+  useEffect(() => {
+    if (routeCounty) {
+      setSelectedCounty(decodeURIComponent(routeCounty));
+    }
+  }, [routeCounty]);
+
+  const handleBackToAll = () => {
+    navigate("/pool-fund");
+  };
 
   const { data: poolFundEntries = [], isLoading } = useQuery<PoolFund[]>({
     queryKey: selectedCounty === "all" ? ["/api/pool-fund"] : ["/api/pool-fund/county", selectedCounty],
@@ -98,6 +112,18 @@ export default function PoolFundPage() {
 
   return (
     <div className="space-y-6">
+      {/* Back to All Counties Button */}
+      {selectedCounty !== "all" && (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleBackToAll}>
+            ← Back to All Counties
+          </Button>
+          <div className="text-sm text-slate-600">
+            Viewing pool fund details for {selectedCounty} County
+          </div>
+        </div>
+      )}
+
       {/* Pool Fund Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-2 border-emerald-200 bg-emerald-50">
@@ -185,10 +211,21 @@ export default function PoolFundPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle>Pool Fund Activity</CardTitle>
+            <CardTitle>
+              {selectedCounty !== "all" ? `Pool Fund Activity - ${selectedCounty} County` : "Pool Fund Activity"}
+            </CardTitle>
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <div className="flex gap-2">
-                <Select value={selectedCounty} onValueChange={setSelectedCounty}>
+                <Select 
+                  value={selectedCounty} 
+                  onValueChange={(value) => {
+                    if (value === "all") {
+                      navigate("/pool-fund");
+                    } else {
+                      navigate(`/pool-fund/${encodeURIComponent(value)}`);
+                    }
+                  }}
+                >
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Select County" />
                   </SelectTrigger>

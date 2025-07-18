@@ -52,6 +52,7 @@ function AuthenticatedRouter() {
             <Route path="/applications" component={Applications} />
             <Route path="/financials" component={Financials} />
             <Route path="/pool-fund" component={PoolFund} />
+            <Route path="/pool-fund/:county" component={PoolFund} />
             <Route path="/housing-support" component={HousingSupport} />
             <Route path="/vendors" component={Vendors} />
             <Route path="/other-subsidies" component={OtherSubsidies} />

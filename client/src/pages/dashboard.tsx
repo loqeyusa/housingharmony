@@ -25,6 +25,7 @@ import PropertyForm from "@/components/property-form";
 import ApplicationForm from "@/components/application-form";
 import PoolFundForm from "@/components/pool-fund-form";
 import type { Client, Application, Transaction, Company } from "@shared/schema";
+import { PageLoadingSpinner } from "@/components/loading-spinner";
 
 interface DashboardStats {
   totalClients: number;
@@ -89,19 +90,7 @@ export default function Dashboard() {
   const recentTransactions = transactions.slice(0, 3);
 
   if (statsLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6">
-          {[...Array(7)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-16 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <PageLoadingSpinner message="Loading dashboard..." />;
   }
 
   return (

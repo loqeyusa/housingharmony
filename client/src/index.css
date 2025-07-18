@@ -198,4 +198,18 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     }
   }
+
+  /* Loading Animation */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-in-out;
+  }
 }

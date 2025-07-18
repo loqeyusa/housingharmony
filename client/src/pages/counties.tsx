@@ -4,31 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, Building, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Client } from "@shared/schema";
+import { PageLoadingSpinner } from "@/components/loading-spinner";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Counties() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   
   const { data: clients = [], isLoading } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+    queryKey: ["/api/clients", user?.id],
+    enabled: !!user,
   });
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-32 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <PageLoadingSpinner message="Loading counties..." />;
   }
 
   // Group clients by county

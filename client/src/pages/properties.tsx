@@ -7,13 +7,17 @@ import { Search, Plus, MapPin, User, Phone, Mail, Bed, Bath, Square } from "luci
 import { useState } from "react";
 import PropertyForm from "@/components/property-form";
 import type { Property } from "@shared/schema";
+import { PageLoadingSpinner } from "@/components/loading-spinner";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Properties() {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useAuth();
 
   const { data: properties = [], isLoading } = useQuery<Property[]>({
-    queryKey: ["/api/properties"],
+    queryKey: ["/api/properties", user?.id],
+    enabled: !!user,
   });
 
   const filteredProperties = properties.filter(property =>
@@ -35,23 +39,7 @@ export default function Properties() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-32 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <PageLoadingSpinner message="Loading properties..." />;
   }
 
   return (

@@ -20,23 +20,29 @@ import ApplicationForm from "@/components/application-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Application, Client, Property } from "@shared/schema";
+import { PageLoadingSpinner } from "@/components/loading-spinner";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Applications() {
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: applications = [], isLoading } = useQuery<Application[]>({
-    queryKey: ["/api/applications"],
+    queryKey: ["/api/applications", user?.id],
+    enabled: !!user,
   });
 
   const { data: clients = [] } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+    queryKey: ["/api/clients", user?.id],
+    enabled: !!user,
   });
 
   const { data: properties = [] } = useQuery<Property[]>({
-    queryKey: ["/api/properties"],
+    queryKey: ["/api/properties", user?.id],
+    enabled: !!user,
   });
 
   const updateApplicationMutation = useMutation({
@@ -120,23 +126,7 @@ export default function Applications() {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse"></div>
-          <div className="h-10 bg-gray-200 rounded w-32 animate-pulse"></div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-32 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <PageLoadingSpinner message="Loading applications..." />;
   }
 
   return (

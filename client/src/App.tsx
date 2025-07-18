@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -29,6 +29,7 @@ import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import SystemAdmin from "@/pages/system-admin";
 import { PERMISSIONS } from "@shared/schema";
+import { PageLoadingSpinner } from "@/components/loading-spinner";
 
 function AuthenticatedRouter() {
   return (
@@ -36,36 +37,38 @@ function AuthenticatedRouter() {
       <Route path="/mobile" component={Mobile} />
       <Route path="/" nest>
         <Layout>
-          <Switch>
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/" component={Dashboard} />
-            <Route path="/clients/:clientId" component={ClientDetails} />
-            <Route path="/client/:clientId" component={ClientDetails} />
-            <Route path="/clients" component={Clients} />
-            <Route path="/counties" component={Counties} />
-            <Route path="/county/:countyName" component={CountyDetails} />
+          <Suspense fallback={<PageLoadingSpinner message="Loading page..." />}>
+            <Switch>
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/" component={Dashboard} />
+              <Route path="/clients/:clientId" component={ClientDetails} />
+              <Route path="/client/:clientId" component={ClientDetails} />
+              <Route path="/clients" component={Clients} />
+              <Route path="/counties" component={Counties} />
+              <Route path="/county/:countyName" component={CountyDetails} />
 
-            <Route path="/properties" component={Properties} />
-            <Route path="/applications" component={Applications} />
-            <Route path="/financials" component={Financials} />
-            <Route path="/pool-fund/:county" component={PoolFund} />
-            <Route path="/pool-fund" component={PoolFund} />
-            <Route path="/housing-support" component={HousingSupport} />
-            <Route path="/vendors" component={Vendors} />
-            <Route path="/other-subsidies" component={OtherSubsidies} />
-            <Route path="/user-management">
-              <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
-                <UserManagement />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/system-admin">
-              <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
-                <SystemAdmin />
-              </ProtectedRoute>
-            </Route>
-            <Route path="/reports" component={Reports} />
-            <Route component={NotFound} />
-          </Switch>
+              <Route path="/properties" component={Properties} />
+              <Route path="/applications" component={Applications} />
+              <Route path="/financials" component={Financials} />
+              <Route path="/pool-fund/:county" component={PoolFund} />
+              <Route path="/pool-fund" component={PoolFund} />
+              <Route path="/housing-support" component={HousingSupport} />
+              <Route path="/vendors" component={Vendors} />
+              <Route path="/other-subsidies" component={OtherSubsidies} />
+              <Route path="/user-management">
+                <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                  <UserManagement />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/system-admin">
+                <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                  <SystemAdmin />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/reports" component={Reports} />
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
         </Layout>
       </Route>
       <Route component={NotFound} />

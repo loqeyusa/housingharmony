@@ -57,6 +57,7 @@ export interface IStorage {
   deleteCompany(id: number): Promise<boolean>;
   approveCompany(id: number, approvedBy: number): Promise<Company | undefined>;
   suspendCompany(id: number): Promise<Company | undefined>;
+  deactivateCompany(id: number): Promise<Company | undefined>;
   getCompanyStats(companyId: number): Promise<{
     totalClients: number;
     activeProperties: number;
@@ -193,6 +194,7 @@ export interface IStorage {
   
   // Admin operations
   clearAllData(): Promise<void>;
+  getTotalUsers(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -248,6 +250,18 @@ export class DatabaseStorage implements IStorage {
       .update(companies)
       .set({ 
         status: 'suspended',
+        updatedAt: new Date()
+      })
+      .where(eq(companies.id, id))
+      .returning();
+    return company || undefined;
+  }
+
+  async deactivateCompany(id: number): Promise<Company | undefined> {
+    const [company] = await db
+      .update(companies)
+      .set({ 
+        status: 'rejected',
         updatedAt: new Date()
       })
       .where(eq(companies.id, id))
@@ -1130,6 +1144,13 @@ export class DatabaseStorage implements IStorage {
       ne(roles.name, 'Manager'),
       ne(roles.name, 'Staff')
     ));
+  }
+
+  async getTotalUsers(): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(users);
+    return result.count;
   }
 }
 

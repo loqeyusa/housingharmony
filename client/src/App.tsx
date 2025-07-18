@@ -14,7 +14,7 @@ import ClientDetails from "@/pages/client-details";
 import TestClientDetails from "@/pages/test-client-details";
 import Counties from "@/pages/counties";
 import CountyDetails from "@/pages/county-details";
-import Companies from "@/pages/companies";
+
 import Properties from "@/pages/properties";
 import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
@@ -27,6 +27,7 @@ import UserManagement from "@/pages/user-management";
 import Mobile from "@/pages/mobile";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
+import SystemAdmin from "@/pages/system-admin";
 import { PERMISSIONS } from "@shared/schema";
 
 function AuthenticatedRouter() {
@@ -43,11 +44,7 @@ function AuthenticatedRouter() {
             <Route path="/clients" component={Clients} />
             <Route path="/counties" component={Counties} />
             <Route path="/county/:countyName" component={CountyDetails} />
-            <Route path="/companies">
-              <ProtectedRoute requireSuperAdmin={true}>
-                <Companies />
-              </ProtectedRoute>
-            </Route>
+
             <Route path="/properties" component={Properties} />
             <Route path="/applications" component={Applications} />
             <Route path="/financials" component={Financials} />
@@ -102,11 +99,15 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
-  return <AuthenticatedRouter />;
+  return (
+    <Switch>
+      <Route path="/system-admin" component={SystemAdmin} />
+      <Route path="/login" component={Login} />
+      <Route>
+        {isAuthenticated ? <AuthenticatedRouter /> : <Login />}
+      </Route>
+    </Switch>
+  );
 }
 
 function App() {

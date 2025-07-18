@@ -34,7 +34,7 @@ const navigationItems = [
   { path: "/", label: "Dashboard", icon: Home },
   { path: "/clients", label: "Clients", icon: Users },
   { path: "/counties", label: "Counties", icon: MapPin },
-  { path: "/companies", label: "Companies", icon: Building2 },
+
   { path: "/properties", label: "Properties", icon: Building },
   { path: "/applications", label: "Applications", icon: FileText },
   { path: "/housing-support", label: "Housing Support", icon: Calculator },

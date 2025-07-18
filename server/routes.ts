@@ -145,6 +145,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/companies/:id/deactivate", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const company = await storage.deactivateCompany(id);
+      if (!company) {
+        return res.status(404).json({ error: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to deactivate company" });
+    }
+  });
+
+  app.get("/api/system/companies-stats", async (_req, res) => {
+    try {
+      const companies = await storage.getCompanies();
+      const totalUsers = await storage.getTotalUsers();
+      res.json({
+        totalCompanies: companies.length,
+        pendingCompanies: companies.filter(c => c.status === 'pending').length,
+        approvedCompanies: companies.filter(c => c.status === 'active').length,
+        totalUsers: totalUsers
+      });
+    } catch (error) {
+      console.error("Error fetching companies stats:", error);
+      res.status(500).json({ error: "Failed to fetch companies stats" });
+    }
+  });
+
   app.get("/api/companies/:id/stats", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

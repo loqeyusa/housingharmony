@@ -57,6 +57,11 @@ export default function ClientTransactionForm({
     enabled: !!clientId,
   });
 
+  const { data: client } = useQuery({
+    queryKey: ["/api/clients", clientId],
+    enabled: !!clientId,
+  });
+
   const form = useForm<InsertPoolFund>({
     resolver: zodResolver(insertPoolFundSchema),
     defaultValues: {
@@ -78,16 +83,7 @@ export default function ClientTransactionForm({
         applicationId: null,
       };
 
-      const transactionResponse = await fetch("/api/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transactionData),
-      });
-      
-      if (!transactionResponse.ok) {
-        throw new Error("Failed to create transaction");
-      }
-      
+      const transactionResponse = await apiRequest("POST", "/api/transactions", transactionData);
       const transaction = await transactionResponse.json();
 
       // Then create the pool fund entry
@@ -95,18 +91,11 @@ export default function ClientTransactionForm({
         ...data,
         transactionId: transaction.id,
         clientId: clientId,
+        county: client?.site || "Unknown",
       };
 
-      const response = await fetch("/api/pool-fund", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(poolFundData),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to create pool fund entry");
-      }
-      return response.json();
+      const poolFundResponse = await apiRequest("POST", "/api/pool-fund", poolFundData);
+      return await poolFundResponse.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pool-fund"] });

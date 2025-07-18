@@ -190,14 +190,12 @@ export default function ClientTransactionFormEnhanced({
           applicationId: applications.find(app => app.status === "approved")?.id || null,
         };
 
-        const transactionResponse = await apiRequest("/api/transactions", {
-          method: "POST",
-          body: JSON.stringify(transactionData),
-        });
+        const transactionResponse = await apiRequest("POST", "/api/transactions", transactionData);
+        const transaction = await transactionResponse.json();
 
         // Create pool fund withdrawal for the transaction
         const poolFundData = {
-          transactionId: transactionResponse.id,
+          transactionId: transaction.id,
           amount: txn.amount,
           type: "withdrawal",
           description: `${txn.description} payment for ${clientName}`,
@@ -205,12 +203,10 @@ export default function ClientTransactionFormEnhanced({
           county: client?.site || "Unknown",
         };
 
-        const poolFundResponse = await apiRequest("/api/pool-fund", {
-          method: "POST",
-          body: JSON.stringify(poolFundData),
-        });
+        const poolFundResponse = await apiRequest("POST", "/api/pool-fund", poolFundData);
+        const poolFund = await poolFundResponse.json();
 
-        results.push({ transaction: transactionResponse, poolFund: poolFundResponse });
+        results.push({ transaction, poolFund });
       }
 
       return results;

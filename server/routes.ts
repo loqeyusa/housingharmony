@@ -596,11 +596,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", async (req, res) => {
     try {
+      console.log("Transaction POST request body:", req.body);
       const transactionData = insertTransactionSchema.parse(req.body);
+      console.log("Parsed transaction data:", transactionData);
       const transaction = await storage.createTransaction(transactionData);
       res.status(201).json(transaction);
     } catch (error) {
-      res.status(400).json({ error: "Invalid transaction data" });
+      console.error("Transaction creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: "Invalid transaction data" });
+      }
     }
   });
 
@@ -660,11 +667,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pool-fund", async (req, res) => {
     try {
+      console.log("Pool fund POST request body:", req.body);
       const poolFundData = insertPoolFundSchema.parse(req.body);
+      console.log("Parsed pool fund data:", poolFundData);
       const entry = await storage.createPoolFundEntry(poolFundData);
       res.status(201).json(entry);
     } catch (error) {
-      res.status(400).json({ error: "Invalid pool fund data" });
+      console.error("Pool fund creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: "Invalid pool fund data" });
+      }
     }
   });
 

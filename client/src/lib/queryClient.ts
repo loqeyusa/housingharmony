@@ -12,9 +12,18 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Add cache busting timestamp and aggressive no-cache headers
+  const timestamp = Date.now();
+  const urlWithCacheBuster = url.includes('?') ? `${url}&_t=${timestamp}` : `${url}?_t=${timestamp}`;
+  
+  const res = await fetch(urlWithCacheBuster, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -29,8 +38,18 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    // Add cache busting timestamp to every query
+    const timestamp = Date.now();
+    const url = queryKey[0] as string;
+    const urlWithCacheBuster = url.includes('?') ? `${url}&_t=${timestamp}` : `${url}?_t=${timestamp}`;
+    
+    const res = await fetch(urlWithCacheBuster, {
       credentials: "include",
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

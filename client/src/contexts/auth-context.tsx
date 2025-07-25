@@ -53,27 +53,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log('Login: Previous user ID:', previousUserId);
         console.log('Login: New user ID:', userData.user.id);
         
-        // Clear all cached data before setting new user
+        // AGGRESSIVE cache clearing - completely destroy all cached data
         queryClient.clear();
         queryClient.getMutationCache().clear();
         queryClient.getQueryCache().clear();
+        queryClient.invalidateQueries();
+        queryClient.resetQueries();
         
-        // If different user, ensure complete cache isolation
-        if (previousUserId && previousUserId !== userData.user.id.toString()) {
-          console.log('Different user detected, clearing all caches');
-          // Force cache recreation for complete isolation
-          queryClient.invalidateQueries();
-          queryClient.resetQueries();
+        // Clear browser storage cache
+        if (typeof window !== 'undefined') {
+          // Clear any potential cached data in localStorage/sessionStorage
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('query-') || key.startsWith('cache-')) {
+              localStorage.removeItem(key);
+            }
+          });
         }
+        
+        console.log('Different user detected, clearing ALL caches and browser storage');
         
         setUser(userData.user);
         localStorage.setItem('authUser', JSON.stringify(userData.user));
         localStorage.setItem('currentUserId', userData.user.id.toString());
         
-        // Force refresh all data after successful login
+        // Immediate force refresh all data after login with no delay
+        forceRefreshAllData();
+        
+        // Double refresh after 500ms to ensure data loads
         setTimeout(() => {
+          console.log('Secondary refresh to ensure fresh data');
           forceRefreshAllData();
-        }, 100);
+        }, 500);
         
         console.log('Login complete for user:', userData.user.username, 'Company ID:', userData.user.companyId);
       } else {

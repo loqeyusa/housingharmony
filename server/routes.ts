@@ -1,6 +1,18 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+
+// Middleware to prevent all caching
+const noCacheMiddleware = (req: any, res: any, next: any) => {
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate, private',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Last-Modified': new Date().toUTCString(),
+    'ETag': Math.random().toString(36)
+  });
+  next();
+};
 import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
@@ -76,6 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(404).json({ error: 'Icon not found' });
     }
   });
+
+  // Apply no-cache middleware to all API routes
+  app.use('/api', noCacheMiddleware);
 
   // Dashboard
   app.get("/api/dashboard/stats", async (req, res) => {

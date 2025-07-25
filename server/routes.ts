@@ -326,6 +326,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get client pool fund information
+  app.get("/api/clients/:id/pool-fund", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getClient(clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      
+      const poolFundData = await storage.getClientPoolFundInfo(clientId);
+      res.json(poolFundData);
+    } catch (error) {
+      console.error("Error fetching client pool fund data:", error);
+      res.status(500).json({ error: "Failed to fetch client pool fund data" });
+    }
+  });
+
   app.post("/api/clients", async (req, res) => {
     try {
       const user = req.session.user;

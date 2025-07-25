@@ -77,6 +77,24 @@ export default function ClientDetails() {
     enabled: !!clientId,
   });
 
+  // Get client pool fund balance and activity
+  const { data: clientPoolFund } = useQuery<{
+    balance: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    recentEntries: Array<{
+      id: number;
+      amount: number;
+      type: string;
+      description: string;
+      created_at: string;
+      county: string;
+    }>;
+  }>({
+    queryKey: [`/api/clients/${clientId}/pool-fund`],
+    enabled: !!clientId,
+  });
+
   console.log('Client data:', client, 'Loading:', isLoading, 'Error:', error);
 
   const updateClientMutation = useMutation({
@@ -374,7 +392,23 @@ export default function ClientDetails() {
                       ) : (
                         <p className="text-gray-900 font-medium flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          {new Date(client.dateOfBirth).toLocaleDateString()}
+                          {client.dateOfBirth ? new Date(client.dateOfBirth).toLocaleDateString() : 'Not specified'}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="site">County</Label>
+                      {isEditing ? (
+                        <Input
+                          id="site"
+                          value={editedClient.site ?? client.site}
+                          onChange={(e) => handleInputChange('site', e.target.value)}
+                          placeholder="e.g., Dakota County"
+                        />
+                      ) : (
+                        <p className="text-gray-900 font-medium flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          {client.site || 'Not specified'}
                         </p>
                       )}
                     </div>
@@ -881,6 +915,72 @@ export default function ClientDetails() {
                 <FileText className="h-4 w-4 mr-2" />
                 Generate Report
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Pool Fund Balance Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Pool Fund Balance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {clientPoolFund ? (
+                <>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">
+                      ${clientPoolFund.balance.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-600">Current Balance</p>
+                  </div>
+                  <Separator />
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Total Deposits</p>
+                      <p className="font-medium text-green-600">
+                        +${clientPoolFund.totalDeposits.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Total Spent</p>
+                      <p className="font-medium text-red-600">
+                        -${clientPoolFund.totalWithdrawals.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  {clientPoolFund.recentEntries.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Recent Activity</p>
+                        {clientPoolFund.recentEntries.slice(0, 3).map((entry) => (
+                          <div key={entry.id} className="flex justify-between items-start text-xs">
+                            <div className="flex-1">
+                              <p className="font-medium truncate">
+                                {entry.description}
+                              </p>
+                              <p className="text-gray-500">
+                                {entry.county} • {new Date(entry.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span className={`font-medium ${
+                              entry.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {entry.type === 'deposit' ? '+' : '-'}${entry.amount.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-500">Loading pool fund data...</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

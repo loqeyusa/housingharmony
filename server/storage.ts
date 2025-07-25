@@ -123,6 +123,19 @@ export interface IStorage {
   getClientBalance(clientId: number): Promise<number>;
   updateClientBalance(clientId: number, amount: number): Promise<void>;
   updateClientCreditLimit(clientId: number, limit: number): Promise<void>;
+  getClientPoolFundInfo(clientId: number): Promise<{
+    balance: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    recentEntries: Array<{
+      id: number;
+      amount: number;
+      type: string;
+      description: string;
+      created_at: string;
+      county: string;
+    }>;
+  }>;
   setGlobalCreditLimit(limit: number): Promise<void>;
 
   // Housing Support operations
@@ -1084,6 +1097,55 @@ export class DatabaseStorage implements IStorage {
   async setGlobalCreditLimit(limit: number): Promise<void> {
     await db.update(clients)
       .set({ creditLimit: limit.toString() });
+  }
+
+  async getClientPoolFundInfo(clientId: number): Promise<{
+    balance: number;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    recentEntries: Array<{
+      id: number;
+      amount: number;
+      type: string;
+      description: string;
+      created_at: string;
+      county: string;
+    }>;
+  }> {
+    // Get all pool fund entries for this client
+    const entries = await db
+      .select()
+      .from(poolFund)
+      .where(eq(poolFund.clientId, clientId))
+      .orderBy(desc(poolFund.createdAt));
+
+    // Calculate totals
+    const totalDeposits = entries
+      .filter(entry => entry.type === 'deposit')
+      .reduce((sum, entry) => sum + parseFloat(entry.amount.toString()), 0);
+
+    const totalWithdrawals = entries
+      .filter(entry => entry.type === 'withdrawal')
+      .reduce((sum, entry) => sum + parseFloat(entry.amount.toString()), 0);
+
+    const balance = totalDeposits - totalWithdrawals;
+
+    // Get recent entries (last 10)
+    const recentEntries = entries.slice(0, 10).map(entry => ({
+      id: entry.id,
+      amount: parseFloat(entry.amount.toString()),
+      type: entry.type,
+      description: entry.description || '',
+      created_at: entry.createdAt.toISOString(),
+      county: entry.county || ''
+    }));
+
+    return {
+      balance,
+      totalDeposits,
+      totalWithdrawals,
+      recentEntries
+    };
   }
 
   // Vendor operations

@@ -831,11 +831,18 @@ export class DatabaseStorage implements IStorage {
       
       const poolFundBalance = await this.getPoolFundBalance(companyId);
 
-      // Get pool fund balance by county - use the same logic as the pool fund summary API
-      let poolFundByCounty: { county: string; balance: number; }[] = [];
+      // Get comprehensive county statistics including client counts and pool fund balances
+      let poolFundByCounty: { 
+        county: string; 
+        balance: number; 
+        totalClients: number;
+        activeClients: number;
+        inactiveClients: number;
+      }[] = [];
+      
       if (companyId) {
-        // Get pool fund by county (same as pool fund summary endpoint)
-        const result = await db.execute(sql`
+        // Get pool fund balance by county
+        const poolFundResult = await db.execute(sql`
           SELECT county, 
                  SUM(CASE WHEN type = 'deposit' THEN CAST(amount AS DECIMAL) ELSE -CAST(amount AS DECIMAL) END) as balance
           FROM pool_fund 
@@ -844,10 +851,55 @@ export class DatabaseStorage implements IStorage {
           ORDER BY county
         `);
         
-        poolFundByCounty = result.rows.map((row: any) => ({
-          county: row.county,
-          balance: parseFloat(row.balance.toString())
-        }));
+        // Get client counts by county (using site field which contains county info)
+        const clientCountsResult = await db.execute(sql`
+          SELECT site as county,
+                 COUNT(*) as total_clients,
+                 SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_clients,
+                 SUM(CASE WHEN status != 'active' THEN 1 ELSE 0 END) as inactive_clients
+          FROM clients 
+          WHERE company_id = ${companyId} AND site IS NOT NULL
+          GROUP BY site
+          ORDER BY site
+        `);
+        
+        // Combine pool fund and client data by county
+        const countyMap = new Map();
+        
+        // Initialize with pool fund data
+        poolFundResult.rows.forEach((row: any) => {
+          countyMap.set(row.county, {
+            county: row.county,
+            balance: parseFloat(row.balance.toString()),
+            totalClients: 0,
+            activeClients: 0,
+            inactiveClients: 0
+          });
+        });
+        
+        // Add client counts (site field contains "County Name County" format)
+        clientCountsResult.rows.forEach((row: any) => {
+          const siteValue = row.county; // This is like "Dakota County", "Hennepin County", etc.
+          const countyName = siteValue.replace(' County', ''); // Extract just "Dakota", "Hennepin", etc.
+          
+          if (countyMap.has(countyName)) {
+            const existing = countyMap.get(countyName);
+            existing.totalClients = parseInt(row.total_clients);
+            existing.activeClients = parseInt(row.active_clients);
+            existing.inactiveClients = parseInt(row.inactive_clients);
+          } else {
+            // County has clients but no pool fund entries
+            countyMap.set(countyName, {
+              county: countyName,
+              balance: 0,
+              totalClients: parseInt(row.total_clients),
+              activeClients: parseInt(row.active_clients),
+              inactiveClients: parseInt(row.inactive_clients)
+            });
+          }
+        });
+        
+        poolFundByCounty = Array.from(countyMap.values()).sort((a, b) => a.county.localeCompare(b.county));
       }
 
       // Get vendor statistics (vendors are global, not company-specific)

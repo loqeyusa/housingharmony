@@ -32,7 +32,13 @@ interface DashboardStats {
   activeProperties: number;
   pendingApplications: number;
   poolFundBalance: number;
-  poolFundByCounty?: { county: string; balance: number; }[];
+  poolFundByCounty?: { 
+    county: string; 
+    balance: number; 
+    totalClients: number;
+    activeClients: number;
+    inactiveClients: number;
+  }[];
   totalVendors: number;
   activeOtherSubsidies: number;
   totalOtherSubsidyAmount: number;
@@ -266,48 +272,62 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* County-Based Pool Fund Summary */}
-      {poolFundSummaryByCounty.length > 0 && (
-        <Card>
-          <CardHeader className="border-b border-slate-200">
-            <CardTitle>Pool Fund by County</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {poolFundSummaryByCounty.map((county) => (
-                <div 
-                  key={county.county} 
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:border-primary"
-                  onClick={() => handleCountyClick(county.county)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-lg">{county.county}</h3>
-                    <Badge variant={county.balance >= 0 ? 'default' : 'destructive'}>
-                      ${county.balance.toFixed(2)}
-                    </Badge>
+      {/* Enhanced County Overview Section */}
+      {stats?.poolFundByCounty && stats.poolFundByCounty.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-slate-900">County Overview</h2>
+            <Badge variant="secondary" className="text-sm">
+              {stats.poolFundByCounty.length} Counties
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.poolFundByCounty.map((county) => (
+              <Card 
+                key={county.county} 
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-blue-500"
+                onClick={() => handleCountyClick(county.county)}
+              >
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold text-slate-900 flex items-center justify-between">
+                    {county.county} County
+                    <PiggyBank className="h-5 w-5 text-blue-600" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {/* Pool Fund Balance */}
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                    <span className="text-sm font-medium text-green-800">Pool Fund Balance</span>
+                    <span className="text-xl font-bold text-green-900">
+                      ${county.balance.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Total Deposits:</span>
-                      <span className="text-green-600">${county.totalDeposits.toFixed(2)}</span>
+                  
+                  {/* Client Statistics */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="text-lg font-bold text-blue-900">{county.totalClients}</div>
+                      <div className="text-xs font-medium text-blue-700">Total Clients</div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Total Withdrawals:</span>
-                      <span className="text-red-600">${county.totalWithdrawals.toFixed(2)}</span>
+                    <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                      <div className="text-lg font-bold text-emerald-900">{county.activeClients}</div>
+                      <div className="text-xs font-medium text-emerald-700">Active</div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Transactions:</span>
-                      <span className="text-slate-900">{county.entryCount}</span>
+                    <div className="text-center p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="text-lg font-bold text-slate-900">{county.inactiveClients}</div>
+                      <div className="text-xs font-medium text-slate-700">Inactive</div>
                     </div>
                   </div>
-                  <div className="mt-3 text-xs text-slate-500 text-center">
-                    Click to view pool fund details
+                  
+                  <div className="text-center pt-2">
+                    <div className="text-xs text-slate-500">Click to view detailed pool fund records</div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Main Dashboard Grid */}

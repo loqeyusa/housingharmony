@@ -831,20 +831,20 @@ export class DatabaseStorage implements IStorage {
       
       const poolFundBalance = await this.getPoolFundBalance(companyId);
 
-      // Get pool fund balance by county
+      // Get pool fund balance by county - use the same logic as the pool fund summary API
       let poolFundByCounty: { county: string; balance: number; }[] = [];
       if (companyId) {
-        const countyResult = await db.execute(sql`
-          SELECT pf.county, 
-                 SUM(CASE WHEN pf.type = 'deposit' THEN pf.amount ELSE -pf.amount END) as balance
-          FROM pool_fund pf
-          INNER JOIN clients c ON pf.client_id = c.id
-          WHERE c.company_id = ${companyId}
-          GROUP BY pf.county
-          ORDER BY pf.county
+        // Get pool fund by county (same as pool fund summary endpoint)
+        const result = await db.execute(sql`
+          SELECT county, 
+                 SUM(CASE WHEN type = 'deposit' THEN CAST(amount AS DECIMAL) ELSE -CAST(amount AS DECIMAL) END) as balance
+          FROM pool_fund 
+          WHERE county IS NOT NULL 
+          GROUP BY county 
+          ORDER BY county
         `);
         
-        poolFundByCounty = countyResult.rows.map((row: any) => ({
+        poolFundByCounty = result.rows.map((row: any) => ({
           county: row.county,
           balance: parseFloat(row.balance.toString())
         }));

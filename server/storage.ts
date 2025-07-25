@@ -651,19 +651,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPoolFundBalance(companyId?: number): Promise<number> {
-    // Pool fund entries are filtered by company through client relationship
+    // Pool fund entries are filtered by company through county relationship
     if (companyId) {
-      // Use proper Drizzle ORM syntax with raw SQL import
-      const result = await db.execute(sql`
-        SELECT pf.amount, pf.type 
-        FROM pool_fund pf
-        INNER JOIN clients c ON pf.client_id = c.id
-        WHERE c.company_id = ${companyId}
-      `);
+      // Get counties where this company has clients (normalize site names to match pool fund county names)
+      const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
+      const companyCounties = new Set(companyClients.map(c => {
+        if (c.site) {
+          // Normalize "Dakota County" to "Dakota", "Hennepin County" to "Hennepin", etc.
+          return c.site.replace(' County', '');
+        }
+        return null;
+      }).filter(Boolean));
       
-      return result.rows.reduce((balance: number, row: any) => {
-        const amount = parseFloat(row.amount.toString());
-        if (row.type === 'deposit') {
+      if (companyCounties.size === 0) {
+        return 0; // No clients, no pool fund balance
+      }
+      
+      // Get pool fund entries for the company's counties
+      let entries: any[] = [];
+      if (companyCounties.size === 1) {
+        entries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounties)[0]));
+      } else if (companyCounties.size > 1) {
+        entries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounties) as string[]));
+      }
+      
+      return entries.reduce((balance: number, entry: any) => {
+        const amount = parseFloat(entry.amount.toString());
+        if (entry.type === 'deposit') {
           return balance + amount;
         } else {
           // Both 'withdrawal' and 'allocation' reduce the balance
@@ -709,9 +723,15 @@ export class DatabaseStorage implements IStorage {
     let allEntries: any[] = [];
     
     if (companyId) {
-      // Get all counties where this company has clients
+      // Get all counties where this company has clients (normalize site names to match pool fund county names)
       const companyClients = await db.select().from(clients).where(eq(clients.companyId, companyId));
-      const companyCounties = new Set(companyClients.map(c => c.county).filter(Boolean));
+      const companyCounties = new Set(companyClients.map(c => {
+        if (c.site) {
+          // Normalize "Dakota County" to "Dakota", "Hennepin County" to "Hennepin", etc.
+          return c.site.replace(' County', '');
+        }
+        return null;
+      }).filter(Boolean));
       
       if (companyCounties.size === 0) {
         return []; // No clients, no pool fund data
@@ -720,8 +740,8 @@ export class DatabaseStorage implements IStorage {
       // Get pool fund entries for the company's counties
       if (companyCounties.size === 1) {
         allEntries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounties)[0]));
-      } else {
-        allEntries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounties)));
+      } else if (companyCounties.size > 1) {
+        allEntries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounties) as string[]));
       }
     } else {
       // Global pool fund data

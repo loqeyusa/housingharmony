@@ -304,6 +304,7 @@ export default function Financials() {
           <TabsTrigger value="client-balances">Client Balances</TabsTrigger>
           <TabsTrigger value="transactions">Transaction History</TabsTrigger>
           <TabsTrigger value="reports">Financial Reports</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         {/* Dashboard Tab */}
@@ -518,6 +519,213 @@ export default function Financials() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recurring Bills Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Recurring Bills Configuration
+                </CardTitle>
+                <CardDescription>
+                  Set up automated monthly billing for clients
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Configure automatic monthly rent and bill deductions from client accounts. 
+                    This creates negative balances that require county reimbursement.
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/account-settings'}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Configure Recurring Bills
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Processing Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Payment Processing
+                </CardTitle>
+                <CardDescription>
+                  Default settings for county reimbursements
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Default Payment Method</Label>
+                    <Select defaultValue="check">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="check">Check</SelectItem>
+                        <SelectItem value="ach">ACH Transfer</SelectItem>
+                        <SelectItem value="wire">Wire Transfer</SelectItem>
+                        <SelectItem value="cash">Cash</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Processing Schedule</Label>
+                    <Select defaultValue="monthly">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Financial Reporting Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Reporting Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure financial report generation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Report Generation</Label>
+                    <Select defaultValue="monthly">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>Auto-export Reports</Label>
+                    <input type="checkbox" className="toggle" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>Email Notifications</Label>
+                    <input type="checkbox" className="toggle" defaultChecked />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bill Management Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  Bill Management
+                </CardTitle>
+                <CardDescription>
+                  Automated bill processing controls
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Access bill management interface to track pending payments and mark bills as paid.
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/bill-management'}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Manage Bills & Payments
+                  </Button>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      Monthly Bill Generation
+                    </div>
+                    <div className="text-xs text-blue-600 dark:text-blue-300">
+                      Automatically generates bills on the 1st of each month
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Advanced Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Financial Settings</CardTitle>
+              <CardDescription>
+                System-wide financial configuration options
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label>Currency Format</Label>
+                  <Select defaultValue="usd">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="usd">USD ($)</SelectItem>
+                      <SelectItem value="cad">CAD ($)</SelectItem>
+                      <SelectItem value="eur">EUR (€)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Fiscal Year Start</Label>
+                  <Select defaultValue="january">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="january">January</SelectItem>
+                      <SelectItem value="april">April</SelectItem>
+                      <SelectItem value="july">July</SelectItem>
+                      <SelectItem value="october">October</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Data Retention</Label>
+                  <Select defaultValue="7years">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3years">3 Years</SelectItem>
+                      <SelectItem value="5years">5 Years</SelectItem>
+                      <SelectItem value="7years">7 Years</SelectItem>
+                      <SelectItem value="indefinite">Indefinite</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

@@ -2066,6 +2066,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Financial Reports API
+  app.get("/api/financial-reports", async (req, res) => {
+    try {
+      const { month } = req.query;
+      const user = req.session.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Get all data for financial analysis
+      const [transactions, clients, applications, recurringBills] = await Promise.all([
+        storage.getTransactions(),
+        storage.getClients(user.companyId),
+        storage.getApplications(user.companyId), 
+        storage.getRecurringBillInstances()
+      ]);
+
+      // Filter by month if specified
+      const filteredTransactions = month 
+        ? transactions.filter(t => t.month === month || new Date(t.createdAt).toISOString().substring(0, 7) === month)
+        : transactions;
+
+      // Calculate client balances
+      const clientBalances: Record<number, { 
+        name: string; 
+        balance: number; 
+        lastPayment: string | null; 
+        totalReceived: number;
+        totalSpent: number;
+      }> = {};
+
+      clients.forEach(client => {
+        const clientTransactions = transactions.filter(t => {
+          const app = applications.find(a => a.id === t.applicationId);
+          return app?.clientId === client.id;
+        });
+
+        const balance = clientTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        const totalReceived = clientTransactions
+          .filter(t => parseFloat(t.amount) > 0)
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        const totalSpent = clientTransactions
+          .filter(t => parseFloat(t.amount) < 0)
+          .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+        const lastPayment = clientTransactions
+          .filter(t => parseFloat(t.amount) > 0)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+        clientBalances[client.id] = {
+          name: `${client.firstName} ${client.lastName}`,
+          balance,
+          lastPayment: lastPayment ? lastPayment.createdAt : null,
+          totalReceived,
+          totalSpent,
+        };
+      });
+
+      // Calculate summary metrics
+      const totalIncome = filteredTransactions
+        .filter(t => parseFloat(t.amount) > 0)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      const totalExpenses = filteredTransactions
+        .filter(t => parseFloat(t.amount) < 0)
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+      const pendingBills = recurringBills.filter(bill => bill.status === 'pending');
+      const overdueBills = pendingBills.filter(bill => new Date(bill.dueDate) < new Date());
+
+      const report = {
+        summary: {
+          totalIncome,
+          totalExpenses,
+          netFlow: totalIncome - totalExpenses,
+          pendingBillsCount: pendingBills.length,
+          overdueBillsCount: overdueBills.length,
+          pendingBillsAmount: pendingBills.reduce((sum, bill) => sum + parseFloat(bill.amount), 0),
+        },
+        clientBalances,
+        transactions: filteredTransactions,
+        clients: {
+          positive: Object.entries(clientBalances).filter(([_, data]) => data.balance > 0),
+          negative: Object.entries(clientBalances).filter(([_, data]) => data.balance < 0),
+          zero: Object.entries(clientBalances).filter(([_, data]) => data.balance === 0),
+        }
+      };
+
+      res.json(report);
+    } catch (error) {
+      console.error('Financial reports error:', error);
+      res.status(500).json({ error: "Failed to generate financial report" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

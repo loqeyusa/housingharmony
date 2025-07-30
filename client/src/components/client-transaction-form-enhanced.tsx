@@ -275,19 +275,7 @@ export default function ClientTransactionFormEnhanced({
     setSelectedTransactions(selectedTypes);
   };
 
-  const updateAmount = (index: number, amount: string) => {
-    const currentTransactions = form.getValues("transactions");
-    const updatedTransactions = [...currentTransactions];
-    updatedTransactions[index].amount = amount;
-    form.setValue("transactions", updatedTransactions);
-  };
 
-  const updateMonth = (index: number, month: string) => {
-    const currentTransactions = form.getValues("transactions");
-    const updatedTransactions = [...currentTransactions];
-    updatedTransactions[index].month = month;
-    form.setValue("transactions", updatedTransactions);
-  };
 
   const currentBalance = (poolFundBalance as any)?.balance || 0;
   const currentClientBalance = (clientBalance as any)?.balance || 0;
@@ -391,40 +379,57 @@ export default function ClientTransactionFormEnhanced({
                             <div className="text-right space-y-2">
                               <div>
                                 <div className="text-sm text-gray-500">Amount</div>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={transaction.amount}
-                                  onChange={(e) => updateAmount(index, e.target.value)}
-                                  className="w-24 h-8 text-right"
+                                <FormField
+                                  control={form.control}
+                                  name={`transactions.${index}.amount`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          {...field}
+                                          className="w-24 h-8 text-right"
+                                          placeholder="0.00"
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
                                 />
                               </div>
                               <div>
                                 <div className="text-sm text-gray-500">Month</div>
-                                <Select
-                                  value={transaction.month}
-                                  onValueChange={(value) => updateMonth(index, value)}
-                                >
-                                  <SelectTrigger className="w-32 h-8">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {/* Generate months for current year and next year */}
-                                    {Array.from({ length: 24 }, (_, i) => {
-                                      const date = new Date();
-                                      date.setMonth(date.getMonth() - 12 + i);
-                                      const year = date.getFullYear();
-                                      const month = date.getMonth() + 1;
-                                      const value = `${year}-${String(month).padStart(2, '0')}`;
-                                      const label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-                                      return (
-                                        <SelectItem key={value} value={value}>
-                                          {label}
-                                        </SelectItem>
-                                      );
-                                    })}
-                                  </SelectContent>
-                                </Select>
+                                <FormField
+                                  control={form.control}
+                                  name={`transactions.${index}.month`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Select value={field.value} onValueChange={field.onChange}>
+                                          <SelectTrigger className="w-32 h-8">
+                                            <SelectValue placeholder="Select month" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {/* Generate months for current year and next year */}
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                              const date = new Date();
+                                              date.setMonth(date.getMonth() - 12 + i);
+                                              const year = date.getFullYear();
+                                              const month = date.getMonth() + 1;
+                                              const value = `${year}-${String(month).padStart(2, '0')}`;
+                                              const label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                                              return (
+                                                <SelectItem key={value} value={value}>
+                                                  {label}
+                                                </SelectItem>
+                                              );
+                                            })}
+                                          </SelectContent>
+                                        </Select>
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
                               </div>
                             </div>
                           </div>

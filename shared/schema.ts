@@ -119,6 +119,43 @@ export const poolFund = pgTable("pool_fund", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Recurring Bills Configuration - manages automatic monthly charges
+export const recurringBills = pgTable("recurring_bills", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  propertyId: integer("property_id"), // Optional link to property
+  billType: text("bill_type").notNull(), // 'rent', 'utilities', 'insurance', etc.
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  dueDay: integer("due_day").notNull().default(1), // Day of month (1-31)
+  isActive: boolean("is_active").notNull().default(true),
+  startDate: date("start_date").notNull(), // When recurring bill starts
+  endDate: date("end_date"), // Optional end date
+  description: text("description"),
+  landlordName: text("landlord_name"), // For rent payments
+  landlordPhone: text("landlord_phone"),
+  landlordEmail: text("landlord_email"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Recurring Bill Instances - actual monthly bills generated from recurring bills
+export const recurringBillInstances = pgTable("recurring_bill_instances", {
+  id: serial("id").primaryKey(),
+  recurringBillId: integer("recurring_bill_id").notNull(),
+  clientId: integer("client_id").notNull(),
+  dueDate: date("due_date").notNull(), // Specific due date for this instance
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, paid, overdue, cancelled
+  paymentMethod: text("payment_method"), // check, transfer, cash, etc.
+  checkNumber: text("check_number"),
+  checkDate: date("check_date"),
+  paymentDate: date("payment_date"),
+  paymentNotes: text("payment_notes"),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+  paidAt: timestamp("paid_at"),
+  paidBy: integer("paid_by"), // User ID who marked as paid
+});
+
 // Housing Support Monthly Tracking - automates the spreadsheet calculations
 export const housingSupport = pgTable("housing_support", {
   id: serial("id").primaryKey(),
@@ -260,6 +297,18 @@ export const insertClientNoteSchema = createInsertSchema(clientNotes).omit({
   updatedAt: true,
 });
 
+export const insertRecurringBillSchema = createInsertSchema(recurringBills).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRecurringBillInstanceSchema = createInsertSchema(recurringBillInstances).omit({
+  id: true,
+  generatedAt: true,
+  paidAt: true,
+});
+
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 
@@ -289,6 +338,12 @@ export type InsertOtherSubsidy = z.infer<typeof insertOtherSubsidySchema>;
 
 export type ClientNote = typeof clientNotes.$inferSelect;
 export type InsertClientNote = z.infer<typeof insertClientNoteSchema>;
+
+export type RecurringBill = typeof recurringBills.$inferSelect;
+export type InsertRecurringBill = z.infer<typeof insertRecurringBillSchema>;
+
+export type RecurringBillInstance = typeof recurringBillInstances.$inferSelect;
+export type InsertRecurringBillInstance = z.infer<typeof insertRecurringBillInstanceSchema>;
 
 // User Management Schema
 export const users = pgTable("users", {
@@ -483,6 +538,13 @@ export const PERMISSIONS = {
   // Report permissions
   VIEW_REPORTS: 'view_reports',
   EXPORT_DATA: 'export_data',
+  
+  // Recurring bills permissions
+  VIEW_RECURRING_BILLS: 'view_recurring_bills',
+  CREATE_RECURRING_BILLS: 'create_recurring_bills',
+  EDIT_RECURRING_BILLS: 'edit_recurring_bills',
+  DELETE_RECURRING_BILLS: 'delete_recurring_bills',
+  MANAGE_BILL_PAYMENTS: 'manage_bill_payments',
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];

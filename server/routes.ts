@@ -13,7 +13,7 @@ const noCacheMiddleware = (req: any, res: any, next: any) => {
   });
   next();
 };
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -1914,6 +1914,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Delete client note error:', error);
       res.status(500).json({ error: "Failed to delete client note" });
+    }
+  });
+
+  // Recurring Bills Management Routes
+  app.get("/api/recurring-bills", async (req, res) => {
+    try {
+      const { clientId } = req.query;
+      const bills = await storage.getRecurringBills(clientId ? parseInt(clientId as string) : undefined);
+      res.json(bills);
+    } catch (error) {
+      console.error('Get recurring bills error:', error);
+      res.status(500).json({ error: "Failed to fetch recurring bills" });
+    }
+  });
+
+  app.get("/api/recurring-bills/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const bill = await storage.getRecurringBill(id);
+      if (!bill) {
+        return res.status(404).json({ error: "Recurring bill not found" });
+      }
+      res.json(bill);
+    } catch (error) {
+      console.error('Get recurring bill error:', error);
+      res.status(500).json({ error: "Failed to fetch recurring bill" });
+    }
+  });
+
+  app.post("/api/recurring-bills", async (req, res) => {
+    try {
+      const billData = insertRecurringBillSchema.parse(req.body);
+      const bill = await storage.createRecurringBill(billData);
+      res.status(201).json(bill);
+    } catch (error) {
+      console.error('Create recurring bill error:', error);
+      res.status(400).json({ error: "Invalid recurring bill data" });
+    }
+  });
+
+  app.put("/api/recurring-bills/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const billData = insertRecurringBillSchema.partial().parse(req.body);
+      const bill = await storage.updateRecurringBill(id, billData);
+      if (!bill) {
+        return res.status(404).json({ error: "Recurring bill not found" });
+      }
+      res.json(bill);
+    } catch (error) {
+      console.error('Update recurring bill error:', error);
+      res.status(400).json({ error: "Invalid recurring bill data" });
+    }
+  });
+
+  app.delete("/api/recurring-bills/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteRecurringBill(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Recurring bill not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete recurring bill error:', error);
+      res.status(500).json({ error: "Failed to delete recurring bill" });
+    }
+  });
+
+  // Recurring Bill Instances (for pending bill management)
+  app.get("/api/recurring-bill-instances", async (req, res) => {
+    try {
+      const { status, clientId } = req.query;
+      let instances;
+      
+      if (clientId) {
+        instances = await storage.getRecurringBillInstancesByClient(parseInt(clientId as string));
+      } else {
+        instances = await storage.getRecurringBillInstances(status as string);
+      }
+      
+      res.json(instances);
+    } catch (error) {
+      console.error('Get recurring bill instances error:', error);
+      res.status(500).json({ error: "Failed to fetch recurring bill instances" });
+    }
+  });
+
+  app.get("/api/recurring-bill-instances/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const instance = await storage.getRecurringBillInstance(id);
+      if (!instance) {
+        return res.status(404).json({ error: "Recurring bill instance not found" });
+      }
+      res.json(instance);
+    } catch (error) {
+      console.error('Get recurring bill instance error:', error);
+      res.status(500).json({ error: "Failed to fetch recurring bill instance" });
+    }
+  });
+
+  app.patch("/api/recurring-bill-instances/:id/pay", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.session.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const paymentData = {
+        paymentMethod: req.body.paymentMethod || 'check',
+        checkNumber: req.body.checkNumber,
+        checkDate: req.body.checkDate,
+        paymentDate: req.body.paymentDate || new Date().toISOString().split('T')[0],
+        paymentNotes: req.body.paymentNotes,
+        paidBy: user.id
+      };
+
+      const instance = await storage.markRecurringBillInstancePaid(id, paymentData);
+      if (!instance) {
+        return res.status(404).json({ error: "Recurring bill instance not found" });
+      }
+
+      res.json(instance);
+    } catch (error) {
+      console.error('Mark bill paid error:', error);
+      res.status(400).json({ error: "Failed to mark bill as paid" });
+    }
+  });
+
+  // Monthly bill processing
+  app.post("/api/recurring-bills/generate-monthly", async (req, res) => {
+    try {
+      const { year, month } = req.body;
+      
+      if (!year || !month) {
+        return res.status(400).json({ error: "Year and month are required" });
+      }
+
+      const instances = await storage.generateMonthlyBills(year, month);
+      res.json({
+        message: `Generated ${instances.length} recurring bill instances for ${year}-${month.toString().padStart(2, '0')}`,
+        instances
+      });
+    } catch (error) {
+      console.error('Generate monthly bills error:', error);
+      res.status(500).json({ error: "Failed to generate monthly bills" });
     }
   });
 

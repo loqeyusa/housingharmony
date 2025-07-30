@@ -13,6 +13,8 @@ import {
   userRoles,
   auditLogs,
   clientNotes,
+  recurringBills,
+  recurringBillInstances,
   type Client, 
   type InsertClient,
   type Property,
@@ -42,7 +44,11 @@ import {
   type InsertAuditLog,
   type Permission,
   type ClientNote,
-  type InsertClientNote
+  type InsertClientNote,
+  type RecurringBill,
+  type InsertRecurringBill,
+  type RecurringBillInstance,
+  type InsertRecurringBillInstance
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
@@ -205,6 +211,32 @@ export interface IStorage {
   createClientNote(note: InsertClientNote): Promise<ClientNote>;
   updateClientNote(id: number, note: Partial<InsertClientNote>): Promise<ClientNote | undefined>;
   deleteClientNote(id: number): Promise<boolean>;
+
+  // Recurring Bills
+  getRecurringBills(clientId?: number): Promise<RecurringBill[]>;
+  getRecurringBill(id: number): Promise<RecurringBill | undefined>;
+  createRecurringBill(bill: InsertRecurringBill): Promise<RecurringBill>;
+  updateRecurringBill(id: number, bill: Partial<InsertRecurringBill>): Promise<RecurringBill | undefined>;
+  deleteRecurringBill(id: number): Promise<boolean>;
+
+  // Recurring Bill Instances
+  getRecurringBillInstances(status?: string): Promise<RecurringBillInstance[]>;
+  getRecurringBillInstance(id: number): Promise<RecurringBillInstance | undefined>;
+  getRecurringBillInstancesByClient(clientId: number): Promise<RecurringBillInstance[]>;
+  createRecurringBillInstance(instance: InsertRecurringBillInstance): Promise<RecurringBillInstance>;
+  updateRecurringBillInstance(id: number, instance: Partial<InsertRecurringBillInstance>): Promise<RecurringBillInstance | undefined>;
+  markRecurringBillInstancePaid(id: number, paymentData: {
+    paymentMethod: string;
+    checkNumber?: string;
+    checkDate?: string;
+    paymentDate: string;
+    paymentNotes?: string;
+    paidBy: number;
+  }): Promise<RecurringBillInstance | undefined>;
+
+  // Monthly bill processing
+  generateMonthlyBills(year: number, month: number): Promise<RecurringBillInstance[]>;
+  processClientAccountBalance(clientId: number, amount: number, description: string): Promise<void>;
   
   // Admin operations
   clearAllData(): Promise<void>;
@@ -1608,6 +1640,158 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(users.createdAt));
 
     return usersWithCompanies;
+  }
+
+  // Recurring Bills Implementation
+  async getRecurringBills(clientId?: number): Promise<RecurringBill[]> {
+    if (clientId) {
+      return await db.select().from(recurringBills)
+        .where(eq(recurringBills.clientId, clientId))
+        .orderBy(recurringBills.createdAt);
+    }
+    return await db.select().from(recurringBills).orderBy(recurringBills.createdAt);
+  }
+
+  async getRecurringBill(id: number): Promise<RecurringBill | undefined> {
+    const [bill] = await db.select().from(recurringBills).where(eq(recurringBills.id, id));
+    return bill || undefined;
+  }
+
+  async createRecurringBill(bill: InsertRecurringBill): Promise<RecurringBill> {
+    const [newBill] = await db.insert(recurringBills).values(bill).returning();
+    return newBill;
+  }
+
+  async updateRecurringBill(id: number, bill: Partial<InsertRecurringBill>): Promise<RecurringBill | undefined> {
+    const [updatedBill] = await db
+      .update(recurringBills)
+      .set({ ...bill, updatedAt: new Date() })
+      .where(eq(recurringBills.id, id))
+      .returning();
+    return updatedBill || undefined;
+  }
+
+  async deleteRecurringBill(id: number): Promise<boolean> {
+    const result = await db.delete(recurringBills).where(eq(recurringBills.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Recurring Bill Instances Implementation
+  async getRecurringBillInstances(status?: string): Promise<RecurringBillInstance[]> {
+    if (status) {
+      return await db.select().from(recurringBillInstances)
+        .where(eq(recurringBillInstances.status, status))
+        .orderBy(recurringBillInstances.dueDate);
+    }
+    return await db.select().from(recurringBillInstances).orderBy(recurringBillInstances.dueDate);
+  }
+
+  async getRecurringBillInstance(id: number): Promise<RecurringBillInstance | undefined> {
+    const [instance] = await db.select().from(recurringBillInstances).where(eq(recurringBillInstances.id, id));
+    return instance || undefined;
+  }
+
+  async getRecurringBillInstancesByClient(clientId: number): Promise<RecurringBillInstance[]> {
+    return await db.select().from(recurringBillInstances)
+      .where(eq(recurringBillInstances.clientId, clientId))
+      .orderBy(recurringBillInstances.dueDate);
+  }
+
+  async createRecurringBillInstance(instance: InsertRecurringBillInstance): Promise<RecurringBillInstance> {
+    const [newInstance] = await db.insert(recurringBillInstances).values(instance).returning();
+    return newInstance;
+  }
+
+  async updateRecurringBillInstance(id: number, instance: Partial<InsertRecurringBillInstance>): Promise<RecurringBillInstance | undefined> {
+    const [updatedInstance] = await db
+      .update(recurringBillInstances)
+      .set(instance)
+      .where(eq(recurringBillInstances.id, id))
+      .returning();
+    return updatedInstance || undefined;
+  }
+
+  async markRecurringBillInstancePaid(id: number, paymentData: {
+    paymentMethod: string;
+    checkNumber?: string;
+    checkDate?: string;
+    paymentDate: string;
+    paymentNotes?: string;
+    paidBy: number;
+  }): Promise<RecurringBillInstance | undefined> {
+    const [updatedInstance] = await db
+      .update(recurringBillInstances)
+      .set({
+        status: 'paid',
+        paymentMethod: paymentData.paymentMethod,
+        checkNumber: paymentData.checkNumber,
+        checkDate: paymentData.checkDate,
+        paymentDate: paymentData.paymentDate,
+        paymentNotes: paymentData.paymentNotes,
+        paidBy: paymentData.paidBy,
+        paidAt: new Date(),
+      })
+      .where(eq(recurringBillInstances.id, id))
+      .returning();
+    return updatedInstance || undefined;
+  }
+
+  async generateMonthlyBills(year: number, month: number): Promise<RecurringBillInstance[]> {
+    // Get all active recurring bills
+    const activeBills = await db.select().from(recurringBills)
+      .where(and(
+        eq(recurringBills.isActive, true),
+        or(
+          sql`${recurringBills.endDate} IS NULL`,
+          sql`${recurringBills.endDate} >= ${new Date(year, month - 1, 1).toISOString().split('T')[0]}`
+        )
+      ));
+
+    const newInstances: RecurringBillInstance[] = [];
+
+    for (const bill of activeBills) {
+      const dueDate = new Date(year, month - 1, bill.dueDay);
+      
+      // Check if bill instance already exists for this month
+      const [existingInstance] = await db.select().from(recurringBillInstances)
+        .where(and(
+          eq(recurringBillInstances.recurringBillId, bill.id),
+          eq(recurringBillInstances.dueDate, dueDate.toISOString().split('T')[0])
+        ));
+
+      if (!existingInstance) {
+        const newInstance = await this.createRecurringBillInstance({
+          recurringBillId: bill.id,
+          clientId: bill.clientId,
+          dueDate: dueDate.toISOString().split('T')[0],
+          amount: bill.amount,
+          status: 'pending'
+        });
+        newInstances.push(newInstance);
+
+        // Create negative balance transaction for the client
+        await this.processClientAccountBalance(
+          bill.clientId,
+          -parseFloat(bill.amount.toString()),
+          `${bill.billType} - ${bill.description || 'Monthly recurring charge'}`
+        );
+      }
+    }
+
+    return newInstances;
+  }
+
+  async processClientAccountBalance(clientId: number, amount: number, description: string): Promise<void> {
+    // Create a transaction record for the client account balance change
+    await this.createTransaction({
+      type: 'account_balance_adjustment',
+      amount: amount.toString(),
+      description: description,
+      month: new Date().toISOString().substring(0, 7) // YYYY-MM format
+    });
+
+    // TODO: Implement actual client balance tracking if needed
+    // This could involve updating a client_balances table or similar
   }
 }
 

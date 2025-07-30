@@ -24,6 +24,8 @@ import HousingSupport from "@/pages/housing-support";
 import Vendors from "@/pages/vendors";
 import OtherSubsidies from "@/pages/other-subsidies";
 import UserManagement from "@/pages/user-management";
+import AccountSettings from "@/pages/account-settings";
+import BillManagement from "@/pages/bill-management";
 import ActivityLogs from "@/pages/activity-logs";
 import Mobile from "@/pages/mobile";
 import Login from "@/pages/login";
@@ -56,6 +58,8 @@ function AuthenticatedRouter() {
               <Route path="/housing-support" component={HousingSupport} />
               <Route path="/vendors" component={Vendors} />
               <Route path="/other-subsidies" component={OtherSubsidies} />
+              <Route path="/account-settings" component={AccountSettings} />
+              <Route path="/bill-management" component={BillManagement} />
               <Route path="/user-management">
                 <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
                   <UserManagement />

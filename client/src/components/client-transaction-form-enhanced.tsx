@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, DollarSign, User, Wallet, Home, Receipt, Zap, Phone, Globe, Shirt, HelpCircle } from "lucide-react";
 import type { Client, Application, Property } from "@shared/schema";
 
@@ -93,6 +94,7 @@ const transactionSchema = z.object({
     amount: z.string(),
     description: z.string(),
     selected: z.boolean(),
+    month: z.string(), // YYYY-MM format
   })),
   notes: z.string().optional(),
 });
@@ -150,6 +152,12 @@ export default function ClientTransactionFormEnhanced({
     return 0;
   };
 
+  // Get current month in YYYY-MM format
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  };
+
   // Initialize form with transaction types
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
@@ -159,6 +167,7 @@ export default function ClientTransactionFormEnhanced({
         amount: type.id === "rent" ? getClientRentAmount().toFixed(2) : type.defaultAmount.toFixed(2),
         description: type.description,
         selected: false,
+        month: getCurrentMonth(),
       })),
       notes: "",
     },
@@ -182,12 +191,13 @@ export default function ClientTransactionFormEnhanced({
       const results = [];
 
       for (const txn of selectedTxns) {
-        // Create transaction entry
+        // Create transaction entry with month information
         const transactionData = {
           type: `${txn.type}_payment`,
           amount: txn.amount,
-          description: `${txn.description} - ${clientName}${data.notes ? ` (${data.notes})` : ''}`,
+          description: `${txn.description} - ${clientName} (${txn.month})${data.notes ? ` (${data.notes})` : ''}`,
           applicationId: applications.find(app => app.status === "approved")?.id || null,
+          month: txn.month,
         };
 
         const transactionResponse = await apiRequest("POST", "/api/transactions", transactionData);
@@ -198,9 +208,10 @@ export default function ClientTransactionFormEnhanced({
           transactionId: transaction.id,
           amount: txn.amount,
           type: "withdrawal",
-          description: `${txn.description} payment for ${clientName}`,
+          description: `${txn.description} payment for ${clientName} (${txn.month})`,
           clientId: clientId,
           county: client?.site || "Unknown",
+          month: txn.month,
         };
 
         const poolFundResponse = await apiRequest("POST", "/api/pool-fund", poolFundData);
@@ -271,8 +282,15 @@ export default function ClientTransactionFormEnhanced({
     form.setValue("transactions", updatedTransactions);
   };
 
-  const currentBalance = poolFundBalance?.balance || 0;
-  const currentClientBalance = clientBalance?.balance || 0;
+  const updateMonth = (index: number, month: string) => {
+    const currentTransactions = form.getValues("transactions");
+    const updatedTransactions = [...currentTransactions];
+    updatedTransactions[index].month = month;
+    form.setValue("transactions", updatedTransactions);
+  };
+
+  const currentBalance = (poolFundBalance as any)?.balance || 0;
+  const currentClientBalance = (clientBalance as any)?.balance || 0;
   const selectedCount = selectedTransactions.length;
   const totalAmount = form.getValues("transactions")
     .filter(t => t.selected)
@@ -370,16 +388,44 @@ export default function ClientTransactionFormEnhanced({
                               <div className="font-medium">{type.label}</div>
                               <div className="text-sm text-gray-500">{type.description}</div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-sm text-gray-500">Amount</div>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={transaction.amount}
-                                onChange={(e) => updateAmount(index, e.target.value)}
-                                className="w-20 h-8 text-right"
-                                disabled={!transaction.selected}
-                              />
+                            <div className="text-right space-y-2">
+                              <div>
+                                <div className="text-sm text-gray-500">Amount</div>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={transaction.amount}
+                                  onChange={(e) => updateAmount(index, e.target.value)}
+                                  className="w-24 h-8 text-right"
+                                />
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500">Month</div>
+                                <Select
+                                  value={transaction.month}
+                                  onValueChange={(value) => updateMonth(index, value)}
+                                >
+                                  <SelectTrigger className="w-32 h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {/* Generate months for current year and next year */}
+                                    {Array.from({ length: 24 }, (_, i) => {
+                                      const date = new Date();
+                                      date.setMonth(date.getMonth() - 12 + i);
+                                      const year = date.getFullYear();
+                                      const month = date.getMonth() + 1;
+                                      const value = `${year}-${String(month).padStart(2, '0')}`;
+                                      const label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                                      return (
+                                        <SelectItem key={value} value={value}>
+                                          {label}
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                           </div>
                         </CardContent>

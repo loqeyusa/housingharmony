@@ -103,6 +103,7 @@ export const transactions = pgTable("transactions", {
   type: text("type").notNull(), // rent_payment, deposit_payment, application_fee, county_reimbursement, pool_fund_deposit, pool_fund_withdrawal
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description").notNull(),
+  month: text("month"), // YYYY-MM format for transaction month
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -114,6 +115,7 @@ export const poolFund = pgTable("pool_fund", {
   description: text("description").notNull(),
   clientId: integer("client_id"), // for withdrawals
   county: text("county").notNull(), // county/site designation
+  month: text("month"), // YYYY-MM format for transaction month
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

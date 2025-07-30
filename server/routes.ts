@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Filter dashboard stats by company ID for multi-tenant isolation
-      const stats = await storage.getDashboardStats(user.companyId);
+      const stats = await storage.getDashboardStats(user.companyId || undefined);
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
@@ -147,8 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle schema validation errors
-      if (error.name === 'ZodError') {
-        return res.status(400).json({ error: "Invalid company data", details: error.issues });
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid company data", details: error });
       }
       
       res.status(500).json({ error: "Failed to create company" });
@@ -158,13 +158,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/companies/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updateData = insertCompanySchema.partial().parse(req.body);
+      const baseSchema = insertCompanySchema.omit({ id: true, createdAt: true, updatedAt: true, approvedAt: true, approvedBy: true });
+      const updateData = baseSchema.partial().parse(req.body);
       const company = await storage.updateCompany(id, updateData);
       if (!company) {
         return res.status(404).json({ error: "Company not found" });
       }
       res.json(company);
     } catch (error) {
+      console.error("Error updating company:", error);
       res.status(400).json({ error: "Invalid company data" });
     }
   });
@@ -305,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Filter clients by company ID for multi-tenant isolation
-      const clients = await storage.getClients(user.companyId);
+      const clients = await storage.getClients(user.companyId || undefined);
       res.json(clients);
     } catch (error) {
       console.error("Error in clients API:", error);
@@ -404,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Filter properties by company ID for multi-tenant isolation
-      const properties = await storage.getProperties(user.companyId);
+      const properties = await storage.getProperties(user.companyId || undefined);
       res.json(properties);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch properties" });
@@ -489,7 +491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Filter applications by company ID for multi-tenant isolation
         try {
-          const applications = await storage.getApplications(user.companyId);
+          const applications = await storage.getApplications(user.companyId || undefined);
           console.log('Applications API: Retrieved applications:', applications);
           res.json(applications);
         } catch (storageError) {
@@ -623,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(transactions);
       } else {
         // Filter transactions by company ID for multi-tenant isolation
-        const transactions = await storage.getTransactions(user.companyId);
+        const transactions = await storage.getTransactions(user.companyId || undefined);
         res.json(transactions);
       }
     } catch (error) {
@@ -657,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Filter pool fund entries by company ID for multi-tenant isolation
-      const entries = await storage.getPoolFundEntries(user.companyId);
+      const entries = await storage.getPoolFundEntries(user.companyId || undefined);
       res.json(entries);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pool fund entries" });
@@ -682,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Filter pool fund balance by company ID for multi-tenant isolation
-      const balance = await storage.getPoolFundBalance(user.companyId);
+      const balance = await storage.getPoolFundBalance(user.companyId || undefined);
       res.json({ balance });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pool fund balance" });
@@ -707,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Filter pool fund summary by company ID for multi-tenant isolation
-      const summary = await storage.getPoolFundSummaryByCounty(user.companyId);
+      const summary = await storage.getPoolFundSummaryByCounty(user.companyId || undefined);
       res.json(summary);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch county pool fund summary" });
@@ -887,7 +889,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(vendor);
     } catch (error) {
       console.error("Vendor validation error:", error);
-      res.status(400).json({ error: "Invalid vendor data", details: error.message });
+      if (error instanceof Error) {
+        res.status(400).json({ error: "Invalid vendor data", details: error.message });
+      } else {
+        res.status(400).json({ error: "Invalid vendor data" });
+      }
     }
   });
 

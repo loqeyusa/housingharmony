@@ -575,6 +575,7 @@ export class DatabaseStorage implements IStorage {
           type: transactions.type,
           amount: transactions.amount,
           description: transactions.description,
+          month: transactions.month,
           createdAt: transactions.createdAt,
         })
         .from(transactions)
@@ -611,6 +612,7 @@ export class DatabaseStorage implements IStorage {
         type: transactions.type,
         amount: transactions.amount,
         description: transactions.description,
+        month: transactions.month,
         createdAt: transactions.createdAt,
       })
       .from(transactions)
@@ -639,6 +641,7 @@ export class DatabaseStorage implements IStorage {
         description: row.description,
         clientId: row.client_id,
         county: row.county,
+        month: row.month,
         createdAt: new Date(row.created_at)
       }));
     } else {
@@ -683,7 +686,10 @@ export class DatabaseStorage implements IStorage {
       // Get pool fund entries for the company's counties
       let entries: any[] = [];
       if (companyCounties.size === 1) {
-        entries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounties)[0]));
+        const countyValue = Array.from(companyCounties)[0];
+        if (countyValue) {
+          entries = await db.select().from(poolFund).where(eq(poolFund.county, countyValue));
+        }
       } else if (companyCounties.size > 1) {
         entries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounties) as string[]));
       }
@@ -752,7 +758,10 @@ export class DatabaseStorage implements IStorage {
       
       // Get pool fund entries for the company's counties
       if (companyCounties.size === 1) {
-        allEntries = await db.select().from(poolFund).where(eq(poolFund.county, Array.from(companyCounties)[0]));
+        const countyValue = Array.from(companyCounties)[0];
+        if (countyValue) {
+          allEntries = await db.select().from(poolFund).where(eq(poolFund.county, countyValue));
+        }
       } else if (companyCounties.size > 1) {
         allEntries = await db.select().from(poolFund).where(inArray(poolFund.county, Array.from(companyCounties) as string[]));
       }
@@ -930,7 +939,7 @@ export class DatabaseStorage implements IStorage {
         totalOtherSubsidyAmount = 0;
       } else {
         // Get client names for this company
-        const companyClientNames = totalClientsResult.map(c => c.name);
+        const companyClientNames = totalClientsResult.map(c => `${c.firstName} ${c.lastName}`);
         
         // Get other subsidies that match client names
         const allOtherSubsidies = await db.select().from(otherSubsidies);

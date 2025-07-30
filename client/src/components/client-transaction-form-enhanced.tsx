@@ -164,7 +164,7 @@ export default function ClientTransactionFormEnhanced({
     defaultValues: {
       transactions: TRANSACTION_TYPES.map(type => ({
         type: type.id,
-        amount: type.id === "rent" ? getClientRentAmount().toFixed(2) : type.defaultAmount.toFixed(2),
+        amount: type.defaultAmount.toFixed(2),
         description: type.description,
         selected: false,
         month: getCurrentMonth(),
@@ -173,17 +173,13 @@ export default function ClientTransactionFormEnhanced({
     },
   });
 
-  // Update rent amount when applications or properties change
+  // Update rent amount when applications or properties change (but only once)
   useEffect(() => {
     const rentAmount = getClientRentAmount();
     if (rentAmount > 0) {
-      const currentTransactions = form.getValues("transactions");
-      const updatedTransactions = currentTransactions.map(t => 
-        t.type === "rent" ? { ...t, amount: rentAmount.toFixed(2) } : t
-      );
-      form.setValue("transactions", updatedTransactions);
+      form.setValue("transactions.0.amount", rentAmount.toFixed(2)); // Index 0 is rent
     }
-  }, [applications, properties, form]);
+  }, [applications, properties]);
 
   const createTransactionsMutation = useMutation({
     mutationFn: async (data: TransactionFormData) => {
@@ -386,11 +382,16 @@ export default function ClientTransactionFormEnhanced({
                                     <FormItem>
                                       <FormControl>
                                         <Input
-                                          type="number"
-                                          step="0.01"
+                                          type="text"
+                                          inputMode="decimal"
                                           {...field}
                                           className="w-24 h-8 text-right"
                                           placeholder="0.00"
+                                          onChange={(e) => {
+                                            // Allow only numbers and decimal point
+                                            const value = e.target.value.replace(/[^\d.]/g, '');
+                                            field.onChange(value);
+                                          }}
                                         />
                                       </FormControl>
                                     </FormItem>

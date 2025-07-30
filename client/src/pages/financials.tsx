@@ -302,6 +302,8 @@ export default function Financials() {
         <TabsList>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="client-balances">Client Balances</TabsTrigger>
+          <TabsTrigger value="vendor-management">Vendor Management</TabsTrigger>
+          <TabsTrigger value="landlord-payments">Landlord Payments</TabsTrigger>
           <TabsTrigger value="transactions">Transaction History</TabsTrigger>
           <TabsTrigger value="reports">Financial Reports</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -310,72 +312,144 @@ export default function Financials() {
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Clients with Negative Balances */}
+            {/* Priority Financial Actions */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-red-600" />
-                  Clients with Negative Balances
+                  Priority Financial Actions
                 </CardTitle>
                 <CardDescription>
-                  Clients who need county reimbursement
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {financialMetrics.negativeBalanceClients.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No clients with negative balances
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {financialMetrics.negativeBalanceClients.slice(0, 5).map(([clientId, data]) => (
-                      <div key={clientId} className="flex justify-between items-center p-3 border rounded-lg">
-                        <div>
-                          <div className="font-medium">{data.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Balance: <span className="text-red-600 font-medium">${data.balance.toFixed(2)}</span>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddMoney(parseInt(clientId))}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          Add Payment
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Transactions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Recent Transactions
-                </CardTitle>
-                <CardDescription>
-                  Latest financial activity
+                  Urgent items requiring immediate attention
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {financialMetrics.currentMonthTransactions.slice(0, 5).map((transaction: any) => (
-                    <div key={transaction.id} className="flex justify-between items-center p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{transaction.description}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(transaction.createdAt).toLocaleDateString()}
+                  {/* Clients Needing Reimbursement */}
+                  {financialMetrics.negativeBalanceClients.length > 0 && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-medium text-red-800 dark:text-red-200">
+                          Clients Need Reimbursement
                         </div>
+                        <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                          {financialMetrics.negativeBalanceClients.length}
+                        </Badge>
                       </div>
-                      <div className={`font-medium ${parseFloat(transaction.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {parseFloat(transaction.amount) >= 0 ? '+' : ''}${transaction.amount}
+                      <div className="space-y-2">
+                        {financialMetrics.negativeBalanceClients.slice(0, 3).map(([clientId, data]) => (
+                          <div key={clientId} className="flex justify-between items-center">
+                            <span className="text-sm">{data.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-red-600">${Math.abs(data.balance).toFixed(2)}</span>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAddMoney(parseInt(clientId))}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Pay
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Overdue Vendor Payments */}
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium text-orange-800 dark:text-orange-200">
+                        Overdue Vendor Payments
+                      </div>
+                      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                        3
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-orange-600">
+                      $4,250.00 in overdue vendor payments require immediate attention
+                    </div>
+                  </div>
+
+                  {/* Pending Rent Payments */}
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium text-yellow-800 dark:text-yellow-200">
+                        Rent Payments Due Today
+                      </div>
+                      <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                        5
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-yellow-600">
+                      $6,750.00 in rent payments due to landlords today
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Financial Management Tools */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Quick Financial Actions
+                </CardTitle>
+                <CardDescription>
+                  Common finance department tasks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    className="h-16 flex flex-col gap-1 bg-blue-600 hover:bg-blue-700"
+                    onClick={() => setAddMoneyDialogOpen(true)}
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs">Add Client Payment</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="h-16 flex flex-col gap-1"
+                    onClick={() => window.location.href = '/bill-management'}
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    <span className="text-xs">Process Bills</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="h-16 flex flex-col gap-1"
+                    onClick={() => window.location.href = '/vendors'}
+                  >
+                    <Users className="w-5 h-5" />
+                    <span className="text-xs">Manage Vendors</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="h-16 flex flex-col gap-1"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span className="text-xs">Export Reports</span>
+                  </Button>
+                </div>
+
+                {/* Recent Activity Summary */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="text-sm font-medium mb-2">Recent Activity</div>
+                  <div className="space-y-2">
+                    {financialMetrics.currentMonthTransactions.slice(0, 3).map((transaction: any) => (
+                      <div key={transaction.id} className="flex justify-between items-center">
+                        <span className="text-sm truncate">{transaction.description}</span>
+                        <span className={`text-sm font-medium ${parseFloat(transaction.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {parseFloat(transaction.amount) >= 0 ? '+' : ''}${transaction.amount}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -384,11 +458,63 @@ export default function Financials() {
 
         {/* Client Balances Tab */}
         <TabsContent value="client-balances" className="space-y-4">
+          {/* Client Balance Management Tools */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card className="p-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {financialMetrics.positiveBalanceClients.length}
+                </div>
+                <div className="text-sm text-muted-foreground">Positive Balance</div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {financialMetrics.negativeBalanceClients.length}
+                </div>
+                <div className="text-sm text-muted-foreground">Need Reimbursement</div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-600">
+                  {financialMetrics.zeroBalanceClients.length}
+                </div>
+                <div className="text-sm text-muted-foreground">Zero Balance</div>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="text-center">
+                <Button 
+                  className="w-full h-12"
+                  onClick={() => setAddMoneyDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Payment
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          {/* Enhanced Client Balance Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Client Account Balances</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Client Financial Management</span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                </div>
+              </CardTitle>
               <CardDescription>
-                View and manage individual client account balances
+                Comprehensive client account management and payment tracking
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -396,7 +522,9 @@ export default function Financials() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Client Name</TableHead>
-                    <TableHead>Account Balance</TableHead>
+                    <TableHead>Current Balance</TableHead>
+                    <TableHead>Total Received</TableHead>
+                    <TableHead>Total Spent</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Last Payment</TableHead>
                     <TableHead>Actions</TableHead>
@@ -405,22 +533,42 @@ export default function Financials() {
                 <TableBody>
                   {Object.entries(financialMetrics.clientBalances).map(([clientId, data]) => (
                     <TableRow key={clientId}>
-                      <TableCell className="font-medium">{data.name}</TableCell>
-                      <TableCell className={`font-medium ${data.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div>{data.name}</div>
+                          <div className="text-xs text-muted-foreground">ID: {clientId}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className={`font-medium text-lg ${data.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         ${data.balance.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-green-600 font-medium">
+                        ${data.totalReceived?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell className="text-red-600 font-medium">
+                        ${data.totalSpent?.toFixed(2) || '0.00'}
                       </TableCell>
                       <TableCell>{getStatusBadge(data.balance)}</TableCell>
                       <TableCell>
                         {data.lastPayment ? new Date(data.lastPayment).toLocaleDateString() : 'Never'}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleAddMoney(parseInt(clientId))}
-                        >
-                          Add Payment
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddMoney(parseInt(clientId))}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Add Payment
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.location.href = `/client-details/${clientId}`}
+                          >
+                            View Details
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -428,6 +576,277 @@ export default function Financials() {
               </Table>
             </CardContent>
           </Card>
+
+          {/* Bulk Client Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Bulk Client Operations</CardTitle>
+              <CardDescription>
+                Perform actions on multiple clients simultaneously
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <Users className="w-6 h-6" />
+                  <span className="text-xs">Bulk Reimbursement</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <FileText className="w-6 h-6" />
+                  <span className="text-xs">Generate Statements</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <Calendar className="w-6 h-6" />
+                  <span className="text-xs">Schedule Payments</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <AlertTriangle className="w-6 h-6" />
+                  <span className="text-xs">Flag Accounts</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Vendor Management Tab */}
+        <TabsContent value="vendor-management" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Outstanding Vendor Payments */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-600" />
+                  Outstanding Vendor Payments
+                </CardTitle>
+                <CardDescription>
+                  Unpaid vendor bills and services
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Sample vendor data - replace with actual vendor query */}
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Healthcare Plus</div>
+                      <div className="text-sm text-muted-foreground">
+                        Medical services • Due: 3 days
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-red-600">$2,450.00</div>
+                      <Button size="sm" className="mt-1">Pay Now</Button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Mental Health Services</div>
+                      <div className="text-sm text-muted-foreground">
+                        Counseling services • Due: 7 days
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-red-600">$1,800.00</div>
+                      <Button size="sm" className="mt-1">Pay Now</Button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Community Support Inc</div>
+                      <div className="text-sm text-muted-foreground">
+                        Support services • Due: 15 days
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-orange-600">$950.00</div>
+                      <Button size="sm" variant="outline" className="mt-1">Schedule</Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Vendor Payment Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Vendor Payment Summary
+                </CardTitle>
+                <CardDescription>
+                  Monthly vendor expenditure breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span>Healthcare Services</span>
+                    <span className="font-medium">$8,450.00</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Mental Health</span>
+                    <span className="font-medium">$5,200.00</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Support Services</span>
+                    <span className="font-medium">$3,100.00</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Group Homes</span>
+                    <span className="font-medium">$12,800.00</span>
+                  </div>
+                  <div className="flex justify-between items-center border-t pt-2">
+                    <span className="font-medium">Total Vendor Payments</span>
+                    <span className="font-bold text-blue-600">$29,550.00</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Vendor Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button className="h-20 flex flex-col gap-2">
+              <Plus className="w-6 h-6" />
+              Add Vendor Payment
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col gap-2">
+              <FileText className="w-6 h-6" />
+              Generate Vendor Report
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col gap-2">
+              <Calendar className="w-6 h-6" />
+              Schedule Payments
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* Landlord Payments Tab */}
+        <TabsContent value="landlord-payments" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Pending Rent Payments */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-green-600" />
+                  Pending Rent Payments
+                </CardTitle>
+                <CardDescription>
+                  Monthly rent payments to landlords
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Sample landlord payment data */}
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">ABC Property Management</div>
+                      <div className="text-sm text-muted-foreground">
+                        Client: Craig Johnson • 1234 Main St
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-green-600">$1,200.00</div>
+                      <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                        Due Today
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Sunrise Apartments</div>
+                      <div className="text-sm text-muted-foreground">
+                        Client: Multiple clients • Various units
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-green-600">$3,600.00</div>
+                      <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                        Overdue
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">Metro Housing LLC</div>
+                      <div className="text-sm text-muted-foreground">
+                        Client: Sarah Williams • 567 Oak Ave
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-green-600">$950.00</div>
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Paid
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Landlord Payment Analytics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                  Payment Analytics
+                </CardTitle>
+                <CardDescription>
+                  Landlord payment trends and insights
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                      On-Time Payment Rate
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">92%</div>
+                    <div className="text-xs text-green-600">+3% from last month</div>
+                  </div>
+                  
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      Average Processing Time
+                    </div>
+                    <div className="text-2xl font-bold text-blue-600">2.3 days</div>
+                    <div className="text-xs text-blue-600">-0.5 days improvement</div>
+                  </div>
+
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <div className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                      Total Monthly Rent
+                    </div>
+                    <div className="text-2xl font-bold text-orange-600">$45,200</div>
+                    <div className="text-xs text-orange-600">23 active leases</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Landlord Management Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Button className="h-16 flex flex-col gap-1">
+              <Plus className="w-5 h-5" />
+              <span className="text-xs">Process Payment</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <Calendar className="w-5 h-5" />
+              <span className="text-xs">Schedule Batch</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <FileText className="w-5 h-5" />
+              <span className="text-xs">Generate Report</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col gap-1">
+              <Download className="w-5 h-5" />
+              <span className="text-xs">Export Data</span>
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Transactions Tab */}

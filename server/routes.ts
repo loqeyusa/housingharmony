@@ -165,8 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/companies/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const baseSchema = insertCompanySchema.omit({ id: true, createdAt: true, updatedAt: true, approvedAt: true, approvedBy: true });
-      const updateData = baseSchema.partial().parse(req.body);
+      const updateData = req.body;
+
       const company = await storage.updateCompany(id, updateData);
       if (!company) {
         return res.status(404).json({ error: "Company not found" });
@@ -411,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      const sites = await storage.getSites(req.session.user.companyId);
+      const sites = await storage.getSites(req.session.user.companyId || 0);
       res.json(sites);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch sites" });
@@ -454,7 +454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure site belongs to user's company
-      const siteData = { ...result.data, companyId: req.session.user.companyId };
+      const siteData = { ...result.data, companyId: req.session.user.companyId || 0 };
       const site = await storage.createSite(siteData);
       res.json(site);
     } catch (error) {
@@ -521,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      const buildings = await storage.getBuildings(req.session.user.companyId);
+      const buildings = await storage.getBuildings(req.session.user.companyId || 0);
       res.json(buildings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch buildings" });
@@ -564,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure building belongs to user's company
-      const buildingData = { ...result.data, companyId: req.session.user.companyId };
+      const buildingData = { ...result.data, companyId: req.session.user.companyId || 0 };
       const building = await storage.createBuilding(buildingData);
       res.json(building);
     } catch (error) {
@@ -2303,8 +2303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all data for financial analysis
       const [transactions, clients, applications, recurringBills] = await Promise.all([
         storage.getTransactions(),
-        storage.getClients(user.companyId),
-        storage.getApplications(user.companyId), 
+        storage.getClients(user.companyId || 0),
+        storage.getApplications(user.companyId || 0), 
         storage.getRecurringBillInstances()
       ]);
 
@@ -2343,7 +2343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientBalances[client.id] = {
           name: `${client.firstName} ${client.lastName}`,
           balance,
-          lastPayment: lastPayment ? lastPayment.createdAt : null,
+          lastPayment: lastPayment ? new Date(lastPayment.createdAt).toISOString().split('T')[0] : null,
           totalReceived,
           totalSpent,
         };
@@ -2389,7 +2389,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Building routes
   app.get("/api/buildings", requireAuth, async (req, res) => {
     try {
-      const buildings = await storage.getBuildings(req.session.user.companyId);
+      const buildings = await storage.getBuildings(req.session.user!.companyId || 0);
       res.json(buildings);
     } catch (error) {
       console.error("Error fetching buildings:", error);
@@ -2401,15 +2401,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBuildingSchema.parse({
         ...req.body,
-        companyId: req.session.user.companyId
+        companyId: req.session.user!.companyId
       });
       
       const building = await storage.createBuilding(validatedData);
       res.status(201).json(building);
     } catch (error) {
       console.error("Error creating building:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      if (error && typeof error === 'object' && 'name' in error && (error as any).name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid data", details: (error as any).errors });
       }
       res.status(500).json({ error: "Failed to create building" });
     }

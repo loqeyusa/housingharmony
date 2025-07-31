@@ -22,7 +22,10 @@ import {
   CheckCircle, 
   MinusCircle,
   Download,
-  Filter
+  Filter,
+  Eye,
+  MessageSquare,
+  CheckCircle2
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
@@ -45,10 +48,28 @@ const addMoneySchema = z.object({
 
 type AddMoneyFormData = z.infer<typeof addMoneySchema>;
 
+// Schema for settling payments
+const settlePaymentSchema = z.object({
+  paymentId: z.number(),
+  paymentMethod: z.string().default("check"),
+  checkNumber: z.string().optional(),
+  comments: z.string().optional(),
+  settledDate: z.string(),
+  settledAmount: z.string(),
+});
+
+type SettlePaymentFormData = z.infer<typeof settlePaymentSchema>;
+
 export default function Financials() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
   const [addMoneyDialogOpen, setAddMoneyDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  
+  // Priority Actions Dialogs
+  const [overdueVendorDialogOpen, setOverdueVendorDialogOpen] = useState(false);
+  const [rentPaymentsDialogOpen, setRentPaymentsDialogOpen] = useState(false);
+  const [settlePaymentDialogOpen, setSettlePaymentDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   
   // Report generation states
   const [reportPeriod, setReportPeriod] = useState("1");
@@ -86,6 +107,96 @@ export default function Financials() {
       month: selectedMonth,
     },
   });
+
+  const settleForm = useForm<SettlePaymentFormData>({
+    resolver: zodResolver(settlePaymentSchema),
+    defaultValues: {
+      paymentMethod: "check",
+      settledDate: new Date().toISOString().split('T')[0],
+    },
+  });
+
+  // Mock data for overdue payments - in real app this would come from API
+  const overdueVendorPayments = [
+    {
+      id: 1,
+      vendor: "Midwest Healthcare Services",
+      amount: 1250.00,
+      description: "Medical supplies and equipment",
+      dueDate: "2025-07-25",
+      daysPastDue: 6,
+      invoiceNumber: "INV-2025-001",
+      priority: "high"
+    },
+    {
+      id: 2,
+      vendor: "Community Housing Partners",
+      amount: 1800.00,
+      description: "Facility maintenance and repairs",
+      dueDate: "2025-07-28", 
+      daysPastDue: 3,
+      invoiceNumber: "INV-2025-002",
+      priority: "medium"
+    },
+    {
+      id: 3,
+      vendor: "Metro Transportation Co",
+      amount: 1200.00,
+      description: "Client transportation services",
+      dueDate: "2025-07-30",
+      daysPastDue: 1,
+      invoiceNumber: "INV-2025-003", 
+      priority: "low"
+    }
+  ];
+
+  const rentPaymentsDue = [
+    {
+      id: 1,
+      landlord: "Johnson Property Management",
+      property: "Sunset Apartments - Unit 4B",
+      client: "Maria Rodriguez",
+      amount: 1350.00,
+      dueDate: "2025-07-31",
+      leaseId: "LS-2025-001"
+    },
+    {
+      id: 2,
+      landlord: "Davidson Real Estate",
+      property: "Oak Street Townhomes - Unit 12",
+      client: "James Wilson",
+      amount: 1400.00,
+      dueDate: "2025-07-31",
+      leaseId: "LS-2025-002"
+    },
+    {
+      id: 3,
+      landlord: "Metro Housing LLC",
+      property: "Pine Ridge Complex - Unit 7A",
+      client: "Sarah Chen",
+      amount: 1250.00,
+      dueDate: "2025-07-31",
+      leaseId: "LS-2025-003"
+    },
+    {
+      id: 4,
+      landlord: "Northside Properties",
+      property: "Maple Court - Unit 3C",
+      client: "Robert Taylor",
+      amount: 1150.00,
+      dueDate: "2025-07-31",
+      leaseId: "LS-2025-004"
+    },
+    {
+      id: 5,
+      landlord: "Heritage Housing Group",
+      property: "Elmwood Residence - Unit 8",
+      client: "Lisa Johnson",
+      amount: 1600.00,
+      dueDate: "2025-07-31",
+      leaseId: "LS-2025-005"
+    }
+  ];
 
   const addMoneyMutation = useMutation({
     mutationFn: (data: AddMoneyFormData) =>
@@ -128,6 +239,28 @@ export default function Financials() {
       toast({
         title: "Error",
         description: error.message || "Failed to add payment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const settlePaymentMutation = useMutation({
+    mutationFn: (data: SettlePaymentFormData) =>
+      apiRequest("POST", "/api/financial/settle-payment", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      setSettlePaymentDialogOpen(false);
+      settleForm.reset();
+      toast({
+        title: "Payment Settled",
+        description: "Payment has been successfully marked as settled.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to settle payment",
         variant: "destructive",
       });
     },
@@ -216,6 +349,21 @@ export default function Financials() {
 
   const onSubmitAddMoney = (data: AddMoneyFormData) => {
     addMoneyMutation.mutate(data);
+  };
+
+  const handleSettlePayment = (payment: any) => {
+    setSelectedPayment(payment);
+    settleForm.reset({
+      paymentId: payment.id,
+      paymentMethod: "check",
+      settledDate: new Date().toISOString().split('T')[0],
+      settledAmount: payment.amount.toString(),
+    });
+    setSettlePaymentDialogOpen(true);
+  };
+
+  const onSubmitSettlePayment = (data: SettlePaymentFormData) => {
+    settlePaymentMutation.mutate(data);
   };
 
   const getStatusBadge = (balance: number) => {
@@ -683,33 +831,41 @@ export default function Financials() {
                     </div>
                   )}
 
-                  {/* Overdue Vendor Payments */}
-                  <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  {/* Overdue Vendor Payments - Clickable */}
+                  <div 
+                    className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                    onClick={() => setOverdueVendorDialogOpen(true)}
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="font-medium text-orange-800 dark:text-orange-200">
+                      <div className="font-medium text-orange-800 dark:text-orange-200 flex items-center gap-2">
                         Overdue Vendor Payments
+                        <Eye className="w-4 h-4" />
                       </div>
                       <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                        3
+                        {overdueVendorPayments.length}
                       </Badge>
                     </div>
                     <div className="text-sm text-orange-600">
-                      $4,250.00 in overdue vendor payments require immediate attention
+                      ${overdueVendorPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} in overdue vendor payments require immediate attention
                     </div>
                   </div>
 
-                  {/* Pending Rent Payments */}
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  {/* Rent Payments Due Today - Clickable */}
+                  <div 
+                    className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    onClick={() => setRentPaymentsDialogOpen(true)}
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="font-medium text-yellow-800 dark:text-yellow-200">
+                      <div className="font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
                         Rent Payments Due Today
+                        <Eye className="w-4 h-4" />
                       </div>
-                      <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                        5
+                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        {rentPaymentsDue.length}
                       </Badge>
                     </div>
-                    <div className="text-sm text-yellow-600">
-                      $6,750.00 in rent payments due to landlords today
+                    <div className="text-sm text-blue-600">
+                      ${rentPaymentsDue.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} in rent payments due to landlords today
                     </div>
                   </div>
                 </div>
@@ -1798,6 +1954,268 @@ export default function Financials() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Overdue Vendor Payments Detail Dialog */}
+      <Dialog open={overdueVendorDialogOpen} onOpenChange={setOverdueVendorDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              Overdue Vendor Payments Details
+            </DialogTitle>
+            <DialogDescription>
+              {overdueVendorPayments.length} payments totaling ${overdueVendorPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} require immediate attention
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vendor</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Days Past Due</TableHead>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {overdueVendorPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{payment.vendor}</div>
+                        <div className="text-sm text-muted-foreground">{payment.description}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium text-red-600">
+                      ${payment.amount.toFixed(2)}
+                    </TableCell>
+                    <TableCell>{new Date(payment.dueDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge className={`${payment.daysPastDue > 5 ? 'bg-red-100 text-red-800' : 
+                        payment.daysPastDue > 2 ? 'bg-orange-100 text-orange-800' : 
+                        'bg-yellow-100 text-yellow-800'}`}>
+                        {payment.daysPastDue} days
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">{payment.invoiceNumber}</TableCell>
+                    <TableCell>
+                      <Badge className={`${payment.priority === 'high' ? 'bg-red-100 text-red-800' : 
+                        payment.priority === 'medium' ? 'bg-orange-100 text-orange-800' : 
+                        'bg-green-100 text-green-800'}`}>
+                        {payment.priority}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleSettlePayment(payment)}
+                          className="h-8 px-3"
+                        >
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Settle
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-3"
+                        >
+                          <MessageSquare className="w-3 h-3 mr-1" />
+                          Comment
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOverdueVendorDialogOpen(false)}>
+              Close
+            </Button>
+            <Button>
+              Bulk Actions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rent Payments Due Today Detail Dialog */}
+      <Dialog open={rentPaymentsDialogOpen} onOpenChange={setRentPaymentsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Rent Payments Due Today
+            </DialogTitle>
+            <DialogDescription>
+              {rentPaymentsDue.length} rent payments totaling ${rentPaymentsDue.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} due to landlords today
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Property</TableHead>
+                  <TableHead>Landlord</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Lease ID</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rentPaymentsDue.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>
+                      <div className="font-medium">{payment.property}</div>
+                    </TableCell>
+                    <TableCell>{payment.landlord}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{payment.client}</div>
+                    </TableCell>
+                    <TableCell className="font-medium text-blue-600">
+                      ${payment.amount.toFixed(2)}
+                    </TableCell>
+                    <TableCell>{new Date(payment.dueDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono text-sm">{payment.leaseId}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleSettlePayment(payment)}
+                          className="h-8 px-3"
+                        >
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Pay Rent
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-3"
+                        >
+                          <MessageSquare className="w-3 h-3 mr-1" />
+                          Comment
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRentPaymentsDialogOpen(false)}>
+              Close
+            </Button>
+            <Button>
+              Process All Payments
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settle Payment Dialog */}
+      <Dialog open={settlePaymentDialogOpen} onOpenChange={setSettlePaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Settle Payment</DialogTitle>
+            <DialogDescription>
+              Mark this payment as settled and add settlement details
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={settleForm.handleSubmit(onSubmitSettlePayment)} className="space-y-4">
+            {selectedPayment && (
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="font-medium">{selectedPayment.vendor || selectedPayment.landlord}</div>
+                <div className="text-sm text-muted-foreground">
+                  {selectedPayment.description || selectedPayment.property}
+                </div>
+                <div className="font-medium text-lg mt-1">
+                  ${selectedPayment.amount.toFixed(2)}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="settle-amount">Settlement Amount</Label>
+              <Input
+                id="settle-amount"
+                {...settleForm.register("settledAmount")}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="settle-method">Payment Method</Label>
+              <Select value={settleForm.watch("paymentMethod")} onValueChange={(value) => settleForm.setValue("paymentMethod", value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="check">Check</SelectItem>
+                  <SelectItem value="ach">ACH Transfer</SelectItem>
+                  <SelectItem value="wire">Wire Transfer</SelectItem>
+                  <SelectItem value="melio">Melio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {settleForm.watch("paymentMethod") === "check" && (
+              <div className="space-y-2">
+                <Label htmlFor="check-number">Check Number</Label>
+                <Input
+                  id="check-number"
+                  {...settleForm.register("checkNumber")}
+                  placeholder="Enter check number"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="settle-date">Settlement Date</Label>
+              <Input
+                id="settle-date"
+                type="date"
+                {...settleForm.register("settledDate")}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="settle-comments">Comments (Optional)</Label>
+              <Textarea
+                id="settle-comments"
+                {...settleForm.register("comments")}
+                placeholder="Add any notes about this settlement..."
+                rows={3}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSettlePaymentDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={settlePaymentMutation.isPending}>
+                {settlePaymentMutation.isPending ? "Processing..." : "Settle Payment"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Money Dialog */}
       <Dialog open={addMoneyDialogOpen} onOpenChange={setAddMoneyDialogOpen}>

@@ -1254,7 +1254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
     } catch (error) {
       console.error('Assistant chat error:', error);
-      res.status(500).json({ error: "Failed to process your request" });
+      res.status(500).json({ error: "AI temporarily not available. Please try again later." });
     }
   });
 
@@ -1269,7 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ transcription });
     } catch (error) {
       console.error('Speech to text error:', error);
-      res.status(500).json({ error: "Failed to transcribe audio" });
+      res.status(500).json({ error: "Speech recognition temporarily not available. Please try again." });
     }
   });
 
@@ -1289,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send(audioBuffer);
     } catch (error) {
       console.error('Text to speech error:', error);
-      res.status(500).json({ error: "Failed to generate speech" });
+      res.status(500).json({ error: "Voice synthesis temporarily not available. Please try again." });
     }
   });
 

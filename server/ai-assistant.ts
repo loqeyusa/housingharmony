@@ -68,12 +68,11 @@ FINANCIAL SUMMARY:
 
 PROPERTIES:
 ${properties.map(p => `
-- ${p.address} (ID: ${p.id})
+- Unit ${p.unitNumber} Building ${p.buildingId} (ID: ${p.id})
   Status: ${p.status}
   Bedrooms: ${p.bedrooms}, Bathrooms: ${p.bathrooms}
   Rent: $${p.rentAmount}/month
   Deposit: $${p.depositAmount}
-  Landlord: ${p.landlordName} (${p.landlordPhone})
   Square Footage: ${p.squareFootage} sq ft
 `).join('')}
 
@@ -264,10 +263,11 @@ Always be professional, accurate, and solution-oriented. Leverage the complete s
     } catch (error) {
       console.error('AI Assistant error:', error);
       
-      // Check if it's a quota/billing issue
-      if (error.status === 429 || error.code === 'insufficient_quota') {
+      // Check if it's a quota/billing issue and return generic message
+      const errorObj = error as any;
+      if (errorObj?.status === 429 || errorObj?.code === 'insufficient_quota' || errorObj?.code === 'rate_limit_exceeded') {
         return {
-          response: "The AI assistant is currently unavailable due to API quota limits. Please check your OpenAI billing and usage limits, or try again later. In the meantime, you can navigate through the system using the menu options.",
+          response: "AI temporarily not available due to high demand. Please try again later. In the meantime, you can navigate through the system using the menu options.",
           confidence: 0.0,
           suggestions: [
             "Check Dashboard for system overview",

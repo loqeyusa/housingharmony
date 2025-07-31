@@ -99,9 +99,22 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
       setMessages(prev => [...prev, newMessage]);
     },
     onError: (error) => {
+      // Check if it's a rate limit or API quota error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      let description = "AI temporarily not available. Please try again later.";
+      
+      // Only show generic message for any AI-related errors
+      if (errorMessage.includes('rate limit') || 
+          errorMessage.includes('quota') || 
+          errorMessage.includes('OpenAI') ||
+          errorMessage.includes('insufficient_quota') ||
+          errorMessage.includes('rate_limit_exceeded')) {
+        description = "AI temporarily not available due to high demand. Please try again later.";
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
+        title: "AI Assistant",
+        description,
         variant: "destructive",
       });
     }
@@ -132,8 +145,8 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to recognize speech. Please try again.",
+        title: "Speech Recognition",
+        description: "Speech recognition temporarily not available. Please try again.",
         variant: "destructive",
       });
     }
@@ -196,8 +209,8 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to generate speech. Please try again.",
+        title: "Text-to-Speech",
+        description: "Voice synthesis temporarily not available. Please try again.",
         variant: "destructive",
       });
     }

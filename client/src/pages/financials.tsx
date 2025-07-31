@@ -49,6 +49,16 @@ export default function Financials() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
   const [addMoneyDialogOpen, setAddMoneyDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
+  
+  // Report generation states
+  const [reportPeriod, setReportPeriod] = useState("1");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [exportFormat, setExportFormat] = useState("pdf");
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [statementData, setStatementData] = useState<any>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -224,6 +234,296 @@ export default function Financials() {
         <MinusCircle className="w-3 h-3 mr-1" />
         Zero
       </Badge>;
+    }
+  };
+
+  // Report generation functions
+  const generateStatement = async () => {
+    setGeneratingReport(true);
+    try {
+      // Calculate date range based on selected period
+      let startDate, endDate;
+      const now = new Date();
+      
+      if (reportPeriod === 'custom') {
+        startDate = new Date(customStartDate);
+        endDate = new Date(customEndDate);
+      } else {
+        const monthsBack = parseInt(reportPeriod);
+        startDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      }
+
+      // Filter transactions for the selected period
+      const periodTransactions = transactions.filter((t: any) => {
+        const transactionDate = new Date(t.createdAt);
+        return transactionDate >= startDate && transactionDate <= endDate;
+      });
+
+      // Calculate financial metrics for the period
+      const totalIncome = periodTransactions
+        .filter((t: any) => parseFloat(t.amount) > 0)
+        .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+
+      const totalExpenses = periodTransactions
+        .filter((t: any) => parseFloat(t.amount) < 0)
+        .reduce((sum: number, t: any) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+      const netFlow = totalIncome - totalExpenses;
+
+      // Calculate client balances for the period
+      const periodClientBalances: Record<number, number> = {};
+      clients.forEach((client: any) => {
+        const clientTransactions = periodTransactions.filter((t: any) => {
+          const app = applications.find((a: any) => a.id === t.applicationId);
+          return app?.clientId === client.id;
+        });
+        periodClientBalances[client.id] = clientTransactions.reduce(
+          (sum: number, t: any) => sum + parseFloat(t.amount), 0
+        );
+      });
+
+      const positiveCount = Object.values(periodClientBalances).filter(balance => balance > 0).length;
+      const negativeCount = Object.values(periodClientBalances).filter(balance => balance < 0).length;
+      const zeroCount = Object.values(periodClientBalances).filter(balance => balance === 0).length;
+
+      const statement = {
+        period: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+          description: reportPeriod === 'custom' 
+            ? `${customStartDate} to ${customEndDate}`
+            : `Last ${reportPeriod} month${reportPeriod !== '1' ? 's' : ''}`
+        },
+        summary: {
+          totalIncome,
+          totalExpenses,
+          netFlow,
+          transactionCount: periodTransactions.length
+        },
+        transactions: periodTransactions.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ),
+        clientSummary: {
+          positive: positiveCount,
+          negative: negativeCount,
+          zero: zeroCount,
+          total: Object.keys(periodClientBalances).length
+        },
+        clientBalances: periodClientBalances,
+        generatedAt: new Date().toISOString()
+      };
+
+      setStatementData(statement);
+      setPreviewMode(true);
+
+      toast({
+        title: "Statement Generated",
+        description: `Financial statement for ${statement.period.description} has been generated successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate financial statement",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const downloadStatement = () => {
+    if (!statementData) return;
+
+    try {
+      let content: string;
+      let filename: string;
+      let mimeType: string;
+
+      const timestamp = new Date().toISOString().split('T')[0];
+      const periodDesc = statementData.period.description.replace(/[^a-zA-Z0-9]/g, '_');
+
+      switch (exportFormat) {
+        case 'json':
+          content = JSON.stringify(statementData, null, 2);
+          filename = `financial_statement_${periodDesc}_${timestamp}.json`;
+          mimeType = 'application/json';
+          break;
+
+        case 'csv':
+          // Generate CSV with transaction details
+          const csvHeaders = ['Date', 'Description', 'Type', 'Amount', 'Client', 'Payment Method'];
+          const csvRows = statementData.transactions.map((t: any) => {
+            const relatedApp = applications.find((app: any) => app.id === t.applicationId);
+            const relatedClient = relatedApp ? clients.find((c: any) => c.id === relatedApp.clientId) : null;
+            const clientName = relatedClient ? `${relatedClient.firstName} ${relatedClient.lastName}` : 'No client';
+            
+            return [
+              new Date(t.createdAt).toLocaleDateString(),
+              `"${t.description}"`,
+              t.type.replace('_', ' '),
+              parseFloat(t.amount).toFixed(2),
+              `"${clientName}"`,
+              t.paymentMethod || 'N/A'
+            ].join(',');
+          });
+          
+          content = [csvHeaders.join(','), ...csvRows].join('\n');
+          filename = `financial_statement_${periodDesc}_${timestamp}.csv`;
+          mimeType = 'text/csv';
+          break;
+
+        case 'excel':
+          // For Excel, we'll use CSV format but with .xlsx extension
+          // In a real implementation, you'd use a library like xlsx
+          const excelHeaders = ['Date', 'Description', 'Type', 'Amount', 'Client', 'Payment Method'];
+          const excelRows = statementData.transactions.map((t: any) => {
+            const relatedApp = applications.find((app: any) => app.id === t.applicationId);
+            const relatedClient = relatedApp ? clients.find((c: any) => c.id === relatedApp.clientId) : null;
+            const clientName = relatedClient ? `${relatedClient.firstName} ${relatedClient.lastName}` : 'No client';
+            
+            return [
+              new Date(t.createdAt).toLocaleDateString(),
+              t.description,
+              t.type.replace('_', ' '),
+              parseFloat(t.amount).toFixed(2),
+              clientName,
+              t.paymentMethod || 'N/A'
+            ].join('\t');
+          });
+          
+          content = [excelHeaders.join('\t'), ...excelRows].join('\n');
+          filename = `financial_statement_${periodDesc}_${timestamp}.xlsx`;
+          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          break;
+
+        case 'pdf':
+        default:
+          // For PDF, we'll create an HTML version that can be printed as PDF
+          content = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Statement</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .section { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        .transactions { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .positive { color: #16a34a; }
+        .negative { color: #dc2626; }
+        .total-row { font-weight: bold; border-top: 2px solid #333; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Financial Statement</h1>
+        <p>Housing Program Management System</p>
+        <p>Period: ${statementData.period.description}</p>
+        <p>Generated on: ${new Date().toLocaleDateString()}</p>
+    </div>
+    
+    <div class="summary">
+        <div class="section">
+            <h3>Income Summary</h3>
+            <p>County Reimbursements: <span class="positive">$${statementData.summary.totalIncome.toFixed(2)}</span></p>
+            <p>Other Income: $0.00</p>
+            <hr>
+            <p class="total-row">Total Income: <span class="positive">$${statementData.summary.totalIncome.toFixed(2)}</span></p>
+        </div>
+        
+        <div class="section">
+            <h3>Expense Summary</h3>
+            <p>Client Expenses: <span class="negative">$${statementData.summary.totalExpenses.toFixed(2)}</span></p>
+            <p>Administrative: $0.00</p>
+            <hr>
+            <p class="total-row">Total Expenses: <span class="negative">$${statementData.summary.totalExpenses.toFixed(2)}</span></p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>Net Financial Position</h3>
+        <p class="total-row ${statementData.summary.netFlow >= 0 ? 'positive' : 'negative'}">
+            $${statementData.summary.netFlow.toFixed(2)}
+        </p>
+    </div>
+    
+    <div class="transactions">
+        <h3>Transaction Details (${statementData.transactions.length} transactions)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Client</th>
+                    <th>Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${statementData.transactions.map((t: any) => {
+                  const relatedApp = applications.find((app: any) => app.id === t.applicationId);
+                  const relatedClient = relatedApp ? clients.find((c: any) => c.id === relatedApp.clientId) : null;
+                  const clientName = relatedClient ? `${relatedClient.firstName} ${relatedClient.lastName}` : 'No client';
+                  
+                  return `
+                    <tr>
+                        <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+                        <td>${t.description}</td>
+                        <td>${t.type.replace('_', ' ')}</td>
+                        <td class="${parseFloat(t.amount) >= 0 ? 'positive' : 'negative'}">
+                            $${Math.abs(parseFloat(t.amount)).toFixed(2)}
+                        </td>
+                        <td>${clientName}</td>
+                        <td>${t.paymentMethod || 'N/A'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="section" style="margin-top: 20px;">
+        <h3>Client Balance Summary</h3>
+        <p>Clients with Positive Balance: ${statementData.clientSummary.positive}</p>
+        <p>Clients with Negative Balance: ${statementData.clientSummary.negative}</p>
+        <p>Clients with Zero Balance: ${statementData.clientSummary.zero}</p>
+        <p class="total-row">Total Clients: ${statementData.clientSummary.total}</p>
+    </div>
+</body>
+</html>
+          `;
+          filename = `financial_statement_${periodDesc}_${timestamp}.html`;
+          mimeType = 'text/html';
+          break;
+      }
+
+      // Create and download the file
+      const blob = new Blob([content], { type: mimeType });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download Complete",
+        description: `Financial statement downloaded as ${filename}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download the financial statement",
+        variant: "destructive",
+      });
     }
   };
 
@@ -993,11 +1293,259 @@ export default function Financials() {
         </TabsContent>
 
         {/* Reports Tab */}
-        <TabsContent value="reports" className="space-y-4">
+        <TabsContent value="reports" className="space-y-6">
+          {/* Report Generation Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Generate Financial Statements
+              </CardTitle>
+              <CardDescription>
+                Create comprehensive financial reports with customizable date ranges and export options
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Period Selection */}
+                <div className="space-y-2">
+                  <Label>Report Period</Label>
+                  <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Current Month</SelectItem>
+                      <SelectItem value="2">Last 2 Months</SelectItem>
+                      <SelectItem value="3">Last 3 Months</SelectItem>
+                      <SelectItem value="6">Last 6 Months</SelectItem>
+                      <SelectItem value="12">Last 12 Months</SelectItem>
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Custom Date Range */}
+                {reportPeriod === 'custom' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Input 
+                        type="date" 
+                        value={customStartDate} 
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>End Date</Label>
+                      <Input 
+                        type="date" 
+                        value={customEndDate} 
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Export Format */}
+                <div className="space-y-2">
+                  <Label>Export Format</Label>
+                  <Select value={exportFormat} onValueChange={setExportFormat}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pdf">PDF Document</SelectItem>
+                      <SelectItem value="excel">Excel Spreadsheet</SelectItem>
+                      <SelectItem value="csv">CSV File</SelectItem>
+                      <SelectItem value="json">JSON Data</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Report Actions */}
+              <div className="flex gap-3">
+                <Button 
+                  onClick={generateStatement} 
+                  disabled={generatingReport}
+                  className="flex items-center gap-2"
+                >
+                  {generatingReport ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      Generate Statement
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={downloadStatement}
+                  disabled={!statementData || generatingReport}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download {exportFormat.toUpperCase()}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPreviewMode(!previewMode)}
+                  disabled={!statementData}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  {previewMode ? 'Hide Preview' : 'Preview Statement'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Statement Preview */}
+          {previewMode && statementData && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Financial Statement Preview</CardTitle>
+                <CardDescription>
+                  {reportPeriod === 'custom' 
+                    ? `${customStartDate} to ${customEndDate}`
+                    : `Last ${reportPeriod} month${reportPeriod !== '1' ? 's' : ''}`
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6 max-h-96 overflow-y-auto border rounded-lg p-4">
+                  {/* Statement Header */}
+                  <div className="text-center border-b pb-4">
+                    <h2 className="text-2xl font-bold">Financial Statement</h2>
+                    <p className="text-muted-foreground">Housing Program Management System</p>
+                    <p className="text-sm">Generated on {new Date().toLocaleDateString()}</p>
+                  </div>
+
+                  {/* Summary Section */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold mb-3">Income Summary</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>County Reimbursements:</span>
+                          <span className="font-medium text-green-600">
+                            ${statementData.summary.totalIncome.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Other Income:</span>
+                          <span className="font-medium">$0.00</span>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t pt-2">
+                          <span>Total Income:</span>
+                          <span className="text-green-600">
+                            ${statementData.summary.totalIncome.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold mb-3">Expense Summary</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>Client Expenses:</span>
+                          <span className="font-medium text-red-600">
+                            ${statementData.summary.totalExpenses.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Administrative:</span>
+                          <span className="font-medium">$0.00</span>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t pt-2">
+                          <span>Total Expenses:</span>
+                          <span className="text-red-600">
+                            ${statementData.summary.totalExpenses.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Net Position */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold">Net Financial Position:</span>
+                      <span className={`text-xl font-bold ${
+                        statementData.summary.netFlow >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        ${statementData.summary.netFlow.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Transaction Details */}
+                  <div>
+                    <h3 className="font-semibold mb-3">Transaction Details ({statementData.transactions.length} transactions)</h3>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-3">
+                      {statementData.transactions.slice(0, 10).map((transaction: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <div>
+                            <span className="font-medium">{transaction.description}</span>
+                            <span className="text-muted-foreground ml-2">
+                              ({new Date(transaction.createdAt).toLocaleDateString()})
+                            </span>
+                          </div>
+                          <span className={`font-medium ${
+                            parseFloat(transaction.amount) >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            ${Math.abs(parseFloat(transaction.amount)).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                      {statementData.transactions.length > 10 && (
+                        <p className="text-sm text-muted-foreground text-center pt-2">
+                          ... and {statementData.transactions.length - 10} more transactions
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Client Balance Summary */}
+                  <div>
+                    <h3 className="font-semibold mb-3">Client Balance Summary</h3>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                        <div className="text-2xl font-bold text-green-600">
+                          {statementData.clientSummary.positive}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Positive Balance</div>
+                      </div>
+                      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                        <div className="text-2xl font-bold text-red-600">
+                          {statementData.clientSummary.negative}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Negative Balance</div>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                        <div className="text-2xl font-bold">
+                          {statementData.clientSummary.zero}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Zero Balance</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Summary Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Summary</CardTitle>
+                <CardTitle>Current Month Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">

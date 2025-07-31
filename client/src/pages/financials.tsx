@@ -83,20 +83,24 @@ export default function Financials() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: transactions = [] } = useQuery({
+  const { data: transactions = [] } = useQuery<any[]>({
     queryKey: ["/api/transactions"],
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [] } = useQuery<any[]>({
     queryKey: ["/api/clients"],
   });
 
-  const { data: applications = [] } = useQuery({
+  const { data: applications = [] } = useQuery<any[]>({
     queryKey: ["/api/applications"],
   });
 
-  const { data: recurringBillInstances = [] } = useQuery({
+  const { data: recurringBillInstances = [] } = useQuery<any[]>({
     queryKey: ["/api/recurring-bill-instances"],
+  });
+
+  const { data: recurringBills = [] } = useQuery<any[]>({
+    queryKey: ["/api/recurring-bills"],
   });
 
   const form = useForm<AddMoneyFormData>({
@@ -116,87 +120,65 @@ export default function Financials() {
     },
   });
 
-  // Mock data for overdue payments - in real app this would come from API
-  const overdueVendorPayments = [
-    {
-      id: 1,
-      vendor: "Midwest Healthcare Services",
-      amount: 1250.00,
-      description: "Medical supplies and equipment",
-      dueDate: "2025-07-25",
-      daysPastDue: 6,
-      invoiceNumber: "INV-2025-001",
-      priority: "high"
-    },
-    {
-      id: 2,
-      vendor: "Community Housing Partners",
-      amount: 1800.00,
-      description: "Facility maintenance and repairs",
-      dueDate: "2025-07-28", 
-      daysPastDue: 3,
-      invoiceNumber: "INV-2025-002",
-      priority: "medium"
-    },
-    {
-      id: 3,
-      vendor: "Metro Transportation Co",
-      amount: 1200.00,
-      description: "Client transportation services",
-      dueDate: "2025-07-30",
-      daysPastDue: 1,
-      invoiceNumber: "INV-2025-003", 
-      priority: "low"
-    }
-  ];
+  // Process real overdue vendor payments from transactions
+  const overdueVendorPayments = useMemo(() => {
+    const today = new Date();
+    return transactions
+      .filter((t: any) => t.type === 'vendor_payment' && t.description)
+      .map((t: any) => {
+        // Parse vendor info from description field
+        const parts = t.description.split(' - ');
+        const vendor = parts[0] || 'Unknown Vendor';
+        const description = parts.slice(1).join(' - ');
+        
+        // Extract due date from description or use created date
+        const dueDateMatch = t.description.match(/Due:\s*(\d{4}-\d{2}-\d{2})/);
+        const dueDate = dueDateMatch ? new Date(dueDateMatch[1]) : new Date(t.created_at);
+        const daysPastDue = Math.max(0, Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)));
+        
+        return {
+          id: t.id,
+          vendor,
+          amount: parseFloat(t.amount),
+          description,
+          dueDate: dueDate.toISOString().split('T')[0],
+          daysPastDue,
+          invoiceNumber: t.confirmation_number || `INV-${t.id}`,
+          priority: daysPastDue > 5 ? 'high' : daysPastDue > 2 ? 'medium' : 'low'
+        };
+      })
+      .filter((p: any) => p.daysPastDue > 0) // Only show overdue
+      .sort((a: any, b: any) => b.daysPastDue - a.daysPastDue);
+  }, [transactions]);
 
-  const rentPaymentsDue = [
-    {
-      id: 1,
-      landlord: "Johnson Property Management",
-      property: "Sunset Apartments - Unit 4B",
-      client: "Maria Rodriguez",
-      amount: 1350.00,
-      dueDate: "2025-07-31",
-      leaseId: "LS-2025-001"
-    },
-    {
-      id: 2,
-      landlord: "Davidson Real Estate",
-      property: "Oak Street Townhomes - Unit 12",
-      client: "James Wilson",
-      amount: 1400.00,
-      dueDate: "2025-07-31",
-      leaseId: "LS-2025-002"
-    },
-    {
-      id: 3,
-      landlord: "Metro Housing LLC",
-      property: "Pine Ridge Complex - Unit 7A",
-      client: "Sarah Chen",
-      amount: 1250.00,
-      dueDate: "2025-07-31",
-      leaseId: "LS-2025-003"
-    },
-    {
-      id: 4,
-      landlord: "Northside Properties",
-      property: "Maple Court - Unit 3C",
-      client: "Robert Taylor",
-      amount: 1150.00,
-      dueDate: "2025-07-31",
-      leaseId: "LS-2025-004"
-    },
-    {
-      id: 5,
-      landlord: "Heritage Housing Group",
-      property: "Elmwood Residence - Unit 8",
-      client: "Lisa Johnson",
-      amount: 1600.00,
-      dueDate: "2025-07-31",
-      leaseId: "LS-2025-005"
-    }
-  ];
+  // Process real rent payments due today from bill instances
+  const rentPaymentsDue = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return recurringBillInstances
+      .filter((instance: any) => 
+        instance.status === 'pending' && 
+        instance.dueDate <= today
+      )
+      .map((instance: any) => {
+        const client = clients.find((c: any) => c.id === instance.clientId);
+        const clientName = client ? `${client.firstName} ${client.lastName}` : 'Unknown Client';
+        
+        // Get landlord info from recurring bills
+        const recurringBill = recurringBills.find((rb: any) => rb.id === instance.recurringBillId);
+        const landlord = recurringBill?.landlordName || 'Property Management';
+        const property = `${recurringBill?.description || 'Property'} - ${clientName}`;
+        
+        return {
+          id: instance.id,
+          property,
+          landlord,
+          client: clientName,
+          amount: parseFloat(instance.amount),
+          dueDate: instance.dueDate,
+          leaseId: `RBI-${instance.id}`
+        };
+      });
+  }, [recurringBillInstances, clients, recurringBills]);
 
   const addMoneyMutation = useMutation({
     mutationFn: (data: AddMoneyFormData) =>
@@ -846,7 +828,7 @@ export default function Financials() {
                       </Badge>
                     </div>
                     <div className="text-sm text-orange-600">
-                      ${overdueVendorPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} in overdue vendor payments require immediate attention
+                      ${overdueVendorPayments.reduce((sum: number, p: any) => sum + p.amount, 0).toFixed(2)} in overdue vendor payments require immediate attention
                     </div>
                   </div>
 
@@ -865,7 +847,7 @@ export default function Financials() {
                       </Badge>
                     </div>
                     <div className="text-sm text-blue-600">
-                      ${rentPaymentsDue.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} in rent payments due to landlords today
+                      ${rentPaymentsDue.reduce((sum: number, p: any) => sum + p.amount, 0).toFixed(2)} in rent payments due to landlords today
                     </div>
                   </div>
                 </div>
@@ -1964,7 +1946,7 @@ export default function Financials() {
               Overdue Vendor Payments Details
             </DialogTitle>
             <DialogDescription>
-              {overdueVendorPayments.length} payments totaling ${overdueVendorPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} require immediate attention
+              {overdueVendorPayments.length} payments totaling ${overdueVendorPayments.reduce((sum: number, p: any) => sum + p.amount, 0).toFixed(2)} require immediate attention
             </DialogDescription>
           </DialogHeader>
           
@@ -1982,7 +1964,7 @@ export default function Financials() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {overdueVendorPayments.map((payment) => (
+                {overdueVendorPayments.map((payment: any) => (
                   <TableRow key={payment.id}>
                     <TableCell>
                       <div>
@@ -2055,7 +2037,7 @@ export default function Financials() {
               Rent Payments Due Today
             </DialogTitle>
             <DialogDescription>
-              {rentPaymentsDue.length} rent payments totaling ${rentPaymentsDue.reduce((sum, p) => sum + p.amount, 0).toFixed(2)} due to landlords today
+              {rentPaymentsDue.length} rent payments totaling ${rentPaymentsDue.reduce((sum: number, p: any) => sum + p.amount, 0).toFixed(2)} due to landlords today
             </DialogDescription>
           </DialogHeader>
           
@@ -2073,7 +2055,7 @@ export default function Financials() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rentPaymentsDue.map((payment) => (
+                {rentPaymentsDue.map((payment: any) => (
                   <TableRow key={payment.id}>
                     <TableCell>
                       <div className="font-medium">{payment.property}</div>

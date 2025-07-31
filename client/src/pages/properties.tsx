@@ -3,28 +3,62 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, MapPin, User, Phone, Mail, Bed, Bath, Square } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Search, Plus, MapPin, User, Phone, Mail, Bed, Bath, Square, Building2, Home, Users } from "lucide-react";
 import { useState } from "react";
 import PropertyForm from "@/components/property-form";
-import type { Property } from "@shared/schema";
+import BuildingForm from "@/components/building-form";
+import type { Property, Building } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function Properties() {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
+  const [showBuildingForm, setShowBuildingForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("units");
   const { user } = useAuth();
 
-  const { data: properties = [], isLoading } = useQuery<Property[]>({
+  const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({
     queryKey: ["/api/properties"],
     enabled: !!user,
-    refetchInterval: 20000, // Refresh every 20 seconds for real-time updates
+    refetchInterval: 20000,
   });
 
-  const filteredProperties = properties.filter(property =>
-    property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.landlordName.toLowerCase().includes(searchTerm.toLowerCase())
+  const { data: buildings = [], isLoading: buildingsLoading } = useQuery<Building[]>({
+    queryKey: ["/api/buildings"],
+    enabled: !!user,
+    refetchInterval: 20000,
+  });
+
+  const isLoading = propertiesLoading || buildingsLoading;
+
+  // Group properties by building
+  const propertiesByBuilding = properties.reduce((acc, property) => {
+    const buildingId = property.buildingId;
+    if (!acc[buildingId]) {
+      acc[buildingId] = [];
+    }
+    acc[buildingId].push(property);
+    return acc;
+  }, {} as Record<number, Property[]>);
+
+  const filteredBuildings = buildings.filter(building =>
+    building.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    building.landlordName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (building.name && building.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const filteredProperties = properties.filter(property => {
+    const building = buildings.find(b => b.id === property.buildingId);
+    if (!building) return false;
+    
+    return building.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           building.landlordName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (building.name && building.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+           property.unitNumber.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {

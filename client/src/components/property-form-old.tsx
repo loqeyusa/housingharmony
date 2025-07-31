@@ -1,18 +1,37 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { insertPropertySchema, type InsertProperty, type Building } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Plus, X, Building2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { insertPropertySchema, type InsertProperty, type Building } from "@shared/schema";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { X, Plus, Building2 } from "lucide-react";
 import BuildingForm from "./building-form";
 
 interface PropertyFormProps {
@@ -21,12 +40,13 @@ interface PropertyFormProps {
 }
 
 export default function PropertyForm({ onClose, onSuccess }: PropertyFormProps) {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showBuildingForm, setShowBuildingForm] = useState(false);
-  const [newAmenity, setNewAmenity] = useState("");
-  const [newUtility, setNewUtility] = useState("");
   const [unitAmenities, setUnitAmenities] = useState<string[]>([]);
   const [utilities, setUtilities] = useState<string[]>([]);
+  const [newAmenity, setNewAmenity] = useState("");
+  const [newUtility, setNewUtility] = useState("");
 
   const { data: buildings = [] } = useQuery<Building[]>({
     queryKey: ["/api/buildings"],
@@ -38,36 +58,42 @@ export default function PropertyForm({ onClose, onSuccess }: PropertyFormProps) 
       buildingId: 0,
       unitNumber: "",
       floor: null,
+      rentAmount: "0",
+      depositAmount: "0",
       bedrooms: 1,
       bathrooms: 1,
       squareFootage: null,
-      rentAmount: "",
-      depositAmount: "",
-      status: "available",
+      unitAmenities: [],
       hasBalcony: false,
       hasPatio: false,
       hasWasherDryer: false,
       petFriendly: false,
-      unitAmenities: [],
       utilities: [],
+      status: "available",
       notes: "",
     },
   });
 
   const createPropertyMutation = useMutation({
-    mutationFn: (data: InsertProperty) => {
-      return apiRequest("/api/properties", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+    mutationFn: async (data: InsertProperty) => {
+      return apiRequest("/api/properties", "POST", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      toast({
+        title: "Success",
+        description: "Unit added successfully!",
+      });
       onSuccess?.();
       onClose();
     },
-    onError: (error) => {
-      console.error("Failed to create property:", error);
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add unit. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -462,5 +488,143 @@ export default function PropertyForm({ onClose, onSuccess }: PropertyFormProps) 
         </DialogContent>
       </Dialog>
     </>
+  );
+} 
+                            step="0.01"
+                            placeholder="0.00" 
+                            className="pl-8"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="depositAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Security Deposit</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 text-slate-500">$</span>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            placeholder="0.00" 
+                            className="pl-8"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="bedrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bedrooms</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          {...field} 
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bathrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bathrooms</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          {...field} 
+                          onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="squareFootage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Square Footage</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="Optional"
+                          {...field}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Property Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="occupied">Occupied</SelectItem>
+                        <SelectItem value="maintenance">Under Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200">
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createPropertyMutation.isPending}
+                className="bg-primary text-white hover:bg-primary/90"
+              >
+                {createPropertyMutation.isPending ? "Adding..." : "Add Property"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

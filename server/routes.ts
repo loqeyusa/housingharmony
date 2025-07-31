@@ -13,7 +13,7 @@ const noCacheMiddleware = (req: any, res: any, next: any) => {
   });
   next();
 };
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, insertBuildingSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -504,6 +504,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete site" });
+    }
+  });
+
+  // Buildings API
+  app.get("/api/buildings", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const buildings = await storage.getBuildings(req.session.user.companyId);
+      res.json(buildings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch buildings" });
+    }
+  });
+
+  app.get("/api/buildings/:id", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const building = await storage.getBuilding(id);
+      
+      if (!building) {
+        return res.status(404).json({ error: "Building not found" });
+      }
+      
+      // Check if building belongs to user's company
+      if (building.companyId !== req.session.user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      res.json(building);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch building" });
+    }
+  });
+
+  app.post("/api/buildings", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const result = insertBuildingSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid data", details: result.error.errors });
+      }
+      
+      // Ensure building belongs to user's company
+      const buildingData = { ...result.data, companyId: req.session.user.companyId };
+      const building = await storage.createBuilding(buildingData);
+      res.json(building);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create building" });
+    }
+  });
+
+  app.patch("/api/buildings/:id", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const result = insertBuildingSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid data", details: result.error.errors });
+      }
+      
+      // Check if building belongs to user's company
+      const existingBuilding = await storage.getBuilding(id);
+      if (!existingBuilding || existingBuilding.companyId !== req.session.user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const building = await storage.updateBuilding(id, result.data);
+      if (!building) {
+        return res.status(404).json({ error: "Building not found" });
+      }
+      res.json(building);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update building" });
+    }
+  });
+
+  app.delete("/api/buildings/:id", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // Check if building belongs to user's company
+      const existingBuilding = await storage.getBuilding(id);
+      if (!existingBuilding || existingBuilding.companyId !== req.session.user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteBuilding(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Building not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete building" });
     }
   });
 
@@ -2269,6 +2379,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Financial reports error:', error);
       res.status(500).json({ error: "Failed to generate financial report" });
+    }
+  });
+
+  // Building routes
+  app.get("/api/buildings", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const buildings = await storage.getBuildings(req.session.user.companyId);
+      res.json(buildings);
+    } catch (error) {
+      console.error("Error fetching buildings:", error);
+      res.status(500).json({ error: "Failed to fetch buildings" });
+    }
+  });
+
+  app.post("/api/buildings", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const validatedData = insertBuildingSchema.parse({
+        ...req.body,
+        companyId: req.session.user.companyId
+      });
+      
+      const building = await storage.createBuilding(validatedData);
+      res.status(201).json(building);
+    } catch (error) {
+      console.error("Error creating building:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create building" });
     }
   });
 

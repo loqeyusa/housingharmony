@@ -84,21 +84,52 @@ export const sites = pgTable("sites", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const properties = pgTable("properties", {
+// Buildings - Apartment buildings with shared landlord information
+export const buildings = pgTable("buildings", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
   siteId: integer("site_id"), // Link to site
-  unitNumber: text("unit_number"), // Unit within the site
+  name: text("name"), // Building name (e.g. "Sunset Apartments")
   address: text("address").notNull(),
   landlordName: text("landlord_name").notNull(),
   landlordPhone: text("landlord_phone").notNull(),
   landlordEmail: text("landlord_email").notNull(),
+  totalUnits: integer("total_units").default(1), // Total number of units in building
+  buildingType: text("building_type").default("single_unit"), // single_unit, apartment, townhouse, duplex
+  propertyManager: text("property_manager"), // On-site manager if different from landlord
+  propertyManagerPhone: text("property_manager_phone"),
+  amenities: text("amenities").array(), // Building amenities
+  parkingSpaces: integer("parking_spaces"),
+  notes: text("notes"),
+  status: text("status").notNull().default("active"), // active, inactive
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Properties/Units - Individual units within buildings
+export const properties = pgTable("properties", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  buildingId: integer("building_id").notNull(), // Reference to building
+  unitNumber: text("unit_number").notNull(), // Unit number (e.g. "101", "2A", "Apt 5")
+  floor: integer("floor"), // Floor number
   rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }).notNull(),
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }).notNull(),
   bedrooms: integer("bedrooms").notNull(),
   bathrooms: integer("bathrooms").notNull(),
   squareFootage: integer("square_footage"),
+  unitAmenities: text("unit_amenities").array(), // Unit-specific amenities
+  hasBalcony: boolean("has_balcony").default(false),
+  hasPatio: boolean("has_patio").default(false),
+  hasWasherDryer: boolean("has_washer_dryer").default(false),
+  petFriendly: boolean("pet_friendly").default(false),
+  utilities: text("utilities").array(), // What utilities are included
   status: text("status").notNull().default("available"), // available, occupied, maintenance, inactive
+  currentTenantId: integer("current_tenant_id"), // Link to client if occupied
+  leaseStartDate: date("lease_start_date"),
+  leaseEndDate: date("lease_end_date"),
+  lastInspection: date("last_inspection"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -610,6 +641,12 @@ export const documentAccessLog = pgTable("document_access_log", {
   accessedAt: timestamp("accessed_at").defaultNow().notNull(),
 });
 
+export const insertBuildingSchema = createInsertSchema(buildings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertSiteSchema = createInsertSchema(sites).omit({
   id: true,
   createdAt: true,
@@ -622,9 +659,11 @@ export const insertClientDocumentSchema = createInsertSchema(clientDocuments).om
   updatedAt: true,
 });
 
+export type Building = typeof buildings.$inferSelect;
 export type Site = typeof sites.$inferSelect;
 export type ClientDocument = typeof clientDocuments.$inferSelect;
 export type DocumentAccessLog = typeof documentAccessLog.$inferSelect;
+export type InsertBuilding = z.infer<typeof insertBuildingSchema>;
 export type InsertSite = z.infer<typeof insertSiteSchema>;
 export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
 

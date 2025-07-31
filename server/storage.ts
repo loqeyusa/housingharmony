@@ -16,6 +16,7 @@ import {
   recurringBills,
   recurringBillInstances,
   sites,
+  buildings,
   clientDocuments,
   documentAccessLog,
   type Client, 
@@ -54,6 +55,8 @@ import {
   type InsertRecurringBillInstance,
   type Site,
   type InsertSite,
+  type Building,
+  type InsertBuilding,
   type ClientDocument,
   type InsertClientDocument,
   type DocumentAccessLog
@@ -252,6 +255,13 @@ export interface IStorage {
   createSite(site: InsertSite): Promise<Site>;
   updateSite(id: number, site: Partial<InsertSite>): Promise<Site | undefined>;
   deleteSite(id: number): Promise<boolean>;
+
+  // Buildings operations
+  getBuildings(companyId?: number): Promise<Building[]>;
+  getBuilding(id: number): Promise<Building | undefined>;
+  createBuilding(building: InsertBuilding): Promise<Building>;
+  updateBuilding(id: number, building: Partial<InsertBuilding>): Promise<Building | undefined>;
+  deleteBuilding(id: number): Promise<boolean>;
 
   // Client Documents (HIPAA compliant)
   getClientDocuments(clientId: number): Promise<ClientDocument[]>;
@@ -1853,6 +1863,42 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
+  // Buildings Operations
+  async getBuildings(companyId?: number): Promise<Building[]> {
+    const query = db.select().from(buildings);
+    if (companyId) {
+      return await query.where(eq(buildings.companyId, companyId)).orderBy(buildings.createdAt);
+    }
+    return await query.orderBy(buildings.createdAt);
+  }
+
+  async getBuilding(id: number): Promise<Building | undefined> {
+    const [building] = await db.select().from(buildings).where(eq(buildings.id, id));
+    return building || undefined;
+  }
+
+  async createBuilding(insertBuilding: InsertBuilding): Promise<Building> {
+    const [building] = await db
+      .insert(buildings)
+      .values(insertBuilding)
+      .returning();
+    return building;
+  }
+
+  async updateBuilding(id: number, updateBuilding: Partial<InsertBuilding>): Promise<Building | undefined> {
+    const [building] = await db
+      .update(buildings)
+      .set({ ...updateBuilding, updatedAt: new Date() })
+      .where(eq(buildings.id, id))
+      .returning();
+    return building || undefined;
+  }
+
+  async deleteBuilding(id: number): Promise<boolean> {
+    const result = await db.delete(buildings).where(eq(buildings.id, id));
+    return result.rowCount > 0;
+  }
+
   // Client Documents Operations (HIPAA compliant)
   async getClientDocuments(clientId: number): Promise<ClientDocument[]> {
     return await db.select().from(clientDocuments)
@@ -1895,6 +1941,31 @@ export class DatabaseStorage implements IStorage {
       ipAddress,
       userAgent,
     });
+  }
+
+  // Building management methods
+  async getBuildings(companyId: number): Promise<Building[]> {
+    return db.select().from(buildings).where(eq(buildings.companyId, companyId));
+  }
+
+  async getBuilding(id: number): Promise<Building | null> {
+    const result = await db.select().from(buildings).where(eq(buildings.id, id)).limit(1);
+    return result[0] || null;
+  }
+
+  async createBuilding(data: InsertBuilding): Promise<Building> {
+    const result = await db.insert(buildings).values(data).returning();
+    return result[0];
+  }
+
+  async updateBuilding(id: number, data: Partial<InsertBuilding>): Promise<Building | null> {
+    const result = await db.update(buildings).set(data).where(eq(buildings.id, id)).returning();
+    return result[0] || null;
+  }
+
+  async deleteBuilding(id: number): Promise<boolean> {
+    const result = await db.delete(buildings).where(eq(buildings.id, id));
+    return result.rowCount > 0;
   }
 }
 

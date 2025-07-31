@@ -16,6 +16,7 @@ import Counties from "@/pages/counties";
 import CountyDetails from "@/pages/county-details";
 
 import Properties from "@/pages/properties";
+import Sites from "@/pages/sites";
 import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
 import PoolFund from "@/pages/pool-fund";
@@ -51,6 +52,7 @@ function AuthenticatedRouter() {
               <Route path="/county/:countyName" component={CountyDetails} />
 
               <Route path="/properties" component={Properties} />
+              <Route path="/sites" component={Sites} />
               <Route path="/applications" component={Applications} />
               <Route path="/financials" component={Financials} />
               <Route path="/pool-fund/:county" component={PoolFund} />

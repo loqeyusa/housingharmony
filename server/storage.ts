@@ -15,6 +15,9 @@ import {
   clientNotes,
   recurringBills,
   recurringBillInstances,
+  sites,
+  clientDocuments,
+  documentAccessLog,
   type Client, 
   type InsertClient,
   type Property,
@@ -48,7 +51,12 @@ import {
   type RecurringBill,
   type InsertRecurringBill,
   type RecurringBillInstance,
-  type InsertRecurringBillInstance
+  type InsertRecurringBillInstance,
+  type Site,
+  type InsertSite,
+  type ClientDocument,
+  type InsertClientDocument,
+  type DocumentAccessLog
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
@@ -238,6 +246,21 @@ export interface IStorage {
   generateMonthlyBills(year: number, month: number): Promise<RecurringBillInstance[]>;
   processClientAccountBalance(clientId: number, amount: number, description: string): Promise<void>;
   
+  // Sites operations
+  getSites(companyId?: number): Promise<Site[]>;
+  getSite(id: number): Promise<Site | undefined>;
+  createSite(site: InsertSite): Promise<Site>;
+  updateSite(id: number, site: Partial<InsertSite>): Promise<Site | undefined>;
+  deleteSite(id: number): Promise<boolean>;
+
+  // Client Documents (HIPAA compliant)
+  getClientDocuments(clientId: number): Promise<ClientDocument[]>;
+  getClientDocument(id: number): Promise<ClientDocument | undefined>;
+  createClientDocument(document: InsertClientDocument): Promise<ClientDocument>;
+  updateClientDocument(id: number, document: Partial<InsertClientDocument>): Promise<ClientDocument | undefined>;
+  deleteClientDocument(id: number): Promise<boolean>;
+  logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string, userAgent?: string): Promise<void>;
+
   // Admin operations
   clearAllData(): Promise<void>;
   getTotalUsers(): Promise<number>;
@@ -1792,6 +1815,86 @@ export class DatabaseStorage implements IStorage {
 
     // TODO: Implement actual client balance tracking if needed
     // This could involve updating a client_balances table or similar
+  }
+
+  // Sites Operations
+  async getSites(companyId?: number): Promise<Site[]> {
+    const query = db.select().from(sites);
+    if (companyId) {
+      return await query.where(eq(sites.companyId, companyId)).orderBy(sites.createdAt);
+    }
+    return await query.orderBy(sites.createdAt);
+  }
+
+  async getSite(id: number): Promise<Site | undefined> {
+    const [site] = await db.select().from(sites).where(eq(sites.id, id));
+    return site || undefined;
+  }
+
+  async createSite(insertSite: InsertSite): Promise<Site> {
+    const [site] = await db
+      .insert(sites)
+      .values(insertSite)
+      .returning();
+    return site;
+  }
+
+  async updateSite(id: number, updateSite: Partial<InsertSite>): Promise<Site | undefined> {
+    const [site] = await db
+      .update(sites)
+      .set({ ...updateSite, updatedAt: new Date() })
+      .where(eq(sites.id, id))
+      .returning();
+    return site || undefined;
+  }
+
+  async deleteSite(id: number): Promise<boolean> {
+    const result = await db.delete(sites).where(eq(sites.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Client Documents Operations (HIPAA compliant)
+  async getClientDocuments(clientId: number): Promise<ClientDocument[]> {
+    return await db.select().from(clientDocuments)
+      .where(eq(clientDocuments.clientId, clientId))
+      .orderBy(desc(clientDocuments.createdAt));
+  }
+
+  async getClientDocument(id: number): Promise<ClientDocument | undefined> {
+    const [document] = await db.select().from(clientDocuments).where(eq(clientDocuments.id, id));
+    return document || undefined;
+  }
+
+  async createClientDocument(insertDocument: InsertClientDocument): Promise<ClientDocument> {
+    const [document] = await db
+      .insert(clientDocuments)
+      .values(insertDocument)
+      .returning();
+    return document;
+  }
+
+  async updateClientDocument(id: number, updateDocument: Partial<InsertClientDocument>): Promise<ClientDocument | undefined> {
+    const [document] = await db
+      .update(clientDocuments)
+      .set({ ...updateDocument, updatedAt: new Date() })
+      .where(eq(clientDocuments.id, id))
+      .returning();
+    return document || undefined;
+  }
+
+  async deleteClientDocument(id: number): Promise<boolean> {
+    const result = await db.delete(clientDocuments).where(eq(clientDocuments.id, id));
+    return result.rowCount > 0;
+  }
+
+  async logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string, userAgent?: string): Promise<void> {
+    await db.insert(documentAccessLog).values({
+      documentId,
+      userId,
+      accessType,
+      ipAddress,
+      userAgent,
+    });
   }
 }
 

@@ -42,6 +42,7 @@ export function usePermissions() {
       { path: '/counties', permission: PERMISSIONS.VIEW_CLIENTS },
       { path: '/companies', permission: null }, // Company management for super admins
       { path: '/properties', permission: PERMISSIONS.VIEW_PROPERTIES },
+      { path: '/sites', permission: PERMISSIONS.VIEW_PROPERTIES },
       { path: '/applications', permission: PERMISSIONS.VIEW_APPLICATIONS },
       { path: '/housing-support', permission: PERMISSIONS.VIEW_HOUSING_SUPPORT },
       { path: '/vendors', permission: PERMISSIONS.VIEW_VENDORS },

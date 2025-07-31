@@ -13,7 +13,7 @@ const noCacheMiddleware = (req: any, res: any, next: any) => {
   });
   next();
 };
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -394,6 +394,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete client" });
+    }
+  });
+
+  // Sites API
+  app.get("/api/sites", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const sites = await storage.getSites(req.session.user.companyId);
+      res.json(sites);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch sites" });
+    }
+  });
+
+  app.get("/api/sites/:id", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const site = await storage.getSite(id);
+      
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      
+      // Check if site belongs to user's company
+      if (site.companyId !== req.session.user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      res.json(site);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch site" });
+    }
+  });
+
+  app.post("/api/sites", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const result = insertSiteSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid data", details: result.error.errors });
+      }
+      
+      // Ensure site belongs to user's company
+      const siteData = { ...result.data, companyId: req.session.user.companyId };
+      const site = await storage.createSite(siteData);
+      res.json(site);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create site" });
+    }
+  });
+
+  app.patch("/api/sites/:id", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const result = insertSiteSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: "Invalid data", details: result.error.errors });
+      }
+      
+      // Check if site belongs to user's company
+      const existingSite = await storage.getSite(id);
+      if (!existingSite || existingSite.companyId !== req.session.user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const site = await storage.updateSite(id, result.data);
+      if (!site) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      res.json(site);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update site" });
+    }
+  });
+
+  app.delete("/api/sites/:id", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      
+      // Check if site belongs to user's company
+      const existingSite = await storage.getSite(id);
+      if (!existingSite || existingSite.companyId !== req.session.user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteSite(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Site not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete site" });
     }
   });
 

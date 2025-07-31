@@ -155,6 +155,7 @@ The application manages five main entities:
 
 ```
 Changelog:
+- July 31, 2025. Implemented sites management system with campus categorization (HSWI, LTH, Group Housing, Other), enhanced transaction forms with payment methods (check, ACH, Melio), and active/inactive client status management with proper UI integration and backend API support
 - July 30, 2025. Enhanced Financial Management system with comprehensive vendor management, landlord payment tracking, and advanced client financial management tools including bulk operations, payment analytics, and priority action dashboards for complete finance department workflow optimization
 - July 18, 2025. Fixed critical pool fund data isolation bug where companies with no clients were seeing global pool fund data instead of $0 balance - implemented proper company-scoped filtering for pool fund entries and balance calculations
 - July 18, 2025. Added comprehensive password protection for system admin page with session-based authentication and detailed activity logging for all security events

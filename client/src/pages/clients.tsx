@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User } from "lucide-react";
+import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User, Circle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import ClientForm from "@/components/client-form";
@@ -115,9 +115,16 @@ export default function Clients() {
                       </CardTitle>
                     </div>
                   </div>
-                  <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                    {client.status}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    {client.isActive ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-gray-400" />
+                    )}
+                    <Badge variant={client.isActive ? 'default' : 'secondary'}>
+                      {client.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -207,9 +214,16 @@ export default function Clients() {
                         Registered {new Date(client.createdAt).toLocaleDateString()}
                       </div>
                     </div>
-                    <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                      {client.status}
-                    </Badge>
+                    <div className="flex items-center space-x-2">
+                      {client.isActive ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-gray-400" />
+                      )}
+                      <Badge variant={client.isActive ? 'default' : 'secondary'}>
+                        {client.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </CardContent>

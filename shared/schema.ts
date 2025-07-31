@@ -44,6 +44,7 @@ export const clients = pgTable("clients", {
   employmentStatus: text("employment_status").notNull(),
   monthlyIncome: decimal("monthly_income", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("active"), // active, inactive, pending
+  isActive: boolean("is_active").default(true), // Active/Inactive toggle
   // Housing Support specific fields
   vendorNumber: text("vendor_number"),
   site: text("site"),
@@ -68,9 +69,26 @@ export const clientNotes = pgTable("client_notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Sites - Housing sites/campuses with categorization
+export const sites = pgTable("sites", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  category: text("category").notNull(), // HSWI, LTH, Group_Housing, Other
+  description: text("description"),
+  managerId: integer("manager_id"), // User who manages this site
+  poolFundSeparate: boolean("pool_fund_separate").default(false), // Whether this site has separate pool funds
+  status: text("status").notNull().default("active"), // active, inactive
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  siteId: integer("site_id"), // Link to site
+  unitNumber: text("unit_number"), // Unit within the site
   address: text("address").notNull(),
   landlordName: text("landlord_name").notNull(),
   landlordPhone: text("landlord_phone").notNull(),
@@ -80,8 +98,9 @@ export const properties = pgTable("properties", {
   bedrooms: integer("bedrooms").notNull(),
   bathrooms: integer("bathrooms").notNull(),
   squareFootage: integer("square_footage"),
-  status: text("status").notNull().default("available"), // available, occupied, maintenance
+  status: text("status").notNull().default("available"), // available, occupied, maintenance, inactive
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const applications = pgTable("applications", {
@@ -100,11 +119,19 @@ export const applications = pgTable("applications", {
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id"),
-  type: text("type").notNull(), // rent_payment, deposit_payment, application_fee, county_reimbursement, pool_fund_deposit, pool_fund_withdrawal
+  clientId: integer("client_id"), // Direct link to client for easier querying
+  type: text("type").notNull(), // rent, utility_electric, utility_gas, utility_water, utility_internet, utility_phone, admin_fee, late_fee, county_reimbursement, pool_fund_deposit, pool_fund_withdrawal, misc
+  subType: text("sub_type"), // For utilities: electric, gas, water, sewer, trash, internet, phone, cable
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   description: text("description").notNull(),
+  paymentMethod: text("payment_method"), // check, ach, melio, cash, money_order, wire_transfer, credit_card
+  checkNumber: text("check_number"), // For check payments
+  confirmationNumber: text("confirmation_number"), // For electronic payments
+  paymentDate: date("payment_date"), // When payment was made
   month: text("month"), // YYYY-MM format for transaction month
+  notes: text("notes"), // Additional payment notes
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const poolFund = pgTable("pool_fund", {
@@ -115,6 +142,7 @@ export const poolFund = pgTable("pool_fund", {
   description: text("description").notNull(),
   clientId: integer("client_id"), // for withdrawals
   county: text("county").notNull(), // county/site designation
+  siteId: integer("site_id"), // Link to site for categorization
   month: text("month"), // YYYY-MM format for transaction month
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -548,3 +576,55 @@ export const PERMISSIONS = {
 } as const;
 
 export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+
+// Client Documents - HIPAA compliant document management
+export const clientDocuments = pgTable("client_documents", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").notNull(),
+  documentType: text("document_type").notNull(), // vendor_number, habitability_inspection, interim_assistance_agreement, psn, shelter_verification, ssi_interim_assistance_agreement, state_id, medical_id, lease, rental_agreement, referral_form
+  documentName: text("document_name").notNull(),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedBy: integer("uploaded_by").notNull(),
+  expirationDate: date("expiration_date"),
+  isRequired: boolean("is_required").default(false),
+  isVerified: boolean("is_verified").default(false),
+  verifiedBy: integer("verified_by"),
+  verifiedAt: timestamp("verified_at"),
+  notes: text("notes"),
+  hipaaAccess: json("hipaa_access"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Document Access Log - HIPAA compliance tracking
+export const documentAccessLog = pgTable("document_access_log", {
+  id: serial("id").primaryKey(),
+  documentId: integer("document_id").notNull(),
+  userId: integer("user_id").notNull(),
+  accessType: text("access_type").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  accessedAt: timestamp("accessed_at").defaultNow().notNull(),
+});
+
+export const insertSiteSchema = createInsertSchema(sites).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientDocumentSchema = createInsertSchema(clientDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Site = typeof sites.$inferSelect;
+export type ClientDocument = typeof clientDocuments.$inferSelect;
+export type DocumentAccessLog = typeof documentAccessLog.$inferSelect;
+export type InsertSite = z.infer<typeof insertSiteSchema>;
+export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
+

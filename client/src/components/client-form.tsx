@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { X } from "lucide-react";
 
 interface ClientFormProps {
@@ -53,6 +54,7 @@ export default function ClientForm({ onClose, onSuccess }: ClientFormProps) {
       employmentStatus: "",
       monthlyIncome: "0",
       status: "active",
+      isActive: true,
     },
   });
 
@@ -241,6 +243,27 @@ export default function ClientForm({ onClose, onSuccess }: ClientFormProps) {
                     </div>
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Active Status</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Enable or disable this client in the system
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

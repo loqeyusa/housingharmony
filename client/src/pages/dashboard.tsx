@@ -59,7 +59,8 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     enabled: !!user,
-    refetchInterval: 10000, // Refresh stats every 10 seconds
+    staleTime: 60000, // Data is fresh for 1 minute
+    refetchInterval: 120000, // Refresh stats every 2 minutes
   });
 
   const { data: company } = useQuery<Company>({
@@ -70,7 +71,8 @@ export default function Dashboard() {
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
     enabled: !!user,
-    refetchInterval: 15000, // Refresh clients every 15 seconds
+    staleTime: 60000, // Data is fresh for 1 minute
+    refetchInterval: 180000, // Refresh clients every 3 minutes
   });
 
   const { data: applications = [] } = useQuery<Application[]>({

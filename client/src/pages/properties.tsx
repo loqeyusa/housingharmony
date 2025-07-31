@@ -23,13 +23,11 @@ export default function Properties() {
   const { data: properties = [], isLoading: propertiesLoading } = useQuery<Property[]>({
     queryKey: ["/api/properties"],
     enabled: !!user,
-    refetchInterval: 20000,
   });
 
   const { data: buildings = [], isLoading: buildingsLoading } = useQuery<Building[]>({
     queryKey: ["/api/buildings"],
     enabled: !!user,
-    refetchInterval: 20000,
   });
 
   const isLoading = propertiesLoading || buildingsLoading;

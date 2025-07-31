@@ -50,7 +50,7 @@ export default function BuildingForm({ onClose, building }: BuildingFormProps) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: InsertBuilding) => apiRequest("/api/buildings", "POST", data),
+    mutationFn: (data: InsertBuilding) => apiRequest("POST", "/api/buildings", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buildings"] });
       toast({ title: "Building created successfully" });
@@ -63,7 +63,7 @@ export default function BuildingForm({ onClose, building }: BuildingFormProps) {
 
   const updateMutation = useMutation({
     mutationFn: (data: Partial<InsertBuilding>) => 
-      apiRequest(`/api/buildings/${building.id}`, "PATCH", data),
+      apiRequest("PATCH", `/api/buildings/${building.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/buildings"] });
       toast({ title: "Building updated successfully" });

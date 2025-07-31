@@ -98,7 +98,7 @@ export const buildings = pgTable("buildings", {
   buildingType: text("building_type").default("single_unit"), // single_unit, apartment, townhouse, duplex
   propertyManager: text("property_manager"), // On-site manager if different from landlord
   propertyManagerPhone: text("property_manager_phone"),
-  amenities: text("amenities").array(), // Building amenities
+  amenities: text("amenities").array().default([]), // Building amenities
   parkingSpaces: integer("parking_spaces"),
   notes: text("notes"),
   status: text("status").notNull().default("active"), // active, inactive
@@ -118,12 +118,12 @@ export const properties = pgTable("properties", {
   bedrooms: integer("bedrooms").notNull(),
   bathrooms: integer("bathrooms").notNull(),
   squareFootage: integer("square_footage"),
-  unitAmenities: text("unit_amenities").array(), // Unit-specific amenities
+  unitAmenities: text("unit_amenities").array().default([]), // Unit-specific amenities
   hasBalcony: boolean("has_balcony").default(false),
   hasPatio: boolean("has_patio").default(false),
   hasWasherDryer: boolean("has_washer_dryer").default(false),
   petFriendly: boolean("pet_friendly").default(false),
-  utilities: text("utilities").array(), // What utilities are included
+  utilities: text("utilities").array().default([]), // What utilities are included
   status: text("status").notNull().default("available"), // available, occupied, maintenance, inactive
   currentTenantId: integer("current_tenant_id"), // Link to client if occupied
   leaseStartDate: date("lease_start_date"),

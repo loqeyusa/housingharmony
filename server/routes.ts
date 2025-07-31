@@ -92,18 +92,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply no-cache middleware to all API routes
   app.use('/api', noCacheMiddleware);
 
+  // Authentication middleware
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.session.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    next();
+  };
+
   // Dashboard
-  app.get("/api/dashboard/stats", async (req, res) => {
+  app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
-      if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      // Filter dashboard stats by company ID for multi-tenant isolation
       const stats = await storage.getDashboardStats(user.companyId || undefined);
       res.json(stats);
     } catch (error) {
+      console.error("Dashboard stats error:", error);
       res.status(500).json({ error: "Failed to fetch dashboard stats" });
     }
   });
@@ -618,17 +622,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Properties
-  app.get("/api/properties", async (req, res) => {
+  app.get("/api/properties", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
-      if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      // Filter properties by company ID for multi-tenant isolation
       const properties = await storage.getProperties(user.companyId || undefined);
       res.json(properties);
     } catch (error) {
+      console.error("Properties fetch error:", error);
       res.status(500).json({ error: "Failed to fetch properties" });
     }
   });
@@ -832,23 +832,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transactions
-  app.get("/api/transactions", async (req, res) => {
+  app.get("/api/transactions", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
-      if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
       const { clientId } = req.query;
       if (clientId) {
         const transactions = await storage.getTransactionsByClient(parseInt(clientId as string));
         res.json(transactions);
       } else {
-        // Filter transactions by company ID for multi-tenant isolation
         const transactions = await storage.getTransactions(user.companyId || undefined);
         res.json(transactions);
       }
     } catch (error) {
+      console.error("Transactions fetch error:", error);
       res.status(500).json({ error: "Failed to fetch transactions" });
     }
   });
@@ -871,17 +867,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pool Fund
-  app.get("/api/pool-fund", async (req, res) => {
+  app.get("/api/pool-fund", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
-      if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      // Filter pool fund entries by company ID for multi-tenant isolation
       const entries = await storage.getPoolFundEntries(user.companyId || undefined);
       res.json(entries);
     } catch (error) {
+      console.error("Pool fund fetch error:", error);
       res.status(500).json({ error: "Failed to fetch pool fund entries" });
     }
   });
@@ -2383,12 +2375,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Building routes
-  app.get("/api/buildings", async (req, res) => {
+  app.get("/api/buildings", requireAuth, async (req, res) => {
     try {
-      if (!req.session.user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
       const buildings = await storage.getBuildings(req.session.user.companyId);
       res.json(buildings);
     } catch (error) {
@@ -2397,12 +2385,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/buildings", async (req, res) => {
+  app.post("/api/buildings", requireAuth, async (req, res) => {
     try {
-      if (!req.session.user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
       const validatedData = insertBuildingSchema.parse({
         ...req.body,
         companyId: req.session.user.companyId

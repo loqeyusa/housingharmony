@@ -56,13 +56,11 @@ export default function PropertyForm({ onClose, onSuccess }: PropertyFormProps) 
 
   const createPropertyMutation = useMutation({
     mutationFn: (data: InsertProperty) => {
-      return apiRequest("/api/properties", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/properties", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/buildings"] });
       onSuccess?.();
       onClose();
     },

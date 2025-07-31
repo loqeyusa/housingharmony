@@ -94,12 +94,24 @@ export default function Financials() {
         }),
       }).then(res => res.json()),
     onSuccess: () => {
+      // Invalidate all transaction-related queries to ensure the transaction history updates
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      // Also invalidate any client-specific transaction queries
+      const clientId = form.getValues("clientId");
+      if (clientId) {
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/transactions?clientId=${clientId}`] 
+        });
+      }
+      
       setAddMoneyDialogOpen(false);
       form.reset();
       toast({
-        title: "Success",
-        description: "Payment added successfully",
+        title: "Payment Added Successfully",
+        description: "County reimbursement has been recorded and will appear in transaction history.",
       });
     },
     onError: (error: any) => {
@@ -127,8 +139,14 @@ export default function Financials() {
 
     const netFlow = totalIncome - totalExpenses;
 
-    // Calculate client balances
-    const clientBalances: Record<number, { name: string; balance: number; lastPayment: string | null }> = {};
+    // Calculate client balances with detailed financial data
+    const clientBalances: Record<number, { 
+      name: string; 
+      balance: number; 
+      totalReceived: number;
+      totalSpent: number;
+      lastPayment: string | null;
+    }> = {};
     
     clients.forEach((client: any) => {
       const clientTransactions = transactions.filter((t: any) => {
@@ -137,6 +155,13 @@ export default function Financials() {
       });
 
       const balance = clientTransactions.reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+      const totalReceived = clientTransactions
+        .filter((t: any) => parseFloat(t.amount) > 0)
+        .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
+      const totalSpent = Math.abs(clientTransactions
+        .filter((t: any) => parseFloat(t.amount) < 0)
+        .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0));
+      
       const lastPayment = clientTransactions
         .filter((t: any) => parseFloat(t.amount) > 0)
         .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
@@ -144,6 +169,8 @@ export default function Financials() {
       clientBalances[client.id] = {
         name: `${client.firstName} ${client.lastName}`,
         balance,
+        totalReceived,
+        totalSpent,
         lastPayment: lastPayment ? lastPayment.createdAt : null,
       };
     });
@@ -851,40 +878,116 @@ export default function Financials() {
 
         {/* Transactions Tab */}
         <TabsContent value="transactions" className="space-y-4">
+          {/* Transaction Filters */}
+          <div className="flex gap-4 items-center mb-4">
+            <div className="flex items-center gap-2">
+              <Label>Month:</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - i);
+                    const monthValue = date.toISOString().substring(0, 7);
+                    const monthLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                    return (
+                      <SelectItem key={monthValue} value={monthValue}>
+                        {monthLabel}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button 
+              onClick={() => setAddMoneyDialogOpen(true)}
+              className="ml-auto"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Transaction
+            </Button>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Transaction History</span>
+                <Badge variant="outline">
+                  {financialMetrics.currentMonthTransactions.length} transactions
+                </Badge>
+              </CardTitle>
               <CardDescription>
                 Complete financial transaction log for {new Date(selectedMonth + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {financialMetrics.currentMonthTransactions.map((transaction: any) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>{new Date(transaction.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell>{transaction.description}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{transaction.type.replace('_', ' ')}</Badge>
-                      </TableCell>
-                      <TableCell className={`font-medium ${parseFloat(transaction.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {parseFloat(transaction.amount) >= 0 ? '+' : ''}${transaction.amount}
-                      </TableCell>
-                      <TableCell>{transaction.paymentMethod || 'N/A'}</TableCell>
+              {financialMetrics.currentMonthTransactions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No transactions found for {new Date(selectedMonth + '-01').toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</p>
+                  <Button 
+                    onClick={() => setAddMoneyDialogOpen(true)}
+                    className="mt-4"
+                    variant="outline"
+                  >
+                    Add First Transaction
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Client</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {financialMetrics.currentMonthTransactions
+                      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((transaction: any) => {
+                        const relatedApp = applications.find((app: any) => app.id === transaction.applicationId);
+                        const relatedClient = relatedApp ? clients.find((c: any) => c.id === relatedApp.clientId) : null;
+                        
+                        return (
+                          <TableRow key={transaction.id}>
+                            <TableCell>
+                              <div>
+                                <div>{new Date(transaction.createdAt).toLocaleDateString()}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(transaction.createdAt).toLocaleTimeString()}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{transaction.description}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{transaction.type.replace('_', ' ')}</Badge>
+                            </TableCell>
+                            <TableCell className={`font-medium ${parseFloat(transaction.amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {parseFloat(transaction.amount) >= 0 ? '+' : ''}${Math.abs(parseFloat(transaction.amount)).toFixed(2)}
+                            </TableCell>
+                            <TableCell>{transaction.paymentMethod || 'N/A'}</TableCell>
+                            <TableCell>
+                              {relatedClient ? (
+                                <div className="text-sm">
+                                  <div className="font-medium">{relatedClient.firstName} {relatedClient.lastName}</div>
+                                  <div className="text-muted-foreground">ID: {relatedClient.id}</div>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">No client</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

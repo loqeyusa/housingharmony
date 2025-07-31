@@ -104,6 +104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const stats = await storage.getDashboardStats(user.companyId || undefined);
       res.json(stats);
     } catch (error) {
@@ -625,6 +628,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/properties", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const properties = await storage.getProperties(user.companyId || undefined);
       res.json(properties);
     } catch (error) {
@@ -835,6 +841,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/transactions", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const { clientId } = req.query;
       if (clientId) {
         const transactions = await storage.getTransactionsByClient(parseInt(clientId as string));
@@ -870,6 +879,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pool-fund", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const entries = await storage.getPoolFundEntries(user.companyId || undefined);
       res.json(entries);
     } catch (error) {
@@ -1814,7 +1826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Login: Session saved successfully, sessionID:', req.sessionID);
         console.log('Login: Session data after save:', req.session);
         console.log('Login: User in session after save:', req.session.user);
-        res.json({ user });
+        res.json({ user: sessionUser });
       });
     } catch (error) {
       console.error("Login error:", error);

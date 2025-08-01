@@ -873,6 +873,60 @@ export class DatabaseStorage implements IStorage {
     return Array.from(summaryMap.values()).sort((a, b) => b.balance - a.balance);
   }
 
+  async getCountyPaymentVarianceReport(companyId?: number): Promise<Array<{
+    clientId: number;
+    clientName: string;
+    county: string;
+    monthlyIncome: number;
+    totalReceived: number;
+    variance: number;
+    status: 'surplus' | 'deficit' | 'exact';
+  }>> {
+    // Get all clients for the company
+    let clientsData: any[] = [];
+    if (companyId) {
+      clientsData = await db.select().from(clients).where(eq(clients.companyId, companyId));
+    } else {
+      clientsData = await db.select().from(clients);
+    }
+
+    const varianceReport = [];
+
+    for (const client of clientsData) {
+      // Get total deposits for this client
+      const poolFundEntries = await db
+        .select()
+        .from(poolFund)
+        .where(eq(poolFund.clientId, client.id));
+
+      const totalReceived = poolFundEntries
+        .filter(entry => entry.type === 'deposit')
+        .reduce((sum, entry) => sum + parseFloat(entry.amount.toString()), 0);
+
+      const monthlyIncome = parseFloat(client.monthlyIncome?.toString() || '0');
+      const variance = totalReceived - monthlyIncome;
+
+      let status: 'surplus' | 'deficit' | 'exact' = 'exact';
+      if (variance > 0.01) status = 'surplus';
+      else if (variance < -0.01) status = 'deficit';
+
+      // Only include clients with variance or payments
+      if (totalReceived > 0 || Math.abs(variance) > 0.01) {
+        varianceReport.push({
+          clientId: client.id,
+          clientName: `${client.firstName} ${client.lastName}`,
+          county: client.site || 'Unknown',
+          monthlyIncome,
+          totalReceived,
+          variance,
+          status
+        });
+      }
+    }
+
+    return varianceReport.sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+  }
+
   async getDashboardStats(companyId?: number): Promise<{
     totalClients: number;
     activeProperties: number;

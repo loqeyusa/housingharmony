@@ -513,6 +513,55 @@ export default function ClientDetails() {
                           </div>
                         </div>
                         
+                        {/* County Payment Variance */}
+                        <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+                          <div className="text-center">
+                            <p className="text-sm text-orange-700 font-medium mb-2">County Payment Status</p>
+                            <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+                              <div>
+                                <p className="text-gray-600">Expected</p>
+                                <p className="font-bold text-blue-700">
+                                  ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Received</p>
+                                <p className="font-bold text-green-700">
+                                  ${clientPoolFund.totalDeposits.toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Variance</p>
+                                <p className={`font-bold ${
+                                  (clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')) >= 0 
+                                    ? 'text-green-700' 
+                                    : 'text-red-700'
+                                }`}>
+                                  {(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')) >= 0 ? '+' : ''}
+                                  ${(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                            {(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')) < 0 && (
+                              <div className="bg-red-100 rounded p-2 border border-red-200">
+                                <p className="text-sm text-red-700 font-medium">
+                                  🚨 DEFICIT: County owes ${Math.abs(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')).toFixed(2)}
+                                </p>
+                                <p className="text-xs text-red-600 mt-1">
+                                  Contact county for missing payment
+                                </p>
+                              </div>
+                            )}
+                            {(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')) > 0 && (
+                              <div className="bg-green-100 rounded p-2 border border-green-200">
+                                <p className="text-sm text-green-700 font-medium">
+                                  ✓ SURPLUS: County sent ${(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')).toFixed(2)} extra
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
                         {/* Active Balance Calculation */}
                         <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-primary">
                           <div className="text-center">

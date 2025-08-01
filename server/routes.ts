@@ -957,6 +957,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // County Payment Variance Report
+  app.get("/api/reports/county-variance", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const varianceReport = await storage.getCountyPaymentVarianceReport(user.companyId);
+      res.json(varianceReport);
+    } catch (error) {
+      console.error('County variance report error:', error);
+      res.status(500).json({ error: "Failed to generate county variance report" });
+    }
+  });
+
   // Housing Support routes
   app.get("/api/housing-support", async (_req, res) => {
     try {

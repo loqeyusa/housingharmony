@@ -50,6 +50,7 @@ Data flows from client onboarding, property matching, application processing, fi
 - **AI Assistant**: An intelligent assistant using OpenAI GPT-4, Whisper (speech-to-text), and TTS (text-to-speech) for conversational interaction. It has access to all system data (properties, clients, applications, financials) and provides contextual intelligence and smart suggestions.
 - **Multi-tenancy**: Comprehensive company management system with business registration, KYC, and company-scoped data isolation for all core entities (clients, properties, applications, transactions, pool fund, dashboard stats).
 - **Role-Based Access Control (RBAC)**: Enterprise-level user management with granular permissions, audit logging, and hierarchical roles (Administrator, Manager, Staff).
+- **Advanced Reporting**: Flexible date range selection (current month, select month, custom date range) with comprehensive client financial reports including transactions, balances, county payment details, and print functionality.
 
 ## External Dependencies
 

@@ -264,6 +264,9 @@ export default function Reports() {
           .print-area { position: absolute; left: 0; top: 0; width: 100%; }
           .no-print { display: none !important; }
           .page-break { page-break-before: always; }
+          .print-only { display: block !important; }
+          .grid { display: block !important; }
+          .grid > * { margin-bottom: 0.5rem; }
         }
       </style>
     `;
@@ -428,41 +431,172 @@ export default function Reports() {
         })}
       </div>
 
-      {/* County Payment Variance Report */}
-      <Card className="hover:shadow-md transition-shadow">
+      {/* Detailed Client Financial Report */}
+      <Card className="hover:shadow-md transition-shadow page-break">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            County Payment Variance Analysis
+            <Users className="h-5 w-5" />
+            Client Financial Report
           </CardTitle>
-          <p className="text-sm text-gray-600">Payment deficits and surpluses by county for {periodDescription}</p>
+          <p className="text-sm text-gray-600">Complete client listing with payments, transactions, and balances for {periodDescription}</p>
         </CardHeader>
         <CardContent>
-          {filteredTransactions.length === 0 ? (
-            <p className="text-center py-6 text-gray-500">No transactions found for selected period</p>
+          {clients.length === 0 ? (
+            <p className="text-center py-6 text-gray-500">No clients found</p>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-sm font-medium text-gray-600 border-b pb-2">
-                <div>Transaction Type</div>
-                <div>Amount</div>
-                <div>Date</div>
-              </div>
-              {filteredTransactions.slice(0, 10).map((transaction) => (
-                <div key={transaction.id} className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-gray-100">
-                  <div className="capitalize">{transaction.type.replace('_', ' ')}</div>
-                  <div className={`font-medium ${parseFloat(transaction.amount.toString()) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ${parseFloat(transaction.amount.toString()).toFixed(2)}
+            <div className="space-y-6">
+              {clients.map((client) => {
+                // Get client-specific transactions for the period
+                const clientTransactions = filteredTransactions.filter(t => t.clientId === client.id);
+                const clientPoolFundEntries = filteredPoolFundEntries.filter(e => e.clientId === client.id);
+                
+                // Calculate client balance
+                const totalReceived = clientTransactions
+                  .filter(t => ['county_reimbursement', 'pool_fund_deposit'].includes(t.type))
+                  .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+                
+                const totalPaid = clientTransactions
+                  .filter(t => ['rent_payment', 'deposit_payment', 'application_fee', 'pool_fund_withdrawal'].includes(t.type))
+                  .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+                
+                const clientBalance = totalReceived - totalPaid;
+                
+                // Get pool fund balance for this client
+                const poolFundBalance = clientPoolFundEntries
+                  .reduce((sum, e) => {
+                    return e.type === 'deposit' 
+                      ? sum + parseFloat(e.amount.toString())
+                      : sum - parseFloat(e.amount.toString());
+                  }, 0);
+
+                return (
+                  <div key={client.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-semibold text-lg">{client.firstName} {client.lastName}</h3>
+                        <p className="text-sm text-gray-600">
+                          Phone: {client.phoneNumber || 'N/A'} | Email: {client.email || 'N/A'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Monthly Income: ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)} | 
+                          County: {client.site || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-lg font-bold ${clientBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          Balance: ${clientBalance.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Pool Fund: ${poolFundBalance.toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Summary */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="bg-white p-3 rounded border">
+                        <p className="text-xs text-gray-500">Total Received</p>
+                        <p className="text-lg font-semibold text-green-600">${totalReceived.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded border">
+                        <p className="text-xs text-gray-500">Total Paid</p>
+                        <p className="text-lg font-semibold text-blue-600">${totalPaid.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded border">
+                        <p className="text-xs text-gray-500">Transactions</p>
+                        <p className="text-lg font-semibold">{clientTransactions.length}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded border">
+                        <p className="text-xs text-gray-500">Pool Fund Activity</p>
+                        <p className="text-lg font-semibold">{clientPoolFundEntries.length}</p>
+                      </div>
+                    </div>
+
+                    {/* Transaction Details */}
+                    {clientTransactions.length > 0 && (
+                      <div className="bg-white rounded border">
+                        <div className="p-3 border-b bg-gray-100">
+                          <h4 className="font-medium">Transaction History</h4>
+                        </div>
+                        <div className="divide-y">
+                          {clientTransactions.slice(0, 5).map((transaction) => (
+                            <div key={transaction.id} className="p-3 grid grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="font-medium capitalize">{transaction.type.replace('_', ' ')}</p>
+                                <p className="text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              <div>
+                                <p className={`font-semibold ${parseFloat(transaction.amount.toString()) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  ${parseFloat(transaction.amount.toString()).toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">{transaction.description || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 text-xs">
+                                  Ref: {transaction.id}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                          {clientTransactions.length > 5 && (
+                            <div className="p-3 text-center text-sm text-gray-500">
+                              Showing 5 of {clientTransactions.length} transactions
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pool Fund Details for County Payments */}
+                    {clientPoolFundEntries.length > 0 && (
+                      <div className="bg-white rounded border mt-4">
+                        <div className="p-3 border-b bg-blue-50">
+                          <h4 className="font-medium">County Payment Details</h4>
+                        </div>
+                        <div className="divide-y">
+                          {clientPoolFundEntries.slice(0, 3).map((entry) => (
+                            <div key={entry.id} className="p-3 grid grid-cols-5 gap-4 text-sm">
+                              <div>
+                                <p className="font-medium capitalize">{entry.type}</p>
+                                <p className="text-gray-500">{new Date(entry.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              <div>
+                                <p className={`font-semibold ${entry.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                                  ${parseFloat(entry.amount.toString()).toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">{entry.county || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600 text-xs">{entry.description || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 text-xs">
+                                  #{entry.id}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                          {clientPoolFundEntries.length > 3 && (
+                            <div className="p-3 text-center text-sm text-gray-500">
+                              Showing 3 of {clientPoolFundEntries.length} county payments
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {clientTransactions.length === 0 && clientPoolFundEntries.length === 0 && (
+                      <div className="text-center py-6 text-gray-500 bg-white rounded border">
+                        No financial activity during selected period
+                      </div>
+                    )}
                   </div>
-                  <div className="text-gray-500">
-                    {new Date(transaction.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-              {filteredTransactions.length > 10 && (
-                <p className="text-center text-sm text-gray-500 py-2">
-                  Showing 10 of {filteredTransactions.length} transactions
-                </p>
-              )}
+                );
+              })}
             </div>
           )}
         </CardContent>

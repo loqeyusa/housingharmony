@@ -91,7 +91,7 @@ export default function ClientTransactionForm({
         ...data,
         transactionId: transaction.id,
         clientId: clientId,
-        county: client?.site || "Unknown",
+        county: (client as any)?.site || "Unknown",
       };
 
       const poolFundResponse = await apiRequest("POST", "/api/pool-fund", poolFundData);
@@ -125,7 +125,31 @@ export default function ClientTransactionForm({
   };
 
   const currentBalance = poolFundBalance?.balance || 0;
-  const currentClientBalance = clientBalance?.balance || 0;
+  
+  // Calculate client balance using monthly income minus total spent
+  const { data: transactions = [] } = useQuery<any[]>({
+    queryKey: ["/api/transactions"],
+  });
+  
+  const { data: applications = [] } = useQuery<any[]>({
+    queryKey: ["/api/applications"],
+  });
+  
+  const currentClientBalance = React.useMemo(() => {
+    if (!client || !transactions || !applications) return 0;
+    
+    const clientTransactions = transactions.filter((t: any) => {
+      const app = applications.find((a: any) => a.id === t.applicationId);
+      return app?.clientId === clientId;
+    });
+    
+    const totalSpent = Math.abs(clientTransactions
+      .filter((t: any) => parseFloat(t.amount) < 0)
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0));
+    
+    const monthlyIncome = parseFloat(client.monthlyIncome?.toString() || "0");
+    return monthlyIncome - totalSpent;
+  }, [client, transactions, applications, clientId]);
 
   return (
     <Dialog open onOpenChange={onClose}>

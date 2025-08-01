@@ -155,6 +155,7 @@ The application manages five main entities:
 
 ```
 Changelog:
+- August 1, 2025. Updated client balance calculation methodology: Client balance now always equals monthly income minus total spent, allowing negative balances when spending exceeds income before money is received. This change affects all client balance displays throughout the system including financials page, transaction forms, and client details.
 - July 31, 2025. Updated AI assistant error handling to display generic user-friendly messages ("AI temporarily not available") instead of OpenAI-specific error messages when rate limits or API quotas are exceeded, enhancing user experience and removing technical implementation details from error messages
 - July 31, 2025. Completed comprehensive system optimization: Applied authentication middleware across all protected API routes for enhanced security, optimized React Query configuration with intelligent caching (60s stale time, 5min garbage collection) to reduce server load, enhanced building and property form API integration with proper error handling, resolved database schema conflicts and TypeScript errors, improved dashboard performance with optimized refresh intervals, and fixed session authentication flow for reliable user login persistence
 - July 31, 2025. Implemented sites management system with campus categorization (HSWI, LTH, Group Housing, Other), enhanced transaction forms with payment methods (check, ACH, Melio), and active/inactive client status management with proper UI integration and backend API support

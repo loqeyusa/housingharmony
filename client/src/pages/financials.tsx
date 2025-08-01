@@ -279,13 +279,17 @@ export default function Financials() {
         return app?.clientId === client.id;
       });
 
-      const balance = clientTransactions.reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
       const totalReceived = clientTransactions
         .filter((t: any) => parseFloat(t.amount) > 0)
         .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0);
       const totalSpent = Math.abs(clientTransactions
         .filter((t: any) => parseFloat(t.amount) < 0)
         .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0));
+      
+      // Always calculate balance as monthly income minus total spent
+      // This allows going negative if spending exceeds income before money is received
+      const monthlyIncome = parseFloat(client.monthlyIncome?.toString() || "0");
+      const balance = monthlyIncome - totalSpent;
       
       const lastPayment = clientTransactions
         .filter((t: any) => parseFloat(t.amount) > 0)

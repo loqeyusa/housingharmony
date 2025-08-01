@@ -137,9 +137,8 @@ export default function ClientTransactionFormEnhanced({
     enabled: !!client,
   });
 
-  const { data: clientBalance } = useQuery({
-    queryKey: ["/api/clients", clientId, "balance"],
-    enabled: !!clientId,
+  const { data: transactions = [] } = useQuery<any[]>({
+    queryKey: ["/api/transactions"],
   });
 
   // Get client's current property and rent amount
@@ -274,7 +273,23 @@ export default function ClientTransactionFormEnhanced({
 
 
   const currentBalance = (poolFundBalance as any)?.balance || 0;
-  const currentClientBalance = (clientBalance as any)?.balance || 0;
+  
+  // Calculate client balance using monthly income minus total spent
+  const currentClientBalance = React.useMemo(() => {
+    if (!client || !transactions || !applications) return 0;
+    
+    const clientTransactions = transactions.filter((t: any) => {
+      const app = applications.find((a: any) => a.id === t.applicationId);
+      return app?.clientId === clientId;
+    });
+    
+    const totalSpent = Math.abs(clientTransactions
+      .filter((t: any) => parseFloat(t.amount) < 0)
+      .reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0));
+    
+    const monthlyIncome = parseFloat(client.monthlyIncome?.toString() || "0");
+    return monthlyIncome - totalSpent;
+  }, [client, transactions, applications, clientId]);
   const selectedCount = selectedTransactions.length;
   const totalAmount = form.getValues("transactions")
     .filter(t => t.selected)

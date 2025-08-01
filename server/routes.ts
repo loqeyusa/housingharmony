@@ -2328,13 +2328,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return app?.clientId === client.id;
         });
 
-        const balance = clientTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
         const totalReceived = clientTransactions
           .filter(t => parseFloat(t.amount) > 0)
           .reduce((sum, t) => sum + parseFloat(t.amount), 0);
         const totalSpent = clientTransactions
           .filter(t => parseFloat(t.amount) < 0)
           .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+
+        // Always calculate balance as monthly income minus total spent
+        // This allows going negative if spending exceeds income before money is received
+        const monthlyIncome = parseFloat(client.monthlyIncome?.toString() || "0");
+        const balance = monthlyIncome - totalSpent;
 
         const lastPayment = clientTransactions
           .filter(t => parseFloat(t.amount) > 0)

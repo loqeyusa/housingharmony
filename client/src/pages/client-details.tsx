@@ -487,6 +487,98 @@ export default function ClientDetails() {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Enhanced Financial Information */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Wallet className="h-5 w-5" />
+                      Financial Overview
+                    </h3>
+                    
+                    {clientPoolFund && client ? (
+                      <div className="space-y-4">
+                        {/* Monthly Income */}
+                        <div className="bg-blue-50 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-blue-700 font-medium">Monthly Income</p>
+                              <p className="text-2xl font-bold text-blue-800">
+                                ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                              </p>
+                              <p className="text-xs text-blue-600">per month</p>
+                            </div>
+                            <DollarSign className="h-8 w-8 text-blue-600" />
+                          </div>
+                        </div>
+                        
+                        {/* Financial Breakdown */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-green-50 rounded-lg p-4 text-center">
+                            <p className="text-sm text-green-700 mb-1">Received This Month</p>
+                            <p className="text-xl font-bold text-green-800">
+                              ${clientPoolFund.totalDeposits.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="bg-red-50 rounded-lg p-4 text-center">
+                            <p className="text-sm text-red-700 mb-1">Total Spent</p>
+                            <p className="text-xl font-bold text-red-800">
+                              ${clientPoolFund.totalWithdrawals.toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Active Balance Calculation */}
+                        <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-primary">
+                          <div className="text-center">
+                            <p className="text-sm text-gray-700 mb-2">Active Balance Calculation</p>
+                            <p className="text-sm text-gray-600 mb-2">
+                              ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)} - ${clientPoolFund.totalWithdrawals.toFixed(2)} = 
+                            </p>
+                            <p className={`text-3xl font-bold ${clientPoolFund.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ${clientPoolFund.balance.toFixed(2)}
+                            </p>
+                            {clientPoolFund.balance < 0 && (
+                              <div className="mt-3 p-2 bg-red-100 rounded border border-red-200">
+                                <p className="text-sm text-red-700 font-medium">
+                                  ⚠️ Spending exceeded income before money received
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Recent Financial Activity */}
+                        {clientPoolFund.recentEntries.length > 0 && (
+                          <div className="bg-white border rounded-lg p-4">
+                            <h4 className="text-sm font-semibold mb-3 text-gray-700">Recent Financial Activity</h4>
+                            <div className="space-y-2">
+                              {clientPoolFund.recentEntries.slice(0, 3).map((entry) => (
+                                <div key={entry.id} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2 last:border-b-0">
+                                  <div className="flex-1">
+                                    <p className="font-medium text-gray-900 truncate">
+                                      {entry.description}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {entry.county} • {new Date(entry.created_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <span className={`font-bold text-sm ${
+                                    entry.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    {entry.type === 'deposit' ? '+' : '-'}${entry.amount.toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 bg-gray-50 rounded-lg">
+                        <p className="text-gray-500">Loading financial data...</p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -918,89 +1010,7 @@ export default function ClientDetails() {
             </CardContent>
           </Card>
 
-          {/* Pool Fund Balance Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wallet className="h-5 w-5" />
-                Pool Fund Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {clientPoolFund && client ? (
-                <>
-                  {/* Enhanced Financial Breakdown */}
-                  <div className="space-y-3">
-                    <div className="text-center bg-gray-50 rounded-lg p-3">
-                      <p className="text-sm text-gray-600">Monthly Income</p>
-                      <p className="text-xl font-bold text-blue-600">
-                        ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}/month
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="text-center bg-green-50 rounded-lg p-3">
-                        <p className="text-gray-600">Received This Month</p>
-                        <p className="font-bold text-green-600">
-                          ${clientPoolFund.totalDeposits.toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="text-center bg-red-50 rounded-lg p-3">
-                        <p className="text-gray-600">Total Spent</p>
-                        <p className="font-bold text-red-600">
-                          ${clientPoolFund.totalWithdrawals.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-center bg-primary/10 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 mb-1">Active Balance</p>
-                      <p className="text-sm text-gray-500 mb-2">
-                        ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)} - ${clientPoolFund.totalWithdrawals.toFixed(2)} = 
-                      </p>
-                      <p className={`text-2xl font-bold ${clientPoolFund.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        ${clientPoolFund.balance.toFixed(2)}
-                      </p>
-                      {clientPoolFund.balance < 0 && (
-                        <p className="text-xs text-red-500 mt-2">
-                          ⚠️ Spending exceeded income before money received
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {clientPoolFund.recentEntries.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Recent Activity</p>
-                        {clientPoolFund.recentEntries.slice(0, 3).map((entry) => (
-                          <div key={entry.id} className="flex justify-between items-start text-xs">
-                            <div className="flex-1">
-                              <p className="font-medium truncate">
-                                {entry.description}
-                              </p>
-                              <p className="text-gray-500">
-                                {entry.county} • {new Date(entry.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <span className={`font-medium ${
-                              entry.type === 'deposit' ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {entry.type === 'deposit' ? '+' : '-'}${entry.amount.toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-4">
-                  <p className="text-gray-500">Loading pool fund data...</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
 
           <Card>
             <CardHeader>

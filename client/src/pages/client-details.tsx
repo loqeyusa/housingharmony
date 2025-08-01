@@ -99,6 +99,9 @@ export default function ClientDetails() {
   });
 
   console.log('Client data:', client, 'Loading:', isLoading, 'Error:', error);
+  console.log('Client Pool Fund data:', clientPoolFund);
+  console.log('Transactions data:', transactions);
+  console.log('Applications data:', applications);
 
   const updateClientMutation = useMutation({
     mutationFn: (data: Partial<Client>) => 
@@ -786,7 +789,7 @@ export default function ClientDetails() {
                   )}
                   
                   {/* Pool Fund Financial Data */}
-                  {clientPoolFund && (
+                  {clientPoolFund ? (
                     <div className="mt-6 space-y-4">
                       <h3 className="text-lg font-semibold flex items-center gap-2">
                         <Wallet className="h-5 w-5" />
@@ -903,6 +906,10 @@ export default function ClientDetails() {
                           </div>
                         </div>
                       )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 bg-gray-50 rounded-lg">
+                      <p className="text-gray-500">Loading financial data...</p>
                     </div>
                   )}
                 </CardContent>

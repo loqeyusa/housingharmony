@@ -469,23 +469,6 @@ export default function ClientDetails() {
                         </p>
                       )}
                     </div>
-                    <div>
-                      <Label htmlFor="monthlyIncome">Monthly Income</Label>
-                      {isEditing ? (
-                        <Input
-                          id="monthlyIncome"
-                          type="number"
-                          step="0.01"
-                          value={editedClient.monthlyIncome ?? client.monthlyIncome}
-                          onChange={(e) => handleInputChange('monthlyIncome', parseFloat(e.target.value))}
-                        />
-                      ) : (
-                        <p className="text-gray-900 font-medium flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" />
-                          ${parseFloat(client.monthlyIncome.toString()).toFixed(2)}/month
-                        </p>
-                      )}
-                    </div>
                   </div>
                   
                   {/* Enhanced Financial Information */}

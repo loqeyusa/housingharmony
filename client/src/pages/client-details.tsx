@@ -927,27 +927,45 @@ export default function ClientDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {clientPoolFund ? (
+              {clientPoolFund && client ? (
                 <>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">
-                      ${clientPoolFund.balance.toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-600">Current Balance</p>
-                  </div>
-                  <Separator />
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Total Deposits</p>
-                      <p className="font-medium text-green-600">
-                        +${clientPoolFund.totalDeposits.toFixed(2)}
+                  {/* Enhanced Financial Breakdown */}
+                  <div className="space-y-3">
+                    <div className="text-center bg-gray-50 rounded-lg p-3">
+                      <p className="text-sm text-gray-600">Monthly Income</p>
+                      <p className="text-xl font-bold text-blue-600">
+                        ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}/month
                       </p>
                     </div>
-                    <div>
-                      <p className="text-gray-600">Total Spent</p>
-                      <p className="font-medium text-red-600">
-                        -${clientPoolFund.totalWithdrawals.toFixed(2)}
+                    
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="text-center bg-green-50 rounded-lg p-3">
+                        <p className="text-gray-600">Received This Month</p>
+                        <p className="font-bold text-green-600">
+                          ${clientPoolFund.totalDeposits.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="text-center bg-red-50 rounded-lg p-3">
+                        <p className="text-gray-600">Total Spent</p>
+                        <p className="font-bold text-red-600">
+                          ${clientPoolFund.totalWithdrawals.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="text-center bg-primary/10 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">Active Balance</p>
+                      <p className="text-sm text-gray-500 mb-2">
+                        ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)} - ${clientPoolFund.totalWithdrawals.toFixed(2)} = 
                       </p>
+                      <p className={`text-2xl font-bold ${clientPoolFund.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ${clientPoolFund.balance.toFixed(2)}
+                      </p>
+                      {clientPoolFund.balance < 0 && (
+                        <p className="text-xs text-red-500 mt-2">
+                          ⚠️ Spending exceeded income before money received
+                        </p>
+                      )}
                     </div>
                   </div>
                   {clientPoolFund.recentEntries.length > 0 && (

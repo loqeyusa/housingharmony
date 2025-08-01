@@ -957,6 +957,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client Pool Fund Summary
+  app.get("/api/clients/:clientId/pool-fund", async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.clientId);
+      const poolFundData = await storage.getClientPoolFundInfo(clientId);
+      res.json(poolFundData);
+    } catch (error) {
+      console.error('Client pool fund error:', error);
+      res.status(500).json({ error: "Failed to fetch client pool fund data" });
+    }
+  });
+
   // County Payment Variance Report
   app.get("/api/reports/county-variance", async (req, res) => {
     try {

@@ -784,6 +784,127 @@ export default function ClientDetails() {
                       </div>
                     </div>
                   )}
+                  
+                  {/* Pool Fund Financial Data */}
+                  {clientPoolFund && (
+                    <div className="mt-6 space-y-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <Wallet className="h-5 w-5" />
+                        Pool Fund Overview
+                      </h3>
+                      
+                      {/* Monthly Income */}
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-blue-700 font-medium">Monthly Income</p>
+                            <p className="text-2xl font-bold text-blue-800">
+                              ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                            </p>
+                            <p className="text-xs text-blue-600">per month</p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-blue-600" />
+                        </div>
+                      </div>
+                      
+                      {/* Financial Breakdown */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-green-50 rounded-lg p-4 text-center">
+                          <p className="text-sm text-green-700 mb-1">Total Received</p>
+                          <p className="text-xl font-bold text-green-800">
+                            ${clientPoolFund.totalDeposits.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="bg-red-50 rounded-lg p-4 text-center">
+                          <p className="text-sm text-red-700 mb-1">Total Spent</p>
+                          <p className="text-xl font-bold text-red-800">
+                            ${clientPoolFund.totalWithdrawals.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* County Payment Variance */}
+                      <div className="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+                        <div className="text-center">
+                          <p className="text-sm text-orange-700 font-medium mb-2">County Payment Status</p>
+                          <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+                            <div>
+                              <p className="text-gray-600">Expected</p>
+                              <p className="font-bold text-blue-700">
+                                ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Received</p>
+                              <p className="font-bold text-green-700">
+                                ${clientPoolFund.totalDeposits.toFixed(2)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-gray-600">Variance</p>
+                              <p className={`font-bold ${(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')) >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                                ${(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                          {clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0') < 0 && (
+                            <div className="mt-3 p-2 bg-red-100 rounded border border-red-200">
+                              <p className="text-sm text-red-700 font-medium">
+                                🚨 DEFICIT: County owes ${Math.abs(clientPoolFund.totalDeposits - parseFloat(client.monthlyIncome?.toString() || '0')).toFixed(2)}
+                              </p>
+                              <p className="text-xs text-red-600 mt-1">Follow up with county for missing payment</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Active Balance Calculation */}
+                      <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-primary">
+                        <div className="text-center">
+                          <p className="text-sm text-gray-700 mb-2">Active Balance Calculation</p>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Income: ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)} - Spent: ${clientPoolFund.totalWithdrawals.toFixed(2)} = 
+                          </p>
+                          <p className={`text-3xl font-bold ${clientPoolFund.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            ${clientPoolFund.balance.toFixed(2)}
+                          </p>
+                          {clientPoolFund.balance < 0 && (
+                            <div className="mt-3 p-2 bg-red-100 rounded border border-red-200">
+                              <p className="text-sm text-red-700 font-medium">
+                                ⚠️ Spending exceeded available funds
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Recent Financial Activity */}
+                      {clientPoolFund.recentEntries.length > 0 && (
+                        <div className="bg-white border rounded-lg p-4">
+                          <h4 className="text-sm font-semibold mb-3 text-gray-700">Recent Financial Activity</h4>
+                          <div className="space-y-2">
+                            {clientPoolFund.recentEntries.slice(0, 5).map((entry) => (
+                              <div key={entry.id} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2 last:border-b-0">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900 truncate">
+                                    {entry.description}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {entry.county} • {new Date(entry.created_at).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <span className={`font-bold text-sm ${
+                                  entry.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {entry.type === 'deposit' ? '+' : '-'}${entry.amount.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

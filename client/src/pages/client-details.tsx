@@ -32,7 +32,8 @@ import {
   Home,
   ClipboardList,
   History,
-  Wallet
+  Wallet,
+  Banknote
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -42,6 +43,7 @@ import ClientTransactionForm from "@/components/client-transaction-form";
 import ClientTransactionFormEnhanced from "@/components/client-transaction-form-enhanced";
 import { ClientNotesDisplay } from "@/components/client-notes-display";
 import { ClientNotesForm } from "@/components/client-notes-form";
+import CountyPaymentForm from "@/components/county-payment-form";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function ClientDetails() {
@@ -52,6 +54,7 @@ export default function ClientDetails() {
   const [showAddDocument, setShowAddDocument] = useState(false);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [showNotesForm, setShowNotesForm] = useState(false);
+  const [showCountyPaymentForm, setShowCountyPaymentForm] = useState(false);
   const [newDocument, setNewDocument] = useState({ name: "", type: "id", file: null as File | null });
   const { toast } = useToast();
 
@@ -977,6 +980,14 @@ export default function ClientDetails() {
               <Button 
                 className="w-full justify-start" 
                 variant="outline"
+                onClick={() => setShowCountyPaymentForm(true)}
+              >
+                <Banknote className="h-4 w-4 mr-2" />
+                County Payment Received
+              </Button>
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
                 onClick={() => setShowNotesForm(true)}
               >
                 <FileText className="h-4 w-4 mr-2" />
@@ -1050,6 +1061,29 @@ export default function ClientDetails() {
             // Refresh notes data
             queryClient.invalidateQueries({ 
               queryKey: [`/api/clients/${clientId}/notes`] 
+            });
+          }}
+        />
+      )}
+
+      {/* County Payment Form Modal */}
+      {showCountyPaymentForm && client && (
+        <CountyPaymentForm
+          clientId={parseInt(clientId!)}
+          clientName={`${client.firstName} ${client.lastName}`}
+          monthlyIncome={parseFloat(client.monthlyIncome?.toString() || '0')}
+          county={client.site || ''}
+          onClose={() => setShowCountyPaymentForm(false)}
+          onSuccess={() => {
+            // Refresh all relevant data
+            queryClient.invalidateQueries({ 
+              queryKey: [`/api/clients/${clientId}/pool-fund`] 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: ["/api/pool-fund"] 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: ["/api/transactions"] 
             });
           }}
         />

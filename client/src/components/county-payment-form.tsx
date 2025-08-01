@@ -15,7 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
 const countyPaymentSchema = z.object({
-  amount: z.string().min(1, "Amount is required"),
+  amount: z.string()
+    .min(1, "Amount is required")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Please enter a valid amount greater than 0"),
   expectedAmount: z.string().min(1, "Expected amount is required"),
   county: z.string().min(1, "County is required"),
   paymentMethod: z.enum(["check", "direct_deposit", "wire_transfer"]),
@@ -151,10 +153,10 @@ export default function CountyPaymentForm({
               <Label htmlFor="expectedAmount">Expected Amount</Label>
               <Input
                 id="expectedAmount"
-                type="number"
-                step="0.01"
+                type="text"
                 {...form.register("expectedAmount")}
                 className="bg-gray-50"
+                readOnly
               />
               <p className="text-xs text-gray-500 mt-1">Monthly income</p>
             </div>
@@ -162,10 +164,19 @@ export default function CountyPaymentForm({
               <Label htmlFor="amount">Amount Received</Label>
               <Input
                 id="amount"
-                type="number"
-                step="0.01"
+                type="text"
                 placeholder="0.00"
                 {...form.register("amount")}
+                onChange={(e) => {
+                  // Allow only numbers and decimal point
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  // Ensure only one decimal point
+                  const parts = value.split('.');
+                  if (parts.length > 2) {
+                    return;
+                  }
+                  form.setValue("amount", value);
+                }}
               />
               {form.formState.errors.amount && (
                 <p className="text-xs text-red-500 mt-1">{form.formState.errors.amount.message}</p>

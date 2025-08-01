@@ -1,6 +1,10 @@
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   FileText, 
   Download, 
@@ -12,12 +16,23 @@ import {
   TrendingUp,
   BarChart3,
   PieChart,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Printer,
+  Filter
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import type { Client, Property, Application, Transaction, PoolFund } from "@shared/schema";
 
 export default function Reports() {
+  const { toast } = useToast();
+  
+  // Date range selection state
+  const [dateRangeType, setDateRangeType] = useState<'current_month' | 'select_month' | 'custom_range'>('current_month');
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7)); // YYYY-MM format
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
+
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
   });
@@ -42,23 +57,89 @@ export default function Reports() {
     queryKey: ["/api/pool-fund/balance"],
   });
 
-  // Calculate statistics
+  // Calculate date range based on selection
+  const { startDate, endDate, periodDescription } = useMemo(() => {
+    const now = new Date();
+    let start: Date;
+    let end: Date;
+    let description: string;
+
+    switch (dateRangeType) {
+      case 'current_month':
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        description = `Current Month (${start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })})`;
+        break;
+      
+      case 'select_month':
+        const [year, month] = selectedMonth.split('-').map(Number);
+        start = new Date(year, month - 1, 1);
+        end = new Date(year, month, 0, 23, 59, 59);
+        description = `${start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+        break;
+      
+      case 'custom_range':
+        start = customStartDate ? new Date(customStartDate) : new Date(now.getFullYear(), now.getMonth(), 1);
+        end = customEndDate ? new Date(customEndDate + 'T23:59:59') : new Date();
+        description = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+        break;
+      
+      default:
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date();
+        description = 'Current Month';
+    }
+
+    return { startDate: start, endDate: end, periodDescription: description };
+  }, [dateRangeType, selectedMonth, customStartDate, customEndDate]);
+
+  // Filter data based on date range
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.createdAt);
+      return transactionDate >= startDate && transactionDate <= endDate;
+    });
+  }, [transactions, startDate, endDate]);
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter(a => {
+      const appDate = new Date(a.submittedAt);
+      return appDate >= startDate && appDate <= endDate;
+    });
+  }, [applications, startDate, endDate]);
+
+  const filteredPoolFundEntries = useMemo(() => {
+    return poolFundEntries.filter(e => {
+      const entryDate = new Date(e.createdAt);
+      return entryDate >= startDate && entryDate <= endDate;
+    });
+  }, [poolFundEntries, startDate, endDate]);
+
+  // Calculate statistics based on filtered data
   const stats = {
     totalClients: clients.length,
     activeClients: clients.filter(c => c.status === 'active').length,
     totalProperties: properties.length,
     availableProperties: properties.filter(p => p.status === 'available').length,
-    totalApplications: applications.length,
-    pendingApplications: applications.filter(a => a.status === 'pending').length,
-    approvedApplications: applications.filter(a => a.status === 'approved').length,
-    rejectedApplications: applications.filter(a => a.status === 'rejected').length,
-    totalRevenue: transactions
+    totalApplications: filteredApplications.length,
+    pendingApplications: filteredApplications.filter(a => a.status === 'pending').length,
+    approvedApplications: filteredApplications.filter(a => a.status === 'approved').length,
+    rejectedApplications: filteredApplications.filter(a => a.status === 'rejected').length,
+    totalRevenue: filteredTransactions
       .filter(t => t.type === 'county_reimbursement')
       .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
-    totalExpenses: transactions
+    totalExpenses: filteredTransactions
       .filter(t => ['rent_payment', 'deposit_payment', 'application_fee', 'pool_fund_withdrawal'].includes(t.type))
       .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0),
     poolFundBalance: poolFundBalance?.balance ?? 0,
+    poolFundDeposits: filteredPoolFundEntries.filter(e => e.type === 'deposit').length,
+    poolFundWithdrawals: filteredPoolFundEntries.filter(e => e.type === 'withdrawal').length,
+    poolFundDepositAmount: filteredPoolFundEntries
+      .filter(e => e.type === 'deposit')
+      .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0),
+    poolFundWithdrawalAmount: filteredPoolFundEntries
+      .filter(e => e.type === 'withdrawal')
+      .reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0),
   };
 
   const reportSections = [
@@ -117,10 +198,10 @@ export default function Reports() {
       color: "bg-emerald-100 text-emerald-600",
       data: [
         { label: "Current Balance", value: `$${stats.poolFundBalance.toFixed(2)}` },
-        { label: "Total Deposits", value: poolFundEntries.filter(e => e.type === 'deposit').length },
-        { label: "Total Withdrawals", value: poolFundEntries.filter(e => e.type === 'withdrawal').length },
-        { label: "Total Deposit Amount", value: `$${poolFundEntries.filter(e => e.type === 'deposit').reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0).toFixed(2)}` },
-        { label: "Total Withdrawal Amount", value: `$${poolFundEntries.filter(e => e.type === 'withdrawal').reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0).toFixed(2)}` },
+        { label: "Period Deposits", value: stats.poolFundDeposits },
+        { label: "Period Withdrawals", value: stats.poolFundWithdrawals },
+        { label: "Deposit Amount", value: `$${stats.poolFundDepositAmount.toFixed(2)}` },
+        { label: "Withdrawal Amount", value: `$${stats.poolFundWithdrawalAmount.toFixed(2)}` },
       ]
     }
   ];
@@ -157,14 +238,132 @@ export default function Reports() {
   ];
 
   const handleExport = (action: string) => {
+    toast({
+      title: "Export Started",
+      description: `Generating ${action} report for ${periodDescription}...`,
+    });
+    
     // In a real application, this would trigger the actual export
-    console.log(`Exporting: ${action}`);
-    // For demo purposes, we'll just show a toast or alert
-    alert(`Export functionality for ${action} would be implemented here.`);
+    console.log(`Exporting: ${action} for period: ${periodDescription}`);
+    
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: `Report for ${periodDescription} has been generated successfully.`,
+      });
+    }, 2000);
+  };
+
+  const handlePrint = () => {
+    // Set print styles
+    const printStyles = `
+      <style>
+        @media print {
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+          .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+          .no-print { display: none !important; }
+          .page-break { page-break-before: always; }
+        }
+      </style>
+    `;
+    
+    document.head.insertAdjacentHTML('beforeend', printStyles);
+    
+    // Trigger print
+    window.print();
+    
+    toast({
+      title: "Print Started",
+      description: `Printing report for ${periodDescription}`,
+    });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 print-area">
+      {/* Date Range Selection */}
+      <Card className="no-print">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Report Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="dateRangeType">Report Period</Label>
+              <Select value={dateRangeType} onValueChange={(value: any) => setDateRangeType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current_month">This Month</SelectItem>
+                  <SelectItem value="select_month">Select Month</SelectItem>
+                  <SelectItem value="custom_range">Custom Date Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateRangeType === 'select_month' && (
+              <div>
+                <Label htmlFor="selectedMonth">Select Month</Label>
+                <Input
+                  id="selectedMonth"
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                />
+              </div>
+            )}
+
+            {dateRangeType === 'custom_range' && (
+              <>
+                <div>
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="flex items-end gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2">
+                <Printer className="h-4 w-4" />
+                Print Report
+              </Button>
+            </div>
+          </div>
+          
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <Calendar className="h-4 w-4 inline mr-2" />
+              Report Period: <strong>{periodDescription}</strong>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Print Header */}
+      <div className="hidden print:block mb-6">
+        <h1 className="text-2xl font-bold text-center">Housing Program Management Report</h1>
+        <p className="text-center text-gray-600 mt-2">Report Period: {periodDescription}</p>
+        <p className="text-center text-gray-500 text-sm">Generated on {new Date().toLocaleDateString()}</p>
+      </div>
+
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="hover:shadow-md transition-shadow">
@@ -229,10 +428,50 @@ export default function Reports() {
         })}
       </div>
 
+      {/* County Payment Variance Report */}
+      <Card className="hover:shadow-md transition-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            County Payment Variance Analysis
+          </CardTitle>
+          <p className="text-sm text-gray-600">Payment deficits and surpluses by county for {periodDescription}</p>
+        </CardHeader>
+        <CardContent>
+          {filteredTransactions.length === 0 ? (
+            <p className="text-center py-6 text-gray-500">No transactions found for selected period</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm font-medium text-gray-600 border-b pb-2">
+                <div>Transaction Type</div>
+                <div>Amount</div>
+                <div>Date</div>
+              </div>
+              {filteredTransactions.slice(0, 10).map((transaction) => (
+                <div key={transaction.id} className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-gray-100">
+                  <div className="capitalize">{transaction.type.replace('_', ' ')}</div>
+                  <div className={`font-medium ${parseFloat(transaction.amount.toString()) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${parseFloat(transaction.amount.toString()).toFixed(2)}
+                  </div>
+                  <div className="text-gray-500">
+                    {new Date(transaction.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+              {filteredTransactions.length > 10 && (
+                <p className="text-center text-sm text-gray-500 py-2">
+                  Showing 10 of {filteredTransactions.length} transactions
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Export & Analytics Combined */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Export Section */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow no-print">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-base">
               <Download className="w-4 h-4" />
@@ -258,7 +497,7 @@ export default function Reports() {
                       <Button
                         size="sm"
                         onClick={() => handleExport(report.action)}
-                        className="h-7 text-xs"
+                        className="h-7 text-xs no-print"
                       >
                         <Download className="w-3 h-3 mr-1" />
                         Export

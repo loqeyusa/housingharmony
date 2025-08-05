@@ -1,0 +1,35 @@
+Client 	Properties Management 	Rental Office Address 	Rent Amount 	County Amount 	Notes 	
+Abdi Gabaire	McCarrons Views 	195 W Larpenteur Ave #19 Roseville MN 55113	$1,045.00		Rent changed included utilities	
+Ahmed Warfa 	Mint Properties 	2100 Pillsbury Ave S Minneapolis, MN 55404.	$1,020.00		rent is 875 plus balance of 170 for may rent	
+Anthony Thomas 	The Commerce Building 	10 East 4th st. St.Paul MN 55101	$925.00			
+Antonio William Juaraz 	Vailwood Apartments 	1935 Wilson Ave St.Paul MN 55119	$900.00			
+Antoine Jones 	Vailwood Apartments 	1935 Wilson Ave St.Paul MN 55119	$210.00		rent is 850 grh is 210.00	
+Ashley Jenkins	McCarrons Views 	195 W Larpenteur Ave #19 Roseville MN 55113	$1,045.00			
+Avis Gustavson 	Vailwood Apartments 	1935 Wilson Ave St.Paul MN 55119	$900.00			
+Awad Awad 	Lion Rock  Property Management	5871 Cedar Lake Rd #103 Saint Louis Park, MN 55416	$1,185.00			
+Brian Scott 	Chang Wang	4136 Cashell GLN Eagan MN 55122	$ 775.00 			
+Calitta Jones 	McCarrons Views 	195 W Larpenteur Ave #19 Roseville MN 55113	$900.00			
+Cherie Tracy 	Straus Lofts Apartments-Sherman Associates	233 park ave south suite 201 Minneapolis MN 55415	$1,029.00			
+Damarrian Agnew 	Cedar Commons 	2376 Ariel St North St.Paul MN 55109	$1,100.00			
+Damijah Hopkins 	The Preservation Project One LLC	800 Rice St., Saint Paul MN 55117	$977.50		651-374-1157 - rent is 977.50	
+Demetrius Marble 	Sibley pork apartments 	211 seventh St E Saint Paul 55101 	$950.00		Grh Amount 1053	
+Dominic Archambault 	Anisa Mohamed 	3577 woodland ct Eagan MN 55123	$1,180.00			
+Edward Temple 	Vailwood Apartments 	1935 Wilson Ave St.Paul MN 55119	$900.00		rent is 900--- new financial worker Gaokangshing - 651-266-4064	
+Heather Reynolds 	Mint Properties	2100 Pillsbury Ave S Minneapolis, MN 55404.	$938.00		rent is 1038.00 - only pay 938(grh amount)	
+John Boney	All Area Management LLC	3328 East Lake Street Minneapolis MN 55406	$950.00			
+LeRoy Newman	Stephen Burks	691 St Anthony #1 Saint Paul MN 55104			unable to reach client 875	
+Lesli LeTexier 	The Commerce Building 	10 East 4th st. St.Paul MN 55101	$895.00			
+Michelle Vue 	The Commerce Building 	10 East 4th st. St.Paul MN 55101	$858.00			
+Mohamud Osbale 	Anisa Mohamed 	3577 woodland ct Eagan MN 55123	case inactive		1180	
+Monica Burns 	Vailwood Apartments	1935 Wilson Ave St.Paul MN 55119	$1,400.00		rent is 900 plus 500 Payment plan 	
+Montinez  Bernhardt 	The Commerce Building 	10 East 4th st. St.Paul MN 55101	$895.00			
+Quentin Perkins 	Pine Tree Park Apts	828 Hazel Street #202 Saint Paul MN 55119	$965.00		Add $77 for late fee 5/14/2025	
+Rico Bapist 	Vailwood Apartments 	1935 Wilson Ave St.Paul MN 55119	$900.00			
+Shawn Pride 	Anisa Mohamed 	3577 woodland ct Eagan MN 55123	$930.00		875 grh is 930.00 starting 01/01	
+Tara Lewis 	Vailwood Apartments	1935 Wilson Ave St.Paul MN 55119	$900.00			
+Tony Black 	Anisa Mohamed 	3577 woodland ct Eagan MN 55123	$1,180.00			
+Tony Cotton 	Stephen Burks	691 St Anthony #1 Saint Paul MN 55104	$875.00		$875.00	
+Victoria Morales 	Chang Wang	4136 Cashell GLN Eagan MN 55122	$ 775.00 			
+William Medina-Garcia	Vailwood Apartments	1935 Wilson Ave St.Paul MN 55119	$900.00			
+						
+						

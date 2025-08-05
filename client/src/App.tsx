@@ -20,6 +20,7 @@ import Sites from "@/pages/sites";
 import Applications from "@/pages/applications";
 import Financials from "@/pages/financials";
 import PoolFund from "@/pages/pool-fund";
+import PoolFundBalanceSummary from "@/pages/pool-fund-balance-summary";
 import Reports from "@/pages/reports";
 import HousingSupport from "@/pages/housing-support";
 import Vendors from "@/pages/vendors";
@@ -55,6 +56,7 @@ function AuthenticatedRouter() {
               <Route path="/sites" component={Sites} />
               <Route path="/applications" component={Applications} />
               <Route path="/financials" component={Financials} />
+              <Route path="/pool-fund/balance-summary/:county" component={PoolFundBalanceSummary} />
               <Route path="/pool-fund/:county" component={PoolFund} />
               <Route path="/pool-fund" component={PoolFund} />
               <Route path="/housing-support" component={HousingSupport} />

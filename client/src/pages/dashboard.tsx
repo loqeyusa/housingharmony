@@ -56,6 +56,11 @@ export default function Dashboard() {
     navigate(`/pool-fund/${encodeURIComponent(countyName)}`);
   };
 
+  const handleBalanceClick = (countyName: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent county card click
+    navigate(`/pool-fund/balance-summary/${encodeURIComponent(countyName)}`);
+  };
+
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     enabled: !!user,
@@ -298,12 +303,18 @@ export default function Dashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {/* Pool Fund Balance */}
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                  {/* Pool Fund Balance - Clickable for detailed breakdown */}
+                  <div 
+                    className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 cursor-pointer transition-colors"
+                    onClick={(e) => handleBalanceClick(county.county, e)}
+                  >
                     <span className="text-sm font-medium text-green-800">Pool Fund Balance</span>
-                    <span className="text-xl font-bold text-green-900">
-                      ${county.balance.toLocaleString()}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xl font-bold text-green-900">
+                        ${county.balance.toLocaleString()}
+                      </span>
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                    </div>
                   </div>
                   
                   {/* Client Statistics */}
@@ -323,7 +334,9 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="text-center pt-2">
-                    <div className="text-xs text-slate-500">Click to view detailed pool fund records</div>
+                    <div className="text-xs text-slate-500">
+                      Click county for pool fund records • Click balance for detailed breakdown
+                    </div>
                   </div>
                 </CardContent>
               </Card>

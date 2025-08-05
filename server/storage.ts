@@ -124,6 +124,15 @@ export interface IStorage {
     totalWithdrawals: number;
     entryCount: number;
   }>>;
+  getPoolFundTransactionsByCounty(county: string, companyId?: number): Promise<any[]>;
+  getPoolFundBalanceSummary(county: string, companyId?: number): Promise<{
+    county: string;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    currentBalance: number;
+    transactionCount: number;
+    lastTransaction?: string;
+  }>;
 
   // Dashboard stats
   getDashboardStats(companyId?: number): Promise<{
@@ -871,6 +880,104 @@ export class DatabaseStorage implements IStorage {
     }
 
     return Array.from(summaryMap.values()).sort((a, b) => b.balance - a.balance);
+  }
+
+  async getPoolFundTransactionsByCounty(county: string, companyId?: number): Promise<any[]> {
+    let baseQuery = db.select({
+      id: poolFund.id,
+      transactionId: poolFund.transactionId,
+      amount: poolFund.amount,
+      type: poolFund.type,
+      description: poolFund.description,
+      clientId: poolFund.clientId,
+      county: poolFund.county,
+      month: poolFund.month,
+      createdAt: poolFund.createdAt,
+      // Transaction details
+      transactionType: transactions.type,
+      paymentMethod: transactions.paymentMethod,
+      checkNumber: transactions.checkNumber,
+      paymentDate: transactions.paymentDate,
+      // Client details
+      clientName: sql<string>`CONCAT(${clients.firstName}, ' ', ${clients.lastName})`,
+      vendorNumber: clients.vendorNumber,
+    })
+    .from(poolFund)
+    .leftJoin(transactions, eq(poolFund.transactionId, transactions.id))
+    .leftJoin(clients, eq(poolFund.clientId, clients.id))
+    .where(eq(poolFund.county, county));
+
+    // Filter by company if specified
+    if (companyId) {
+      baseQuery = baseQuery.leftJoin(
+        clients as any, 
+        and(
+          eq(poolFund.clientId, clients.id),
+          eq(clients.companyId, companyId)
+        )
+      );
+    }
+
+    const results = await baseQuery.orderBy(desc(poolFund.createdAt));
+    return results;
+  }
+
+  async getPoolFundBalanceSummary(county: string, companyId?: number): Promise<{
+    county: string;
+    totalDeposits: number;
+    totalWithdrawals: number;
+    currentBalance: number;
+    transactionCount: number;
+    lastTransaction?: string;
+  }> {
+    let baseQuery = db.select().from(poolFund).where(eq(poolFund.county, county));
+
+    // Filter by company if specified - check if any transactions are linked to company clients
+    if (companyId) {
+      const companyClientIds = await db.select({ id: clients.id })
+        .from(clients)
+        .where(eq(clients.companyId, companyId));
+      
+      const clientIds = companyClientIds.map(c => c.id);
+      
+      if (clientIds.length > 0) {
+        baseQuery = baseQuery.where(
+          and(
+            eq(poolFund.county, county),
+            or(
+              eq(poolFund.clientId, null),
+              inArray(poolFund.clientId, clientIds)
+            )
+          )
+        );
+      }
+    }
+
+    const entries = await baseQuery.orderBy(desc(poolFund.createdAt));
+
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+    let currentBalance = 0;
+
+    for (const entry of entries) {
+      const amount = parseFloat(entry.amount.toString());
+      if (entry.type === 'deposit') {
+        totalDeposits += amount;
+        currentBalance += amount;
+      } else {
+        totalWithdrawals += amount;
+        currentBalance -= amount;
+      }
+    }
+
+    return {
+      county,
+      totalDeposits,
+      totalWithdrawals,
+      currentBalance,
+      transactionCount: entries.length,
+      lastTransaction: entries.length > 0 ? entries[0].createdAt.toISOString() : undefined,
+    };
   }
 
   async getCountyPaymentVarianceReport(companyId?: number): Promise<Array<{

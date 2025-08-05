@@ -900,6 +900,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pool fund transactions by county for balance summary
+  app.get("/api/pool-fund/transactions/:county", requireAuth, async (req, res) => {
+    try {
+      const county = decodeURIComponent(req.params.county);
+      const companyId = req.session.user?.companyId;
+      const transactions = await storage.getPoolFundTransactionsByCounty(county, companyId);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching pool fund transactions:", error);
+      res.status(500).json({ error: "Failed to fetch pool fund transactions" });
+    }
+  });
+
+  // Get pool fund balance summary by county
+  app.get("/api/pool-fund/summary/:county", requireAuth, async (req, res) => {
+    try {
+      const county = decodeURIComponent(req.params.county);
+      const companyId = req.session.user?.companyId;
+      const summary = await storage.getPoolFundBalanceSummary(county, companyId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching pool fund balance summary:", error);
+      res.status(500).json({ error: "Failed to fetch pool fund balance summary" });
+    }
+  });
+
   app.get("/api/pool-fund/balance", async (req, res) => {
     try {
       const user = req.session.user;
@@ -954,6 +980,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(400).json({ error: "Invalid pool fund data" });
       }
+    }
+  });
+
+  // Pool Fund Balance Summary - detailed breakdown
+  app.get("/api/pool-fund/transactions/:county", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const county = decodeURIComponent(req.params.county);
+      const transactions = await storage.getPoolFundTransactionsByCounty(county, user.companyId || undefined);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Pool fund transactions error:", error);
+      res.status(500).json({ error: "Failed to fetch pool fund transactions" });
+    }
+  });
+
+  app.get("/api/pool-fund/summary/:county", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const county = decodeURIComponent(req.params.county);
+      const summary = await storage.getPoolFundBalanceSummary(county, user.companyId || undefined);
+      res.json(summary);
+    } catch (error) {
+      console.error("Pool fund summary error:", error);
+      res.status(500).json({ error: "Failed to fetch pool fund summary" });
     }
   });
 

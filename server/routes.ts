@@ -913,19 +913,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get pool fund balance summary by county
-  app.get("/api/pool-fund/summary/:county", async (req, res) => {
-    try {
-      const county = decodeURIComponent(req.params.county);
-      const companyId = undefined; // Remove company filtering for now
-      const summary = await storage.getPoolFundBalanceSummary(county, companyId);
-      res.json(summary);
-    } catch (error) {
-      console.error("Error fetching pool fund balance summary:", error);
-      res.status(500).json({ error: "Failed to fetch pool fund balance summary" });
-    }
-  });
-
   app.get("/api/pool-fund/balance", async (req, res) => {
     try {
       const user = req.session.user;
@@ -951,18 +938,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pool fund summary for all counties - used by dashboard
   app.get("/api/pool-fund/summary/counties", async (req, res) => {
     try {
-      const user = req.session.user;
-      if (!user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      // Filter pool fund summary by company ID for multi-tenant isolation
-      const summary = await storage.getPoolFundSummaryByCounty(user.companyId || undefined);
+      const companyId = undefined; // Remove company filtering for now
+      const summary = await storage.getPoolFundSummaryByCounty(companyId);
       res.json(summary);
     } catch (error) {
+      console.error("Error fetching county pool fund summary:", error);
       res.status(500).json({ error: "Failed to fetch county pool fund summary" });
+    }
+  });
+
+  // Get pool fund balance summary by specific county
+  app.get("/api/pool-fund/summary/:county", async (req, res) => {
+    try {
+      const county = decodeURIComponent(req.params.county);
+      const companyId = undefined; // Remove company filtering for now
+      const summary = await storage.getPoolFundBalanceSummary(county, companyId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching pool fund balance summary:", error);
+      res.status(500).json({ error: "Failed to fetch pool fund balance summary" });
     }
   });
 

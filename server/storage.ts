@@ -1128,7 +1128,7 @@ export class DatabaseStorage implements IStorage {
         // Add client counts (site field contains "County Name County" format)
         clientCountsResult.rows.forEach((row: any) => {
           const siteValue = row.county; // This is like "Dakota County", "Hennepin County", etc.
-          const countyName = siteValue.replace(' County', ''); // Extract just "Dakota", "Hennepin", etc.
+          const countyName = siteValue; // Use the full county name to match pool fund data
           
           if (countyMap.has(countyName)) {
             const existing = countyMap.get(countyName);

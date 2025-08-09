@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,100 +13,135 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User, Circle, CheckCircle2, Trash2, Archive } from "lucide-react";
+import { Search, RotateCcw, Trash2, ArrowLeft, Mail, Phone, Calendar, DollarSign, Grid3X3, List } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation as useMutationHook } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import ClientForm from "@/components/client-form";
 import type { Client } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 import { useAuth } from "@/contexts/auth-context";
 
-export default function Clients() {
-  const [showClientForm, setShowClientForm] = useState(false);
+export default function DeletedClients() {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [permanentDeleteDialogOpen, setPermanentDeleteDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const { data: clients = [], isLoading } = useQuery<Client[]>({
-    queryKey: ["/api/clients"],
+  const { data: deletedClients = [], isLoading } = useQuery<Client[]>({
+    queryKey: ["/api/clients/deleted"],
     enabled: !!user,
-    refetchInterval: 15000, // Refresh every 15 seconds for real-time updates
+    refetchInterval: 15000,
   });
 
-  const deleteClientMutation = useMutation({
+  const restoreClientMutation = useMutationHook({
     mutationFn: (clientId: number) => 
-      apiRequest("POST", `/api/clients/${clientId}/delete`),
+      apiRequest("POST", `/api/clients/${clientId}/restore`),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients/deleted"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       toast({
-        title: "Client deleted",
-        description: "Client has been moved to deleted status. You can restore it from the deleted clients section.",
+        title: "Client restored",
+        description: "Client has been restored successfully.",
       });
-      setDeleteDialogOpen(false);
-      setClientToDelete(null);
+      setRestoreDialogOpen(false);
+      setSelectedClient(null);
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to delete client. Please try again.",
+        description: "Failed to restore client. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
-    e.stopPropagation(); // Prevent navigation to client details
-    setClientToDelete(client);
-    setDeleteDialogOpen(true);
+  const permanentDeleteMutation = useMutationHook({
+    mutationFn: (clientId: number) => 
+      apiRequest("DELETE", `/api/clients/${clientId}/permanent`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients/deleted"] });
+      toast({
+        title: "Client permanently deleted",
+        description: "Client has been permanently removed from the system.",
+      });
+      setPermanentDeleteDialogOpen(false);
+      setSelectedClient(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to permanently delete client. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRestoreClick = (e: React.MouseEvent, client: Client) => {
+    e.stopPropagation();
+    setSelectedClient(client);
+    setRestoreDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (clientToDelete) {
-      deleteClientMutation.mutate(clientToDelete.id);
+  const handlePermanentDeleteClick = (e: React.MouseEvent, client: Client) => {
+    e.stopPropagation();
+    setSelectedClient(client);
+    setPermanentDeleteDialogOpen(true);
+  };
+
+  const handleRestoreConfirm = () => {
+    if (selectedClient) {
+      restoreClientMutation.mutate(selectedClient.id);
     }
   };
 
-  const filteredClients = clients.filter(client =>
+  const handlePermanentDeleteConfirm = () => {
+    if (selectedClient) {
+      permanentDeleteMutation.mutate(selectedClient.id);
+    }
+  };
+
+  const filteredClients = deletedClients.filter(client =>
     `${client.firstName} ${client.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
-    return <PageLoadingSpinner message="Loading clients..." />;
+    return <PageLoadingSpinner message="Loading deleted clients..." />;
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex-1 max-w-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search clients..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/clients')}
+            className="p-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Deleted Clients</h1>
+            <p className="text-gray-600">Manage clients that have been moved to deleted status</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLocation('/clients/deleted')}
-            className="text-slate-600"
-          >
-            <Archive className="w-4 h-4 mr-2" />
-            Deleted Clients
-          </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search deleted clients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-80"
+            />
+          </div>
           <div className="flex items-center border rounded-lg p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -125,45 +160,28 @@ export default function Clients() {
               <List className="w-4 h-4" />
             </Button>
           </div>
-          <Button onClick={() => setShowClientForm(true)} className="bg-primary text-white hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Client
-          </Button>
         </div>
       </div>
 
-      {/* Clients Display */}
+      {/* Deleted Clients Display */}
       {filteredClients.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <div className="text-slate-400 text-lg mb-2">No clients found</div>
+            <div className="text-slate-400 text-lg mb-2">No deleted clients found</div>
             <p className="text-slate-600 mb-4">
-              {searchTerm ? "Try adjusting your search terms" : "Get started by adding your first client"}
+              {searchTerm ? "Try adjusting your search terms" : "No clients have been deleted yet"}
             </p>
-            {!searchTerm && (
-              <Button onClick={() => setShowClientForm(true)} className="bg-primary text-white hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Client
-              </Button>
-            )}
           </CardContent>
         </Card>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client) => (
-            <Card 
-              key={client.id} 
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => {
-                console.log('Navigating to client:', client.id);
-                setLocation(`/clients/${client.id}`);
-              }}
-            >
+            <Card key={client.id} className="border-red-200 bg-red-50/30">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-primary font-medium text-sm">
+                    <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-red-600 font-medium text-sm">
                         {client.firstName.charAt(0)}{client.lastName.charAt(0)}
                       </span>
                     </div>
@@ -173,16 +191,7 @@ export default function Clients() {
                       </CardTitle>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {client.isActive ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-gray-400" />
-                    )}
-                    <Badge variant={client.isActive ? 'default' : 'secondary'}>
-                      {client.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
+                  <Badge variant="destructive">Deleted</Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -203,23 +212,25 @@ export default function Clients() {
                     <DollarSign className="w-4 h-4" />
                     <span>${parseFloat(client.monthlyIncome.toString()).toFixed(2)}/month</span>
                   </div>
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-500 capitalize">
-                          {client.employmentStatus.replace('-', ' ')}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1">
-                          Registered {new Date(client.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
+                  <div className="pt-2 border-t">
+                    <div className="flex items-center justify-between gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={(e) => handleDeleteClick(e, client)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                        onClick={(e) => handleRestoreClick(e, client)}
+                        className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Restore
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => handlePermanentDeleteClick(e, client)}
+                        className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Permanent
                       </Button>
                     </div>
                   </div>
@@ -231,19 +242,12 @@ export default function Clients() {
       ) : (
         <div className="space-y-3">
           {filteredClients.map((client) => (
-            <Card 
-              key={client.id} 
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => {
-                console.log('Navigating to client:', client.id);
-                setLocation(`/clients/${client.id}`);
-              }}
-            >
+            <Card key={client.id} className="border-red-200 bg-red-50/30">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-primary font-medium">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-red-600 font-medium">
                         {client.firstName.charAt(0)}{client.lastName.charAt(0)}
                       </span>
                     </div>
@@ -271,33 +275,25 @@ export default function Clients() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>Client #{client.id}</span>
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Registered {new Date(client.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
+                    <Badge variant="destructive">Deleted</Badge>
                     <div className="flex items-center space-x-2">
-                      {client.isActive ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-gray-400" />
-                      )}
-                      <Badge variant={client.isActive ? 'default' : 'secondary'}>
-                        {client.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={(e) => handleDeleteClick(e, client)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                        onClick={(e) => handleRestoreClick(e, client)}
+                        className="text-green-600 border-green-200 hover:bg-green-50"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Restore
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => handlePermanentDeleteClick(e, client)}
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Permanent Delete
                       </Button>
                     </div>
                   </div>
@@ -308,29 +304,47 @@ export default function Clients() {
         </div>
       )}
 
-      {/* Client Form Modal */}
-      {showClientForm && (
-        <ClientForm onClose={() => setShowClientForm(false)} />
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Restore Confirmation Dialog */}
+      <AlertDialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Restore Client</AlertDialogTitle>
             <AlertDialogDescription>
-              This will move {clientToDelete?.firstName} {clientToDelete?.lastName} to deleted status. 
-              You can restore this client later from the deleted clients section, or permanently remove them.
+              This will restore {selectedClient?.firstName} {selectedClient?.lastName} back to active status. 
+              The client will appear in the main clients list again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700 text-white"
-              disabled={deleteClientMutation.isPending}
+              onClick={handleRestoreConfirm}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={restoreClientMutation.isPending}
             >
-              {deleteClientMutation.isPending ? "Deleting..." : "Delete Client"}
+              {restoreClientMutation.isPending ? "Restoring..." : "Restore Client"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Permanent Delete Confirmation Dialog */}
+      <AlertDialog open={permanentDeleteDialogOpen} onOpenChange={setPermanentDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {selectedClient?.firstName} {selectedClient?.lastName} from the system. 
+              This action cannot be undone. All client data, transactions, and history will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handlePermanentDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={permanentDeleteMutation.isPending}
+            >
+              {permanentDeleteMutation.isPending ? "Deleting..." : "Permanently Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

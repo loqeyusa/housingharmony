@@ -391,6 +391,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get deleted clients
+  app.get("/api/clients/deleted", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Filter deleted clients by company ID for multi-tenant isolation
+      const deletedClients = await storage.getDeletedClients(user.companyId || undefined);
+      res.json(deletedClients);
+    } catch (error) {
+      console.error("Error fetching deleted clients:", error);
+      res.status(500).json({ error: "Failed to fetch deleted clients" });
+    }
+  });
+
+  // Soft delete client (move to deleted status)
+  app.post("/api/clients/:id/delete", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const client = await storage.softDeleteClient(id);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      res.json({ message: "Client moved to deleted status", client });
+    } catch (error) {
+      console.error("Error soft deleting client:", error);
+      res.status(500).json({ error: "Failed to delete client" });
+    }
+  });
+
+  // Restore client from deleted status
+  app.post("/api/clients/:id/restore", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const client = await storage.restoreClient(id);
+      if (!client) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      res.json({ message: "Client restored successfully", client });
+    } catch (error) {
+      console.error("Error restoring client:", error);
+      res.status(500).json({ error: "Failed to restore client" });
+    }
+  });
+
+  // Permanently delete client (complete removal)
+  app.delete("/api/clients/:id/permanent", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const id = parseInt(req.params.id);
+      const success = await storage.permanentDeleteClient(id);
+      if (!success) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+      res.json({ message: "Client permanently deleted" });
+    } catch (error) {
+      console.error("Error permanently deleting client:", error);
+      res.status(500).json({ error: "Failed to permanently delete client" });
+    }
+  });
+
   app.delete("/api/clients/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

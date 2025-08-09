@@ -85,10 +85,14 @@ export interface IStorage {
 
   // Clients (company-scoped)
   getClients(companyId?: number): Promise<Client[]>;
+  getDeletedClients(companyId?: number): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: number): Promise<boolean>;
+  softDeleteClient(id: number): Promise<Client | undefined>;
+  restoreClient(id: number): Promise<Client | undefined>;
+  permanentDeleteClient(id: number): Promise<boolean>;
 
   // Properties (company-scoped)
   getProperties(companyId?: number): Promise<Property[]>;
@@ -486,12 +490,39 @@ export class DatabaseStorage implements IStorage {
       result = await db
         .select()
         .from(clients)
-        .where(eq(clients.companyId, companyId))
+        .where(and(
+          eq(clients.companyId, companyId),
+          ne(clients.status, 'deleted')
+        ))
         .orderBy(clients.createdAt);
     } else {
       result = await db
         .select()
         .from(clients)
+        .where(ne(clients.status, 'deleted'))
+        .orderBy(clients.createdAt);
+    }
+    
+    return result.reverse();
+  }
+
+  async getDeletedClients(companyId?: number): Promise<Client[]> {
+    let result: Client[];
+    
+    if (companyId) {
+      result = await db
+        .select()
+        .from(clients)
+        .where(and(
+          eq(clients.companyId, companyId),
+          eq(clients.status, 'deleted')
+        ))
+        .orderBy(clients.createdAt);
+    } else {
+      result = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.status, 'deleted'))
         .orderBy(clients.createdAt);
     }
     
@@ -521,6 +552,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteClient(id: number): Promise<boolean> {
+    const result = await db.delete(clients).where(eq(clients.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async softDeleteClient(id: number): Promise<Client | undefined> {
+    const [client] = await db
+      .update(clients)
+      .set({ status: 'deleted' })
+      .where(eq(clients.id, id))
+      .returning();
+    return client || undefined;
+  }
+
+  async restoreClient(id: number): Promise<Client | undefined> {
+    const [client] = await db
+      .update(clients)
+      .set({ status: 'active' })
+      .where(eq(clients.id, id))
+      .returning();
+    return client || undefined;
+  }
+
+  async permanentDeleteClient(id: number): Promise<boolean> {
     const result = await db.delete(clients).where(eq(clients.id, id));
     return (result.rowCount || 0) > 0;
   }

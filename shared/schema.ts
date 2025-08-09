@@ -43,7 +43,7 @@ export const clients = pgTable("clients", {
   currentAddress: text("current_address").notNull(),
   employmentStatus: text("employment_status").notNull(),
   monthlyIncome: decimal("monthly_income", { precision: 10, scale: 2 }).notNull(),
-  status: text("status").notNull().default("active"), // active, inactive, pending
+  status: text("status").notNull().default("active"), // active, inactive, pending, deleted
   isActive: boolean("is_active").default(true), // Active/Inactive toggle
   // Housing Support specific fields
   vendorNumber: text("vendor_number"),

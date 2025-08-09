@@ -33,6 +33,7 @@ import Mobile from "@/pages/mobile";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import SystemAdmin from "@/pages/system-admin";
+import DeletedClients from "@/pages/deleted-clients";
 import { PERMISSIONS } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 
@@ -48,6 +49,7 @@ function AuthenticatedRouter() {
               <Route path="/" component={Dashboard} />
               <Route path="/clients/:clientId" component={ClientDetails} />
               <Route path="/client/:clientId" component={ClientDetails} />
+              <Route path="/clients/deleted" component={DeletedClients} />
               <Route path="/clients" component={Clients} />
               <Route path="/counties" component={Counties} />
               <Route path="/county/:countyName" component={CountyDetails} />

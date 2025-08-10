@@ -13,7 +13,7 @@ const noCacheMiddleware = (req: any, res: any, next: any) => {
   });
   next();
 };
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, insertBuildingSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, insertBuildingSchema, insertRentChangeSchema, PERMISSIONS } from "@shared/schema";
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -773,6 +773,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete property" });
+    }
+  });
+
+  // Rent changes API routes
+  app.put("/api/properties/:id/rent", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const propertyId = parseInt(req.params.id);
+      const { newRentAmount, changeReason, changeDate, notes } = req.body;
+
+      if (!newRentAmount || !changeReason || !changeDate) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const updatedProperty = await storage.updatePropertyRent(
+        propertyId,
+        newRentAmount,
+        changeReason,
+        changeDate,
+        user.id,
+        notes
+      );
+
+      if (!updatedProperty) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+
+      res.json(updatedProperty);
+    } catch (error) {
+      console.error("Error updating rent:", error);
+      res.status(500).json({ error: "Failed to update rent" });
+    }
+  });
+
+  app.get("/api/properties/:id/rent-changes", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const propertyId = parseInt(req.params.id);
+      const rentChanges = await storage.getRentChangeHistory(propertyId);
+      res.json(rentChanges);
+    } catch (error) {
+      console.error("Error fetching rent changes:", error);
+      res.status(500).json({ error: "Failed to fetch rent changes" });
+    }
+  });
+
+  app.post("/api/properties/:id/rent-changes", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const propertyId = parseInt(req.params.id);
+      const rentChangeData = insertRentChangeSchema.parse({
+        ...req.body,
+        propertyId,
+        changedBy: user.id
+      });
+      
+      const rentChange = await storage.createRentChange(rentChangeData);
+      res.status(201).json(rentChange);
+    } catch (error) {
+      console.error("Error creating rent change:", error);
+      res.status(400).json({ error: "Invalid rent change data" });
     }
   });
 

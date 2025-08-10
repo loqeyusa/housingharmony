@@ -59,7 +59,10 @@ import {
   type InsertBuilding,
   type ClientDocument,
   type InsertClientDocument,
-  type DocumentAccessLog
+  type DocumentAccessLog,
+  type RentChange,
+  type InsertRentChange,
+  rentChanges
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
@@ -100,6 +103,11 @@ export interface IStorage {
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: number, property: Partial<InsertProperty>): Promise<Property | undefined>;
   deleteProperty(id: number): Promise<boolean>;
+  updatePropertyRent(propertyId: number, newRentAmount: string, changeReason: string, changeDate: string, changedBy: number, notes?: string): Promise<Property | undefined>;
+
+  // Rent Changes
+  getRentChangeHistory(propertyId: number): Promise<RentChange[]>;
+  createRentChange(rentChange: InsertRentChange): Promise<RentChange>;
 
   // Applications
   getApplications(companyId?: number): Promise<Application[]>;
@@ -623,6 +631,61 @@ export class DatabaseStorage implements IStorage {
   async deleteProperty(id: number): Promise<boolean> {
     const result = await db.delete(properties).where(eq(properties.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Update property rent with change logging
+  async updatePropertyRent(propertyId: number, newRentAmount: string, changeReason: string, changeDate: string, changedBy: number, notes?: string): Promise<Property | undefined> {
+    // Get current property to log old rent amount
+    const currentProperty = await this.getProperty(propertyId);
+    if (!currentProperty) {
+      return undefined;
+    }
+
+    // Start a transaction to update property and log rent change
+    const [updatedProperty] = await db
+      .update(properties)
+      .set({ 
+        rentAmount: newRentAmount,
+        updatedAt: new Date()
+      })
+      .where(eq(properties.id, propertyId))
+      .returning();
+
+    // Log the rent change
+    if (updatedProperty) {
+      await db.insert(rentChanges).values({
+        propertyId,
+        oldRentAmount: currentProperty.rentAmount,
+        newRentAmount,
+        changeReason,
+        changeDate,
+        changedBy,
+        notes
+      });
+    }
+
+    return updatedProperty || undefined;
+  }
+
+  // Get rent change history for a property
+  async getRentChangeHistory(propertyId: number): Promise<RentChange[]> {
+    const result = await db
+      .select()
+      .from(rentChanges)
+      .where(eq(rentChanges.propertyId, propertyId))
+      .orderBy(desc(rentChanges.createdAt));
+    
+    return result;
+  }
+
+  // Create rent change record
+  async createRentChange(insertRentChange: InsertRentChange): Promise<RentChange> {
+    const [rentChange] = await db
+      .insert(rentChanges)
+      .values(insertRentChange)
+      .returning();
+    
+    return rentChange;
   }
 
   async getApplications(companyId?: number): Promise<Application[]> {

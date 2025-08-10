@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus, MapPin, User, Phone, Mail, Bed, Bath, Square, Building2, Home, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Plus, MapPin, User, Phone, Mail, Bed, Bath, Square, Building2, Home, Users, DollarSign, History, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import PropertyForm from "@/components/property-form";
 import BuildingForm from "@/components/building-form";
+import { RentChangeDialog } from "@/components/rent-change-dialog";
+import { RentChangeHistory } from "@/components/rent-change-history";
 import type { Property, Building } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 import { useAuth } from "@/contexts/auth-context";
@@ -16,6 +19,9 @@ import { useAuth } from "@/contexts/auth-context";
 export default function Properties() {
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [showBuildingForm, setShowBuildingForm] = useState(false);
+  const [showRentChangeDialog, setShowRentChangeDialog] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [showRentHistory, setShowRentHistory] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("units");
   const { user } = useAuth();
@@ -121,7 +127,9 @@ export default function Properties() {
                   <div className="flex-1">
                     <CardTitle className="text-base flex items-start space-x-2">
                       <MapPin className="w-4 h-4 mt-0.5 text-slate-500 flex-shrink-0" />
-                      <span className="line-clamp-2">{property.address}</span>
+                      <span className="line-clamp-2">
+                        {buildings.find(b => b.id === property.buildingId)?.address || 'Address not found'}
+                      </span>
                     </CardTitle>
                   </div>
                   <Badge className={getStatusColor(property.status)}>
@@ -162,9 +170,22 @@ export default function Properties() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-600">Monthly Rent</span>
-                      <span className="font-semibold text-slate-900">
-                        ${parseFloat(property.rentAmount.toString()).toFixed(2)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900">
+                          ${parseFloat(property.rentAmount.toString()).toFixed(2)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            setSelectedProperty(property);
+                            setShowRentChangeDialog(true);
+                          }}
+                        >
+                          <TrendingUp className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-600">Security Deposit</span>
@@ -172,24 +193,44 @@ export default function Properties() {
                         ${parseFloat(property.depositAmount.toString()).toFixed(2)}
                       </span>
                     </div>
+                    <div className="flex justify-center pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setSelectedProperty(property);
+                          setShowRentHistory(true);
+                        }}
+                      >
+                        <History className="h-3 w-3 mr-1" />
+                        Rent History
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Landlord Information */}
-                  <div className="space-y-2 pt-3 border-t border-slate-100">
-                    <h4 className="text-sm font-medium text-slate-900 flex items-center space-x-1">
-                      <User className="w-4 h-4" />
-                      <span>Landlord</span>
-                    </h4>
-                    <p className="text-sm text-slate-700">{property.landlordName}</p>
-                    <div className="flex items-center space-x-2 text-xs text-slate-600">
-                      <Phone className="w-3 h-3" />
-                      <span>{property.landlordPhone}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-xs text-slate-600">
-                      <Mail className="w-3 h-3" />
-                      <span className="truncate">{property.landlordEmail}</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const building = buildings.find(b => b.id === property.buildingId);
+                    if (!building) return null;
+                    return (
+                      <div className="space-y-2 pt-3 border-t border-slate-100">
+                        <h4 className="text-sm font-medium text-slate-900 flex items-center space-x-1">
+                          <User className="w-4 h-4" />
+                          <span>Landlord</span>
+                        </h4>
+                        <p className="text-sm text-slate-700">{building.landlordName}</p>
+                        <div className="flex items-center space-x-2 text-xs text-slate-600">
+                          <Phone className="w-3 h-3" />
+                          <span>{building.landlordPhone}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-xs text-slate-600">
+                          <Mail className="w-3 h-3" />
+                          <span className="truncate">{building.landlordEmail}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="pt-2">
                     <p className="text-xs text-slate-400">
@@ -206,6 +247,36 @@ export default function Properties() {
       {/* Property Form Modal */}
       {showPropertyForm && (
         <PropertyForm onClose={() => setShowPropertyForm(false)} />
+      )}
+
+      {/* Building Form Modal */}
+      {showBuildingForm && (
+        <BuildingForm onClose={() => setShowBuildingForm(false)} />
+      )}
+
+      {/* Rent Change Dialog */}
+      <RentChangeDialog
+        property={selectedProperty}
+        open={showRentChangeDialog}
+        onOpenChange={(open) => {
+          setShowRentChangeDialog(open);
+          if (!open) setSelectedProperty(null);
+        }}
+      />
+
+      {/* Rent History Dialog */}
+      {selectedProperty && (
+        <Dialog open={showRentHistory} onOpenChange={(open) => {
+          setShowRentHistory(open);
+          if (!open) setSelectedProperty(null);
+        }}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Rent Change History - Unit {selectedProperty.unitNumber}</DialogTitle>
+            </DialogHeader>
+            <RentChangeHistory propertyId={selectedProperty.id} />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

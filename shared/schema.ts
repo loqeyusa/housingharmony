@@ -134,6 +134,19 @@ export const properties = pgTable("properties", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Rent Changes - Log all rent amount changes with history
+export const rentChanges = pgTable("rent_changes", {
+  id: serial("id").primaryKey(),
+  propertyId: integer("property_id").notNull(),
+  oldRentAmount: decimal("old_rent_amount", { precision: 10, scale: 2 }).notNull(),
+  newRentAmount: decimal("new_rent_amount", { precision: 10, scale: 2 }).notNull(),
+  changeReason: text("change_reason"), // reason for rent change
+  changeDate: date("change_date").notNull(), // effective date of rent change
+  changedBy: integer("changed_by").notNull(), // user ID who made the change
+  notes: text("notes"), // additional notes about the change
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").notNull(),
@@ -297,6 +310,11 @@ export const insertPropertySchema = createInsertSchema(properties).omit({
   createdAt: true,
 });
 
+export const insertRentChangeSchema = createInsertSchema(rentChanges).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertApplicationSchema = createInsertSchema(applications).omit({
   id: true,
   submittedAt: true,
@@ -376,6 +394,9 @@ export type InsertClient = z.infer<typeof insertClientSchema>;
 
 export type Property = typeof properties.$inferSelect;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
+
+export type RentChange = typeof rentChanges.$inferSelect;
+export type InsertRentChange = z.infer<typeof insertRentChangeSchema>;
 
 export type Application = typeof applications.$inferSelect;
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;

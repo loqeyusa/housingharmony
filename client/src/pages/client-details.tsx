@@ -55,6 +55,8 @@ export default function ClientDetails() {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [showNotesForm, setShowNotesForm] = useState(false);
   const [showCountyPaymentForm, setShowCountyPaymentForm] = useState(false);
+  const [isEditingIncome, setIsEditingIncome] = useState(false);
+  const [editedIncome, setEditedIncome] = useState("");
   const [newDocument, setNewDocument] = useState({ name: "", type: "id", file: null as File | null });
   const { toast } = useToast();
 
@@ -124,6 +126,33 @@ export default function ClientDetails() {
       });
     },
   });
+
+  const updateIncomeMutation = useMutation({
+    mutationFn: (data: { clientId: number; monthlyIncome: number }) => 
+      apiRequest("PUT", `/api/clients/${data.clientId}`, { monthlyIncome: data.monthlyIncome }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/pool-fund`] });
+      toast({
+        title: "Success",
+        description: "Monthly income updated successfully",
+      });
+      setIsEditingIncome(false);
+      setEditedIncome("");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update monthly income",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateIncomeAsync = (data: { clientId: number; monthlyIncome: number }) => {
+    updateIncomeMutation.mutate(data);
+  };
 
   const handleSave = () => {
     if (Object.keys(editedClient).length > 0) {
@@ -489,11 +518,61 @@ export default function ClientDetails() {
                         {/* Monthly Income */}
                         <div className="bg-blue-50 rounded-lg p-4">
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex-1">
                               <p className="text-sm text-blue-700 font-medium">Monthly Income</p>
-                              <p className="text-2xl font-bold text-blue-800">
-                                ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
-                              </p>
+                              {isEditingIncome ? (
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={editedIncome}
+                                    onChange={(e) => setEditedIncome(e.target.value)}
+                                    className="text-xl font-bold bg-white border-blue-300 focus:border-blue-500"
+                                    placeholder="Enter monthly income"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      if (editedIncome && client) {
+                                        updateIncomeAsync({
+                                          clientId: parseInt(clientId!),
+                                          monthlyIncome: parseFloat(editedIncome)
+                                        });
+                                      }
+                                    }}
+                                    disabled={updateIncomeMutation.isPending}
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setIsEditingIncome(false);
+                                      setEditedIncome("");
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <p className="text-2xl font-bold text-blue-800">
+                                    ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                                  </p>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0 hover:bg-blue-100"
+                                    onClick={() => {
+                                      setIsEditingIncome(true);
+                                      setEditedIncome(client.monthlyIncome?.toString() || '0');
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
                               <p className="text-xs text-blue-600">per month</p>
                             </div>
                             <DollarSign className="h-8 w-8 text-blue-600" />

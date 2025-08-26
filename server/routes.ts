@@ -18,6 +18,8 @@ import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import * as XLSX from 'xlsx';
+import { ObjectStorageService } from "./objectStorage";
 import session from 'express-session';
 import MemoryStore from 'memorystore';
 
@@ -1702,6 +1704,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Delete user error:', error);
       res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Bulk User Upload Routes
+  app.post("/api/upload/users", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error('Get upload URL error:', error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  app.post("/api/users/bulk", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Check if user has permission to create users
+      const hasPermission = await storage.hasPermission(user.id, 'MANAGE_USERS');
+      if (!hasPermission) {
+        return res.status(403).json({ error: "Insufficient permissions" });
+      }
+
+      const { fileUrl } = req.body;
+      if (!fileUrl) {
+        return res.status(400).json({ error: "File URL is required" });
+      }
+
+      // Download and parse the Excel file
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        return res.status(400).json({ error: "Failed to download Excel file" });
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+      const worksheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[worksheetName];
+
+      // Convert to JSON with header row
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      if (jsonData.length < 2) {
+        return res.status(400).json({ error: "Excel file must have at least one header row and one data row" });
+      }
+
+      // Parse the header row to map columns
+      const headers = jsonData[0] as string[];
+      const dataRows = jsonData.slice(1);
+
+      // Map column names to our schema (case insensitive)
+      const columnMap: { [key: string]: string } = {};
+      headers.forEach((header, index) => {
+        const normalizedHeader = header.toLowerCase().trim();
+        if (normalizedHeader.includes('username') || normalizedHeader === 'user') {
+          columnMap[index] = 'username';
+        } else if (normalizedHeader.includes('email')) {
+          columnMap[index] = 'email';
+        } else if (normalizedHeader.includes('first') && normalizedHeader.includes('name')) {
+          columnMap[index] = 'firstName';
+        } else if (normalizedHeader.includes('last') && normalizedHeader.includes('name')) {
+          columnMap[index] = 'lastName';
+        } else if (normalizedHeader.includes('password')) {
+          columnMap[index] = 'password';
+        } else if (normalizedHeader.includes('company')) {
+          columnMap[index] = 'companyId';
+        }
+      });
+
+      // Convert rows to user objects
+      const users = dataRows
+        .filter(row => row.length > 0 && row[0]) // Filter out empty rows
+        .map((row: any[]) => {
+          const userData: any = {
+            companyId: user.companyId, // Default to current user's company
+            isEnabled: true,
+            isSuperAdmin: false
+          };
+
+          // Map columns to user properties
+          Object.keys(columnMap).forEach(colIndex => {
+            const field = columnMap[colIndex];
+            const value = row[parseInt(colIndex)];
+            
+            if (value !== undefined && value !== null && value !== '') {
+              if (field === 'companyId') {
+                userData[field] = parseInt(value) || user.companyId;
+              } else if (field === 'password') {
+                userData.passwordHash = value; // Will be hashed in storage
+              } else {
+                userData[field] = String(value).trim();
+              }
+            }
+          });
+
+          return userData;
+        });
+
+      // Validate that we have required mappings
+      const hasRequiredColumns = users.length > 0 && users[0].username && users[0].email;
+      if (!hasRequiredColumns) {
+        return res.status(400).json({ 
+          error: "Excel file must contain columns for 'Username' and 'Email'. Other supported columns: 'First Name', 'Last Name', 'Password', 'Company'" 
+        });
+      }
+
+      // Process bulk user creation
+      const result = await storage.createBulkUsers(users, user.id);
+
+      // Create audit log for bulk import
+      await storage.createAuditLog({
+        userId: user.id,
+        action: 'BULK_CREATE_USERS',
+        resourceType: 'user',
+        details: `Bulk imported ${result.success.length} users with ${result.errors.length} errors`,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({
+        success: result.success.length,
+        errors: result.errors.length,
+        createdUsers: result.success,
+        errorDetails: result.errors
+      });
+
+    } catch (error) {
+      console.error('Bulk user creation error:', error);
+      res.status(500).json({ error: "Failed to process bulk user upload" });
     }
   });
 

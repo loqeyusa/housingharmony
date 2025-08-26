@@ -208,6 +208,14 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser, createdById?: number): Promise<User>;
+  createBulkUsers(users: any[], createdById: number): Promise<{
+    success: User[];
+    errors: Array<{
+      row: number;
+      error: string;
+      data: any;
+    }>;
+  }>;
   updateUser(id: number, user: UpdateUser): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   enableUser(id: number, enabled: boolean): Promise<boolean>;
@@ -291,6 +299,12 @@ export interface IStorage {
   updateClientDocument(id: number, document: Partial<InsertClientDocument>): Promise<ClientDocument | undefined>;
   deleteClientDocument(id: number): Promise<boolean>;
   logDocumentAccess(documentId: number, userId: number, accessType: string, ipAddress?: string, userAgent?: string): Promise<void>;
+
+  // Bulk user upload operations
+  createBulkUsers(users: InsertUser[], createdById: number): Promise<{
+    success: User[];
+    errors: Array<{ row: number; error: string; data: any }>;
+  }>;
 
   // Admin operations
   clearAllData(): Promise<void>;
@@ -1609,6 +1623,87 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async createBulkUsers(userList: any[], createdById: number): Promise<{
+    success: User[];
+    errors: Array<{
+      row: number;
+      error: string;
+      data: any;
+    }>;
+  }> {
+    const success: User[] = [];
+    const errors: Array<{ row: number; error: string; data: any }> = [];
+    const saltRounds = 12;
+
+    for (let i = 0; i < userList.length; i++) {
+      const userData = userList[i];
+      const rowNumber = i + 2; // +2 because Excel row 1 is headers, and we're 0-indexed
+
+      try {
+        // Validate required fields
+        if (!userData.username || !userData.email) {
+          errors.push({
+            row: rowNumber,
+            error: "Username and email are required",
+            data: userData
+          });
+          continue;
+        }
+
+        // Check for duplicate username
+        const existingUser = await this.getUserByUsername(userData.username);
+        if (existingUser) {
+          errors.push({
+            row: rowNumber,
+            error: `Username '${userData.username}' already exists`,
+            data: userData
+          });
+          continue;
+        }
+
+        // Check for duplicate email
+        const existingEmail = await this.getUserByEmail(userData.email);
+        if (existingEmail) {
+          errors.push({
+            row: rowNumber,
+            error: `Email '${userData.email}' already exists`,
+            data: userData
+          });
+          continue;
+        }
+
+        // Generate default password if not provided
+        const password = userData.passwordHash || 'Password123!';
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        const newUserData = {
+          username: userData.username.trim(),
+          email: userData.email.trim(),
+          passwordHash,
+          firstName: userData.firstName?.trim() || '',
+          lastName: userData.lastName?.trim() || '',
+          companyId: userData.companyId,
+          isEnabled: userData.isEnabled !== false,
+          isSuperAdmin: userData.isSuperAdmin === true,
+          createdById,
+        };
+
+        const [user] = await db.insert(users).values(newUserData).returning();
+        success.push(user);
+
+      } catch (error: any) {
+        console.error(`Error creating user at row ${rowNumber}:`, error);
+        errors.push({
+          row: rowNumber,
+          error: error.message || 'Failed to create user',
+          data: userData
+        });
+      }
+    }
+
+    return { success, errors };
+  }
+
   async updateUser(id: number, updateData: UpdateUser): Promise<User | undefined> {
     const updateFields: any = { ...updateData, updatedAt: new Date() };
     
@@ -1919,6 +2014,92 @@ export class DatabaseStorage implements IStorage {
       ne(roles.name, 'Manager'),
       ne(roles.name, 'Staff')
     ));
+  }
+
+  async createBulkUsers(userList: InsertUser[], createdById: number): Promise<{
+    success: User[];
+    errors: Array<{ row: number; error: string; data: any }>;
+  }> {
+    const success: User[] = [];
+    const errors: Array<{ row: number; error: string; data: any }> = [];
+
+    for (let i = 0; i < userList.length; i++) {
+      const userData = userList[i];
+      try {
+        // Validate required fields
+        if (!userData.username || !userData.email || !userData.firstName || !userData.lastName) {
+          errors.push({
+            row: i + 2, // +2 because row 1 is header, and array is 0-indexed
+            error: "Missing required fields: username, email, firstName, or lastName",
+            data: userData
+          });
+          continue;
+        }
+
+        // Check for duplicate username or email
+        const [existingUser] = await db
+          .select()
+          .from(users)
+          .where(or(
+            eq(users.username, userData.username),
+            eq(users.email, userData.email)
+          ))
+          .limit(1);
+
+        if (existingUser) {
+          if (existingUser.username === userData.username) {
+            errors.push({
+              row: i + 2,
+              error: `Username "${userData.username}" is already taken`,
+              data: userData
+            });
+          } else {
+            errors.push({
+              row: i + 2,
+              error: `Email "${userData.email}" is already taken`,
+              data: userData
+            });
+          }
+          continue;
+        }
+
+        // Hash the password (use default password if not provided)
+        const password = userData.passwordHash || 'HousingApp2025!';
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create the user
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            ...userData,
+            passwordHash: hashedPassword,
+            createdById: createdById,
+            isEnabled: true,
+            isSuperAdmin: false
+          })
+          .returning();
+
+        success.push(newUser);
+
+        // Create audit log
+        await this.createAuditLog({
+          userId: createdById,
+          action: 'CREATE_USER_BULK',
+          resourceType: 'user',
+          resourceId: newUser.id,
+          details: `Bulk created user: ${newUser.username} (${newUser.email})`
+        });
+
+      } catch (error: any) {
+        errors.push({
+          row: i + 2,
+          error: error.message || 'Unknown error occurred',
+          data: userData
+        });
+      }
+    }
+
+    return { success, errors };
   }
 
   async getTotalUsers(): Promise<number> {

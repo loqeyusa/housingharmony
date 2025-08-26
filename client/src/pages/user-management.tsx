@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { BulkUserUpload } from "@/components/BulkUserUpload";
 
 // Types
 interface User {
@@ -103,7 +104,7 @@ export default function UserManagement() {
   const queryClient = useQueryClient();
 
   // Data fetching
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
@@ -121,7 +122,7 @@ export default function UserManagement() {
 
   // Clear data mutation
   const clearDataMutation = useMutation({
-    mutationFn: () => apiRequest("/api/admin/clear-data", { method: "POST" }),
+    mutationFn: () => apiRequest("/api/admin/clear-data", "POST"),
     onSuccess: () => {
       toast({
         title: "Success",
@@ -374,14 +375,16 @@ export default function UserManagement() {
         <TabsContent value="users" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold">User Management</h2>
-            <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-              <DialogTrigger asChild>
-                <Button onClick={() => { setEditingUser(null); userForm.reset(); }}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add User
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
+            <div className="flex items-center gap-2">
+              <BulkUserUpload onUploadComplete={() => refetchUsers()} />
+              <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => { setEditingUser(null); userForm.reset(); }}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>
                     {editingUser ? "Edit User" : "Create New User"}
@@ -505,6 +508,7 @@ export default function UserManagement() {
                 </Form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           <Card>

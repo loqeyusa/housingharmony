@@ -688,3 +688,154 @@ export type InsertBuilding = z.infer<typeof insertBuildingSchema>;
 export type InsertSite = z.infer<typeof insertSiteSchema>;
 export type InsertClientDocument = z.infer<typeof insertClientDocumentSchema>;
 
+// External System Integrations - Store API credentials and connection details
+export const externalIntegrations = pgTable("external_integrations", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  systemName: text("system_name").notNull(), // quickbooks, excel_energy, xcel_energy, centerpoint_energy, etc.
+  systemType: text("system_type").notNull(), // api, web_automation
+  displayName: text("display_name").notNull(),
+  isActive: boolean("is_active").default(true),
+  
+  // API Credentials (encrypted)
+  apiCredentials: json("api_credentials"), // Store encrypted API keys, tokens, etc.
+  
+  // Web Automation Credentials (encrypted)
+  loginUrl: text("login_url"),
+  username: text("username"), // Encrypted
+  password: text("password"), // Encrypted
+  
+  // Configuration
+  settings: json("settings"), // System-specific settings
+  lastSyncAt: timestamp("last_sync_at"),
+  syncStatus: text("sync_status").default("pending"), // pending, active, error, disabled
+  errorMessage: text("error_message"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Automation Tasks - Track automated operations like payments and data entry
+export const automationTasks = pgTable("automation_tasks", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  integrationId: integer("integration_id").notNull(), // Reference to external_integrations
+  clientId: integer("client_id"), // Optional: link to specific client
+  
+  taskType: text("task_type").notNull(), // payment, data_entry, balance_check, etc.
+  systemName: text("system_name").notNull(), // quickbooks, excel_energy, etc.
+  
+  // Task Details
+  taskData: json("task_data").notNull(), // Store task-specific data (meter number, amount, etc.)
+  
+  // Execution Status
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, failed, retrying
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  executionTime: integer("execution_time"), // milliseconds
+  
+  // Results
+  success: boolean("success"),
+  result: json("result"), // Success/failure details, confirmation numbers, etc.
+  errorMessage: text("error_message"),
+  
+  // Retry Logic
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  nextRetryAt: timestamp("next_retry_at"),
+  
+  // Screenshots and Evidence
+  screenshotPath: text("screenshot_path"), // For web automation proof
+  
+  // Auditing
+  triggeredBy: integer("triggered_by").notNull(), // User ID who initiated the task
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// QuickBooks Sync Log - Track data synchronization with QuickBooks
+export const quickbooksSyncLog = pgTable("quickbooks_sync_log", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull(),
+  integrationId: integer("integration_id").notNull(),
+  
+  syncType: text("sync_type").notNull(), // customers, invoices, payments, expenses
+  recordType: text("record_type").notNull(), // client, transaction, vendor
+  recordId: integer("record_id"), // Local record ID
+  quickbooksId: text("quickbooks_id"), // QuickBooks record ID
+  
+  action: text("action").notNull(), // create, update, delete, sync
+  status: text("status").notNull(), // success, failed, skipped
+  
+  // Sync Data
+  syncData: json("sync_data"), // Data that was synced
+  response: json("response"), // QuickBooks API response
+  errorMessage: text("error_message"),
+  
+  syncedAt: timestamp("synced_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Web Automation Logs - Detailed logs for web automation tasks
+export const webAutomationLogs = pgTable("web_automation_logs", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").notNull(), // Reference to automation_tasks
+  
+  stepNumber: integer("step_number").notNull(),
+  stepName: text("step_name").notNull(), // login, navigate, fill_form, submit, etc.
+  stepType: text("step_type").notNull(), // navigation, form_input, click, wait, screenshot
+  
+  // Step Details
+  selector: text("selector"), // CSS selector used
+  inputValue: text("input_value"), // Data entered
+  expectedText: text("expected_text"), // Text expected on page
+  actualText: text("actual_text"), // Text found on page
+  
+  // Results
+  success: boolean("success").notNull(),
+  duration: integer("duration"), // milliseconds
+  errorMessage: text("error_message"),
+  screenshotPath: text("screenshot_path"),
+  
+  // Browser State
+  currentUrl: text("current_url"),
+  pageTitle: text("page_title"),
+  
+  executedAt: timestamp("executed_at").defaultNow().notNull(),
+});
+
+// Schemas for new tables
+export const insertExternalIntegrationSchema = createInsertSchema(externalIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAutomationTaskSchema = createInsertSchema(automationTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertQuickbooksSyncLogSchema = createInsertSchema(quickbooksSyncLog).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWebAutomationLogSchema = createInsertSchema(webAutomationLogs).omit({
+  id: true,
+});
+
+// Types
+export type ExternalIntegration = typeof externalIntegrations.$inferSelect;
+export type AutomationTask = typeof automationTasks.$inferSelect;
+export type QuickbooksSyncLog = typeof quickbooksSyncLog.$inferSelect;
+export type WebAutomationLog = typeof webAutomationLogs.$inferSelect;
+export type InsertExternalIntegration = z.infer<typeof insertExternalIntegrationSchema>;
+export type InsertAutomationTask = z.infer<typeof insertAutomationTaskSchema>;
+export type InsertQuickbooksSyncLog = z.infer<typeof insertQuickbooksSyncLogSchema>;
+export type InsertWebAutomationLog = z.infer<typeof insertWebAutomationLogSchema>;
+

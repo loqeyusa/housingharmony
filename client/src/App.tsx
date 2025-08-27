@@ -29,6 +29,7 @@ import UserManagement from "@/pages/user-management";
 import AccountSettings from "@/pages/account-settings";
 import BillManagement from "@/pages/bill-management";
 import ActivityLogs from "@/pages/activity-logs";
+import Integrations from "@/pages/integrations";
 import Mobile from "@/pages/mobile";
 import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
@@ -79,6 +80,11 @@ function AuthenticatedRouter() {
               <Route path="/system-admin">
                 <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
                   <SystemAdmin />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/integrations">
+                <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                  <Integrations />
                 </ProtectedRoute>
               </Route>
               <Route path="/reports" component={Reports} />

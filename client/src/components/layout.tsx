@@ -18,7 +18,8 @@ import {
   LogOut,
   MapPin,
   Settings,
-  CreditCard
+  CreditCard,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -47,6 +48,7 @@ const navigationItems = [
   { path: "/pool-fund", label: "Pool Fund", icon: PiggyBank },
   { path: "/account-settings", label: "Account Settings", icon: Settings },
   { path: "/bill-management", label: "Bill Management", icon: CreditCard },
+  { path: "/integrations", label: "Integrations", icon: Zap },
   { path: "/user-management", label: "User Management", icon: Shield },
   { path: "/reports", label: "Reports", icon: BarChart3 },
 ];
@@ -107,6 +109,7 @@ export default function Layout({ children }: LayoutProps) {
       "/pool-fund": "Manage surplus funds for client supplies",
       "/account-settings": "Configure recurring bills and account settings",
       "/bill-management": "Track and manage pending recurring bill payments",
+      "/integrations": "Manage external system integrations and automation",
       "/user-management": "Manage users, roles, and system permissions",
       "/reports": "Generate reports and analytics",
     };

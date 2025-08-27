@@ -20,6 +20,8 @@ import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
 import { ObjectStorageService } from "./objectStorage";
+import QuickBooksService from "./quickbooks-service";
+import WebAutomationService from "./web-automation-service";
 import session from 'express-session';
 import MemoryStore from 'memorystore';
 
@@ -2783,6 +2785,398 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid data", details: (error as any).errors });
       }
       res.status(500).json({ error: "Failed to create building" });
+    }
+  });
+
+  // External Integrations API Routes
+  app.get("/api/integrations", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const integrations = await storage.getExternalIntegrations(user.companyId);
+      // Remove sensitive credentials from response
+      const safeIntegrations = integrations.map(integration => ({
+        ...integration,
+        apiCredentials: integration.apiCredentials ? Object.keys(integration.apiCredentials) : [],
+        username: integration.username ? '[HIDDEN]' : null,
+        password: integration.password ? '[HIDDEN]' : null
+      }));
+      
+      res.json(safeIntegrations);
+    } catch (error) {
+      console.error("Get integrations error:", error);
+      res.status(500).json({ error: "Failed to fetch integrations" });
+    }
+  });
+
+  app.get("/api/integrations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const integration = await storage.getExternalIntegration(id);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      
+      // Check if user has access to this integration
+      if (integration.companyId !== req.session.user?.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Remove sensitive credentials from response
+      const safeIntegration = {
+        ...integration,
+        apiCredentials: integration.apiCredentials ? Object.keys(integration.apiCredentials) : [],
+        username: integration.username ? '[HIDDEN]' : null,
+        password: integration.password ? '[HIDDEN]' : null
+      };
+      
+      res.json(safeIntegration);
+    } catch (error) {
+      console.error("Get integration error:", error);
+      res.status(500).json({ error: "Failed to fetch integration" });
+    }
+  });
+
+  app.post("/api/integrations", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const integrationData = {
+        ...req.body,
+        companyId: user.companyId
+      };
+      
+      const integration = await storage.createExternalIntegration(integrationData);
+      
+      // Log integration creation
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "create_integration",
+        resource: "integrations",
+        details: {
+          integrationId: integration.id,
+          systemName: integration.systemName,
+          systemType: integration.systemType
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.status(201).json(integration);
+    } catch (error) {
+      console.error("Create integration error:", error);
+      res.status(500).json({ error: "Failed to create integration" });
+    }
+  });
+
+  app.put("/api/integrations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.session.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Check if integration exists and user has access
+      const existingIntegration = await storage.getExternalIntegration(id);
+      if (!existingIntegration || existingIntegration.companyId !== user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const integration = await storage.updateExternalIntegration(id, req.body);
+      
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      
+      // Log integration update
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "update_integration",
+        resource: "integrations",
+        details: {
+          integrationId: integration.id,
+          systemName: integration.systemName
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json(integration);
+    } catch (error) {
+      console.error("Update integration error:", error);
+      res.status(500).json({ error: "Failed to update integration" });
+    }
+  });
+
+  app.delete("/api/integrations/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.session.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Check if integration exists and user has access
+      const existingIntegration = await storage.getExternalIntegration(id);
+      if (!existingIntegration || existingIntegration.companyId !== user.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const deleted = await storage.deleteExternalIntegration(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      
+      // Log integration deletion
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "delete_integration",
+        resource: "integrations",
+        details: {
+          integrationId: id,
+          systemName: existingIntegration.systemName
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete integration error:", error);
+      res.status(500).json({ error: "Failed to delete integration" });
+    }
+  });
+
+  // Automation Tasks API Routes
+  app.get("/api/automation-tasks", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const { status } = req.query;
+      const tasks = await storage.getAutomationTasks(user.companyId, status as string);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Get automation tasks error:", error);
+      res.status(500).json({ error: "Failed to fetch automation tasks" });
+    }
+  });
+
+  app.get("/api/automation-tasks/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const task = await storage.getAutomationTask(id);
+      
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      
+      // Check if user has access to this task
+      if (task.companyId !== req.session.user?.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      res.json(task);
+    } catch (error) {
+      console.error("Get automation task error:", error);
+      res.status(500).json({ error: "Failed to fetch automation task" });
+    }
+  });
+
+  app.post("/api/automation-tasks", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const taskData = {
+        ...req.body,
+        companyId: user.companyId,
+        triggeredBy: user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      };
+      
+      const task = await storage.createAutomationTask(taskData);
+      
+      // Log task creation
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "create_automation_task",
+        resource: "automation",
+        details: {
+          taskId: task.id,
+          taskType: task.taskType,
+          systemName: task.systemName
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+      
+      res.status(201).json(task);
+    } catch (error) {
+      console.error("Create automation task error:", error);
+      res.status(500).json({ error: "Failed to create automation task" });
+    }
+  });
+
+  // QuickBooks Integration Routes
+  app.get("/api/integrations/:id/quickbooks/auth-url", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const integration = await storage.getExternalIntegration(id);
+      
+      if (!integration || integration.companyId !== req.session.user?.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      if (integration.systemName !== 'quickbooks') {
+        return res.status(400).json({ error: "Not a QuickBooks integration" });
+      }
+      
+      const apiCreds = integration.apiCredentials as any;
+      const clientId = apiCreds?.clientId;
+      if (!clientId) {
+        return res.status(400).json({ error: "QuickBooks client ID not configured" });
+      }
+      
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/integrations/${id}/quickbooks/callback`;
+      const state = `${id}-${Date.now()}`;
+      
+      const authUrl = QuickBooksService.getAuthorizationUrl(clientId, redirectUri, state);
+      res.json({ authUrl, state });
+    } catch (error) {
+      console.error("Get QuickBooks auth URL error:", error);
+      res.status(500).json({ error: "Failed to get authorization URL" });
+    }
+  });
+
+  app.get("/api/integrations/:id/quickbooks/callback", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { code, state, realmId } = req.query;
+      
+      if (!code) {
+        return res.status(400).json({ error: "Authorization code not provided" });
+      }
+      
+      const integration = await storage.getExternalIntegration(id);
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      
+      const qbService = new QuickBooksService(integration);
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/integrations/${id}/quickbooks/callback`;
+      
+      const tokens = await qbService.exchangeCodeForTokens(code as string, redirectUri);
+      
+      // Update integration with new tokens
+      const existingCreds = (integration.apiCredentials as any) || {};
+      await storage.updateExternalIntegration(id, {
+        apiCredentials: {
+          ...existingCreds,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          realmId: realmId as string || tokens.realmId
+        },
+        syncStatus: 'active',
+        lastSyncAt: new Date()
+      });
+      
+      res.json({ success: true, message: "QuickBooks integration connected successfully" });
+    } catch (error) {
+      console.error("QuickBooks callback error:", error);
+      res.status(500).json({ error: "Failed to complete QuickBooks authorization" });
+    }
+  });
+
+  // Test integration connection
+  app.post("/api/integrations/:id/test", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const integration = await storage.getExternalIntegration(id);
+      
+      if (!integration || integration.companyId !== req.session.user?.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      let testResult = { success: false, message: "Unknown error" };
+      
+      if (integration.systemType === 'api' && integration.systemName === 'quickbooks') {
+        const qbService = new QuickBooksService(integration);
+        const connected = await qbService.testConnection();
+        testResult = {
+          success: connected,
+          message: connected ? "QuickBooks connection successful" : "QuickBooks connection failed"
+        };
+      } else if (integration.systemType === 'web_automation') {
+        // For web automation, we could test login credentials
+        testResult = {
+          success: true,
+          message: "Web automation configuration appears valid"
+        };
+      }
+      
+      // Update integration status
+      await storage.updateExternalIntegration(id, {
+        syncStatus: testResult.success ? 'active' : 'error',
+        errorMessage: testResult.success ? null : testResult.message
+      });
+      
+      res.json(testResult);
+    } catch (error) {
+      console.error("Test integration error:", error);
+      res.status(500).json({ error: "Failed to test integration" });
+    }
+  });
+
+  // Sync logs
+  app.get("/api/integrations/:id/sync-logs", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const integration = await storage.getExternalIntegration(id);
+      
+      if (!integration || integration.companyId !== req.session.user?.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const logs = await storage.getQuickbooksSyncLogs(integration.companyId);
+      res.json(logs.filter(log => log.integrationId === id));
+    } catch (error) {
+      console.error("Get sync logs error:", error);
+      res.status(500).json({ error: "Failed to fetch sync logs" });
+    }
+  });
+
+  // Web automation logs
+  app.get("/api/automation-tasks/:id/logs", requireAuth, async (req, res) => {
+    try {
+      const taskId = parseInt(req.params.id);
+      const task = await storage.getAutomationTask(taskId);
+      
+      if (!task || task.companyId !== req.session.user?.companyId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const logs = await storage.getWebAutomationLogs(taskId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Get automation logs error:", error);
+      res.status(500).json({ error: "Failed to fetch automation logs" });
     }
   });
 

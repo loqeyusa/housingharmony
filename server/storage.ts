@@ -19,6 +19,10 @@ import {
   buildings,
   clientDocuments,
   documentAccessLog,
+  externalIntegrations,
+  automationTasks,
+  quickbooksSyncLog,
+  webAutomationLogs,
   type Client, 
   type InsertClient,
   type Property,
@@ -62,6 +66,12 @@ import {
   type DocumentAccessLog,
   type RentChange,
   type InsertRentChange,
+  type ExternalIntegration,
+  type InsertExternalIntegration,
+  type AutomationTask,
+  type InsertAutomationTask,
+  type QuickbooksSyncLog,
+  type WebAutomationLog,
   rentChanges
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
@@ -245,6 +255,25 @@ export interface IStorage {
   isSuperAdmin(userId: number): Promise<boolean>;
   canUserCreateUsers(userId: number): Promise<boolean>;
   canUserAssignRole(userId: number, roleId: number): Promise<boolean>;
+
+  // External Integrations
+  getExternalIntegrations(companyId: number): Promise<ExternalIntegration[]>;
+  getExternalIntegration(id: number): Promise<ExternalIntegration | undefined>;
+  createExternalIntegration(integration: InsertExternalIntegration): Promise<ExternalIntegration>;
+  updateExternalIntegration(id: number, integration: Partial<InsertExternalIntegration>): Promise<ExternalIntegration | undefined>;
+  deleteExternalIntegration(id: number): Promise<boolean>;
+
+  // Automation Tasks
+  getAutomationTasks(companyId: number, status?: string): Promise<AutomationTask[]>;
+  getAutomationTask(id: number): Promise<AutomationTask | undefined>;
+  createAutomationTask(task: InsertAutomationTask): Promise<AutomationTask>;
+  updateAutomationTask(id: number, task: Partial<InsertAutomationTask>): Promise<AutomationTask | undefined>;
+
+  // QuickBooks Sync Logs
+  getQuickbooksSyncLogs(companyId: number, limit?: number): Promise<QuickbooksSyncLog[]>;
+  
+  // Web Automation Logs
+  getWebAutomationLogs(taskId: number): Promise<WebAutomationLog[]>;
   
   // Client Notes operations
   getClientNotes(clientId: number): Promise<ClientNote[]>;
@@ -2425,6 +2454,94 @@ export class DatabaseStorage implements IStorage {
   async deleteBuilding(id: number): Promise<boolean> {
     const result = await db.delete(buildings).where(eq(buildings.id, id));
     return result.rowCount > 0;
+  }
+
+  // External Integrations Operations
+  async getExternalIntegrations(companyId: number): Promise<ExternalIntegration[]> {
+    return await db.select().from(externalIntegrations)
+      .where(eq(externalIntegrations.companyId, companyId))
+      .orderBy(externalIntegrations.createdAt);
+  }
+
+  async getExternalIntegration(id: number): Promise<ExternalIntegration | undefined> {
+    const [integration] = await db.select().from(externalIntegrations)
+      .where(eq(externalIntegrations.id, id));
+    return integration || undefined;
+  }
+
+  async createExternalIntegration(insertIntegration: InsertExternalIntegration): Promise<ExternalIntegration> {
+    const [integration] = await db
+      .insert(externalIntegrations)
+      .values(insertIntegration)
+      .returning();
+    return integration;
+  }
+
+  async updateExternalIntegration(id: number, updateIntegration: Partial<InsertExternalIntegration>): Promise<ExternalIntegration | undefined> {
+    const [integration] = await db
+      .update(externalIntegrations)
+      .set({ ...updateIntegration, updatedAt: new Date() })
+      .where(eq(externalIntegrations.id, id))
+      .returning();
+    return integration || undefined;
+  }
+
+  async deleteExternalIntegration(id: number): Promise<boolean> {
+    const result = await db.delete(externalIntegrations).where(eq(externalIntegrations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Automation Tasks Operations
+  async getAutomationTasks(companyId: number, status?: string): Promise<AutomationTask[]> {
+    let query = db.select().from(automationTasks)
+      .where(eq(automationTasks.companyId, companyId));
+    
+    if (status) {
+      query = query.where(and(
+        eq(automationTasks.companyId, companyId),
+        eq(automationTasks.status, status)
+      ));
+    }
+
+    return await query.orderBy(desc(automationTasks.createdAt));
+  }
+
+  async getAutomationTask(id: number): Promise<AutomationTask | undefined> {
+    const [task] = await db.select().from(automationTasks)
+      .where(eq(automationTasks.id, id));
+    return task || undefined;
+  }
+
+  async createAutomationTask(insertTask: InsertAutomationTask): Promise<AutomationTask> {
+    const [task] = await db
+      .insert(automationTasks)
+      .values(insertTask)
+      .returning();
+    return task;
+  }
+
+  async updateAutomationTask(id: number, updateTask: Partial<InsertAutomationTask>): Promise<AutomationTask | undefined> {
+    const [task] = await db
+      .update(automationTasks)
+      .set({ ...updateTask, updatedAt: new Date() })
+      .where(eq(automationTasks.id, id))
+      .returning();
+    return task || undefined;
+  }
+
+  // QuickBooks Sync Logs Operations
+  async getQuickbooksSyncLogs(companyId: number, limit: number = 100): Promise<QuickbooksSyncLog[]> {
+    return await db.select().from(quickbooksSyncLog)
+      .where(eq(quickbooksSyncLog.companyId, companyId))
+      .orderBy(desc(quickbooksSyncLog.syncedAt))
+      .limit(limit);
+  }
+
+  // Web Automation Logs Operations
+  async getWebAutomationLogs(taskId: number): Promise<WebAutomationLog[]> {
+    return await db.select().from(webAutomationLogs)
+      .where(eq(webAutomationLogs.taskId, taskId))
+      .orderBy(webAutomationLogs.stepNumber);
   }
 }
 

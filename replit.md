@@ -51,6 +51,10 @@ Data flows from client onboarding, property matching, application processing, fi
 - **Multi-tenancy**: Comprehensive company management system with business registration, KYC, and company-scoped data isolation for all core entities (clients, properties, applications, transactions, pool fund, dashboard stats).
 - **Role-Based Access Control (RBAC)**: Enterprise-level user management with granular permissions, audit logging, and hierarchical roles (Administrator, Manager, Staff).
 - **Advanced Reporting**: Flexible date range selection (current month, select month, custom date range) with comprehensive client financial reports including transactions, balances, county payment details, and print functionality.
+- **External System Integrations**: Advanced integration capabilities with external systems including:
+  - **QuickBooks API Integration**: OAuth-based connection for financial data synchronization, automated client/customer sync, transaction mapping, and comprehensive sync logging.
+  - **Web Automation**: Puppeteer-based automation for utility payments (Excel Energy, Xcel Energy, CenterPoint Energy) with automated login, form filling, payment processing, and screenshot evidence capture.
+  - **Comprehensive Logging**: Detailed execution logs, success/failure tracking, retry mechanisms, and performance monitoring for all automation tasks.
 
 ## External Dependencies
 
@@ -68,6 +72,8 @@ Data flows from client onboarding, property matching, application processing, fi
 - Neon (PostgreSQL driver)
 - connect-pg-simple (for session management)
 - OpenAI API (for AI Assistant)
+- **Axios** (for external API requests)
+- **Puppeteer** (for web automation)
 
 ### Development Tools
 - TypeScript
@@ -75,4 +81,8 @@ Data flows from client onboarding, property matching, application processing, fi
 - Vite
 - Drizzle Kit
 - bcryptjs (for password hashing)
+
+### External System APIs
+- **QuickBooks API**: Financial data synchronization and accounting integration
+- **Utility Provider APIs**: Automated bill payment processing for various energy companies
 ```

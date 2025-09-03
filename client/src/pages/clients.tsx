@@ -20,6 +20,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/client-form";
+import { BulkHousingUpload } from "@/components/BulkHousingUpload";
 import type { Client } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 import { useAuth } from "@/contexts/auth-context";
@@ -125,6 +126,13 @@ export default function Clients() {
               <List className="w-4 h-4" />
             </Button>
           </div>
+          <BulkHousingUpload 
+            onUploadComplete={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+            }}
+          />
           <Button onClick={() => setShowClientForm(true)} className="bg-primary text-white hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
             Add Client

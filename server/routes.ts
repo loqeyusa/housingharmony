@@ -1721,6 +1721,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Housing data upload endpoint
+  app.post("/api/upload/housing", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error('Get housing upload URL error:', error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
   app.post("/api/users/bulk", async (req, res) => {
     try {
       const user = req.session.user;
@@ -1839,6 +1851,283 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Bulk user creation error:', error);
       res.status(500).json({ error: "Failed to process bulk user upload" });
+    }
+  });
+
+  // Bulk Housing Data Upload
+  app.post("/api/housing/bulk", async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Check if user has permission to manage housing data
+      const hasPermission = await storage.hasPermission(user.id, 'manage_clients') || 
+                           await storage.hasPermission(user.id, 'manage_properties');
+      if (!hasPermission) {
+        return res.status(403).json({ error: "Insufficient permissions" });
+      }
+
+      const { fileUrl } = req.body;
+      if (!fileUrl) {
+        return res.status(400).json({ error: "File URL is required" });
+      }
+
+      // Download and parse the Excel file
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        return res.status(400).json({ error: "Failed to download Excel file" });
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+      const worksheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[worksheetName];
+
+      // Convert to JSON with header row
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      if (jsonData.length < 2) {
+        return res.status(400).json({ error: "Excel file must have at least one header row and one data row" });
+      }
+
+      // Parse the header row to map columns
+      const headers = jsonData[0] as string[];
+      const dataRows = jsonData.slice(1) as any[][];
+
+      // Map column names to our schema (case insensitive and flexible)
+      const columnMap: { [key: string]: string } = {};
+      headers.forEach((header, index) => {
+        const normalizedHeader = header.toLowerCase().trim().replace(/\s+/g, '');
+        
+        // Client Information
+        if (normalizedHeader.includes('case') && normalizedHeader.includes('number')) {
+          columnMap[index] = 'caseNumber';
+        } else if (normalizedHeader.includes('client') && normalizedHeader.includes('name')) {
+          columnMap[index] = 'clientName';
+        } else if (normalizedHeader.includes('client') && normalizedHeader.includes('address')) {
+          columnMap[index] = 'clientAddress';
+        } else if (normalizedHeader.includes('cell') || normalizedHeader.includes('phone')) {
+          columnMap[index] = 'cellNumber';
+        } else if (normalizedHeader.includes('email')) {
+          columnMap[index] = 'email';
+        }
+        
+        // Property Information
+        else if ((normalizedHeader.includes('properties') && normalizedHeader.includes('management')) || 
+                 (normalizedHeader.includes('property') && normalizedHeader.includes('manager'))) {
+          columnMap[index] = 'propertyManagement';
+        } else if (normalizedHeader.includes('rental') && normalizedHeader.includes('office') && normalizedHeader.includes('address')) {
+          columnMap[index] = 'rentalOfficeAddress';
+        } else if (normalizedHeader.includes('rent') && normalizedHeader.includes('amount')) {
+          columnMap[index] = 'rentAmount';
+        } else if (normalizedHeader === 'county') {
+          columnMap[index] = 'county';
+        } else if (normalizedHeader.includes('county') && normalizedHeader.includes('amount')) {
+          columnMap[index] = 'countyAmount';
+        } else if (normalizedHeader.includes('notes') || normalizedHeader.includes('comment')) {
+          columnMap[index] = 'notes';
+        }
+      });
+
+      // Process each row
+      let successCount = 0;
+      let errorCount = 0;
+      let createdClients = 0;
+      let createdProperties = 0;
+      let createdApplications = 0;
+      const errorDetails: any[] = [];
+      const warnings: any[] = [];
+
+      for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex++) {
+        const row = dataRows[rowIndex];
+        const rowNumber = rowIndex + 2; // +2 because array is 0-indexed and we skip header
+
+        // Skip empty rows
+        if (!row || row.length === 0 || !row.some(cell => cell && cell.toString().trim())) {
+          continue;
+        }
+
+        try {
+          // Extract data from row
+          const rowData: any = {};
+          Object.keys(columnMap).forEach(colIndex => {
+            const field = columnMap[colIndex];
+            const value = row[parseInt(colIndex)];
+            if (value !== undefined && value !== null && value !== '') {
+              rowData[field] = value.toString().trim();
+            }
+          });
+
+          // Process client data
+          let clientId = null;
+          if (rowData.clientName) {
+            // Split client name into first and last name
+            const nameParts = rowData.clientName.split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || nameParts[0] || '';
+
+            // Create or find client
+            const clientData = {
+              companyId: user.companyId!,
+              firstName,
+              lastName,
+              email: rowData.email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@placeholder.com`,
+              phone: rowData.cellNumber || '',
+              dateOfBirth: '1990-01-01', // Default - would need to be updated
+              ssn: 'XXX-XX-XXXX', // Placeholder - would need to be updated
+              currentAddress: rowData.clientAddress || '',
+              employmentStatus: 'unemployed',
+              monthlyIncome: '0',
+              vendorNumber: rowData.caseNumber || null,
+            };
+
+            try {
+              const client = await storage.createClient(clientData);
+              clientId = client.id;
+              createdClients++;
+            } catch (error) {
+              // Try to find existing client by name
+              const existingClients = await storage.getClients();
+              const existingClient = existingClients.find(c => 
+                c.firstName === firstName && 
+                c.lastName === lastName &&
+                c.companyId === user.companyId
+              );
+              
+              if (existingClient) {
+                clientId = existingClient.id;
+                warnings.push({
+                  row: rowNumber,
+                  message: `Client "${rowData.clientName}" already exists, using existing record`,
+                  data: rowData
+                });
+              } else {
+                throw error;
+              }
+            }
+          }
+
+          // Process property data
+          let propertyId = null;
+          if (rowData.propertyManagement && rowData.rentalOfficeAddress) {
+            // Create building first
+            const buildingData = {
+              companyId: user.companyId!,
+              name: rowData.propertyManagement,
+              address: rowData.rentalOfficeAddress,
+              landlordName: rowData.propertyManagement,
+              landlordPhone: rowData.cellNumber || '',
+              landlordEmail: rowData.email || 'contact@property.com',
+            };
+
+            let buildingId = null;
+            try {
+              const building = await storage.createBuilding(buildingData);
+              buildingId = building.id;
+            } catch (error) {
+              // Try to find existing building
+              const existingBuildings = await storage.getBuildings();
+              const existingBuilding = existingBuildings.find(b => 
+                b.name === rowData.propertyManagement && 
+                b.address === rowData.rentalOfficeAddress &&
+                b.companyId === user.companyId
+              );
+              
+              if (existingBuilding) {
+                buildingId = existingBuilding.id;
+              } else {
+                throw error;
+              }
+            }
+
+            // Create property/unit
+            if (buildingId) {
+              const rentAmount = parseFloat(rowData.rentAmount?.replace(/[$,]/g, '') || '0');
+              
+              const propertyData = {
+                companyId: user.companyId!,
+                buildingId,
+                unitNumber: '1', // Default unit
+                rentAmount: rentAmount.toString(),
+                depositAmount: (rentAmount * 0.5).toString(), // Default deposit
+                bedrooms: 1,
+                bathrooms: 1,
+              };
+
+              try {
+                const property = await storage.createProperty(propertyData);
+                propertyId = property.id;
+                createdProperties++;
+              } catch (error) {
+                console.error('Property creation error:', error);
+              }
+            }
+          }
+
+          // Create application if we have both client and property
+          if (clientId && propertyId) {
+            const applicationData = {
+              clientId,
+              propertyId,
+              rentPaid: parseFloat(rowData.rentAmount?.replace(/[$,]/g, '') || '0').toString(),
+              depositPaid: (parseFloat(rowData.rentAmount?.replace(/[$,]/g, '') || '0') * 0.5).toString(),
+              applicationFee: '50',
+              status: 'active',
+              countyReimbursement: parseFloat(rowData.countyAmount?.replace(/[$,]/g, '') || '0').toString(),
+            };
+
+            try {
+              await storage.createApplication(applicationData);
+              createdApplications++;
+            } catch (error) {
+              console.error('Application creation error:', error);
+            }
+          }
+
+          successCount++;
+
+        } catch (error) {
+          console.error(`Error processing row ${rowNumber}:`, error);
+          errorCount++;
+          errorDetails.push({
+            row: rowNumber,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            data: row
+          });
+        }
+      }
+
+      // Log the bulk import
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "bulk_import_housing",
+        resource: "housing_data",
+        details: { 
+          totalRows: dataRows.length,
+          successCount,
+          errorCount,
+          createdClients,
+          createdProperties,
+          createdApplications
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({
+        success: successCount,
+        errors: errorCount,
+        createdClients,
+        createdProperties,
+        createdApplications,
+        errorDetails,
+        warnings
+      });
+
+    } catch (error) {
+      console.error('Bulk housing upload error:', error);
+      res.status(500).json({ error: "Failed to process bulk housing upload" });
     }
   });
 

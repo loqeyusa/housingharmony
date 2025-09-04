@@ -22,7 +22,7 @@ export default function Counties() {
 
   // Group clients by county
   const countiesSummary = clients.reduce((acc, client) => {
-    const county = client.site || 'Unknown';
+    const county = client.county || 'Unknown';
     if (!acc[county]) {
       acc[county] = {
         name: county,

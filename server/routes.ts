@@ -602,10 +602,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
+      // Debug: Log the user and companyId
+      console.log("Buildings API: User companyId:", req.session.user.companyId);
+      console.log("Buildings API: isSuperAdmin:", req.session.user.isSuperAdmin);
+      
       // Super admins (companyId: null) should see all buildings
-      const buildings = await storage.getBuildings(req.session.user.companyId || undefined);
+      const companyIdToQuery = req.session.user.companyId || undefined;
+      console.log("Buildings API: Querying with companyId:", companyIdToQuery);
+      
+      const buildings = await storage.getBuildings(companyIdToQuery);
+      console.log("Buildings API: Found buildings count:", buildings.length);
+      
       res.json(buildings);
     } catch (error) {
+      console.error("Buildings API error:", error);
       res.status(500).json({ error: "Failed to fetch buildings" });
     }
   });

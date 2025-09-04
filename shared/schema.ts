@@ -34,6 +34,8 @@ export const companies = pgTable("companies", {
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
+  // Core client identification fields
+  caseNumber: text("case_number"), // Case Number - can be blank initially
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
@@ -43,6 +45,12 @@ export const clients = pgTable("clients", {
   currentAddress: text("current_address").notNull(),
   employmentStatus: text("employment_status").notNull(),
   monthlyIncome: decimal("monthly_income", { precision: 10, scale: 2 }).notNull(),
+  // New mandatory fields for client management
+  propertiesManagement: text("properties_management"), // Properties Management - can be blank initially
+  rentalOfficeAddress: text("rental_office_address"), // Rental Office Address - can be blank initially
+  rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }), // Rent Amount - can be blank initially
+  countyAmount: decimal("county_amount", { precision: 10, scale: 2 }), // County Amount - can be blank initially
+  notes: text("notes"), // Notes - can be blank initially
   status: text("status").notNull().default("active"), // active, inactive, pending, deleted
   isActive: boolean("is_active").default(true), // Active/Inactive toggle
   // Housing Support specific fields

@@ -602,7 +602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       
-      const buildings = await storage.getBuildings(req.session.user.companyId || 0);
+      // Super admins (companyId: null) should see all buildings
+      const buildings = await storage.getBuildings(req.session.user.companyId || undefined);
       res.json(buildings);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch buildings" });

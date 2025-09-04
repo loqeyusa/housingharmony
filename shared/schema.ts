@@ -46,6 +46,7 @@ export const clients = pgTable("clients", {
   employmentStatus: text("employment_status").notNull(),
   monthlyIncome: decimal("monthly_income", { precision: 10, scale: 2 }).notNull(),
   // New mandatory fields for client management
+  county: text("county"), // County where client is served (e.g., Ramsey County)
   propertiesManagement: text("properties_management"), // Properties Management - can be blank initially
   rentalOfficeAddress: text("rental_office_address"), // Rental Office Address - can be blank initially
   rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }), // Rent Amount - can be blank initially

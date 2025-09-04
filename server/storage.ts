@@ -803,21 +803,13 @@ export class DatabaseStorage implements IStorage {
     if (companyId) {
       // Join with applications and clients to filter by company
       const result = await db
-        .select({
-          id: transactions.id,
-          applicationId: transactions.applicationId,
-          type: transactions.type,
-          amount: transactions.amount,
-          description: transactions.description,
-          month: transactions.month,
-          createdAt: transactions.createdAt,
-        })
+        .select()
         .from(transactions)
         .innerJoin(applications, eq(transactions.applicationId, applications.id))
         .innerJoin(clients, eq(applications.clientId, clients.id))
         .where(eq(clients.companyId, companyId))
         .orderBy(transactions.createdAt);
-      return result.reverse();
+      return result.map(r => r.transactions).reverse();
     } else {
       const result = await db.select().from(transactions).orderBy(transactions.createdAt);
       return result.reverse();
@@ -840,20 +832,12 @@ export class DatabaseStorage implements IStorage {
   async getTransactionsByClient(clientId: number): Promise<Transaction[]> {
     // Get transactions through applications belonging to this client
     const result = await db
-      .select({
-        id: transactions.id,
-        applicationId: transactions.applicationId,
-        type: transactions.type,
-        amount: transactions.amount,
-        description: transactions.description,
-        month: transactions.month,
-        createdAt: transactions.createdAt,
-      })
+      .select()
       .from(transactions)
       .leftJoin(applications, eq(transactions.applicationId, applications.id))
       .where(eq(applications.clientId, clientId))
       .orderBy(transactions.createdAt);
-    return result.reverse();
+    return result.map(r => r.transactions).reverse();
   }
 
   async getPoolFundEntries(companyId?: number): Promise<PoolFund[]> {
@@ -875,6 +859,7 @@ export class DatabaseStorage implements IStorage {
         description: row.description,
         clientId: row.client_id,
         county: row.county,
+        siteId: row.site_id,
         month: row.month,
         createdAt: new Date(row.created_at)
       }));
@@ -1652,87 +1637,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createBulkUsers(userList: any[], createdById: number): Promise<{
-    success: User[];
-    errors: Array<{
-      row: number;
-      error: string;
-      data: any;
-    }>;
-  }> {
-    const success: User[] = [];
-    const errors: Array<{ row: number; error: string; data: any }> = [];
-    const saltRounds = 12;
-
-    for (let i = 0; i < userList.length; i++) {
-      const userData = userList[i];
-      const rowNumber = i + 2; // +2 because Excel row 1 is headers, and we're 0-indexed
-
-      try {
-        // Validate required fields
-        if (!userData.username || !userData.email) {
-          errors.push({
-            row: rowNumber,
-            error: "Username and email are required",
-            data: userData
-          });
-          continue;
-        }
-
-        // Check for duplicate username
-        const existingUser = await this.getUserByUsername(userData.username);
-        if (existingUser) {
-          errors.push({
-            row: rowNumber,
-            error: `Username '${userData.username}' already exists`,
-            data: userData
-          });
-          continue;
-        }
-
-        // Check for duplicate email
-        const existingEmail = await this.getUserByEmail(userData.email);
-        if (existingEmail) {
-          errors.push({
-            row: rowNumber,
-            error: `Email '${userData.email}' already exists`,
-            data: userData
-          });
-          continue;
-        }
-
-        // Generate default password if not provided
-        const password = userData.passwordHash || 'Password123!';
-        const passwordHash = await bcrypt.hash(password, saltRounds);
-
-        const newUserData = {
-          username: userData.username.trim(),
-          email: userData.email.trim(),
-          passwordHash,
-          firstName: userData.firstName?.trim() || '',
-          lastName: userData.lastName?.trim() || '',
-          companyId: userData.companyId,
-          isEnabled: userData.isEnabled !== false,
-          isSuperAdmin: userData.isSuperAdmin === true,
-          createdById,
-        };
-
-        const [user] = await db.insert(users).values(newUserData).returning();
-        success.push(user);
-
-      } catch (error: any) {
-        console.error(`Error creating user at row ${rowNumber}:`, error);
-        errors.push({
-          row: rowNumber,
-          error: error.message || 'Failed to create user',
-          data: userData
-        });
-      }
-    }
-
-    return { success, errors };
-  }
-
   async updateUser(id: number, updateData: UpdateUser): Promise<User | undefined> {
     const updateFields: any = { ...updateData, updatedAt: new Date() };
     
@@ -2093,7 +1997,7 @@ export class DatabaseStorage implements IStorage {
         }
 
         // Hash the password (use default password if not provided)
-        const password = userData.passwordHash || 'HousingApp2025!';
+        const password = (userData as any).password || 'HousingApp2025!';
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create the user
@@ -2114,9 +2018,9 @@ export class DatabaseStorage implements IStorage {
         await this.createAuditLog({
           userId: createdById,
           action: 'CREATE_USER_BULK',
-          resourceType: 'user',
+          resource: 'user',
           resourceId: newUser.id,
-          details: `Bulk created user: ${newUser.username} (${newUser.email})`
+          details: { message: `Bulk created user: ${newUser.username} (${newUser.email})` }
         });
 
       } catch (error: any) {

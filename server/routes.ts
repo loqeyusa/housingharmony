@@ -19,6 +19,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
+import { parseCsvData, processCsvDataToDB } from './csvParser';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -1483,6 +1484,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI Assistant Routes
   const upload = multer({ storage: multer.memoryStorage() });
+
+  // CSV/Excel Upload for Clients
+  app.post("/api/clients/upload", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "File is required" });
+      }
+
+      let csvText = '';
+      const fileExtension = path.extname(req.file.originalname).toLowerCase();
+
+      // Handle CSV files
+      if (fileExtension === '.csv') {
+        csvText = req.file.buffer.toString('utf-8');
+      } 
+      // Handle Excel files
+      else if (fileExtension === '.xlsx' || fileExtension === '.xls') {
+        const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        csvText = XLSX.utils.sheet_to_csv(worksheet);
+      } else {
+        return res.status(400).json({ error: "Only CSV and Excel files are supported" });
+      }
+
+      // Parse CSV data
+      const parseResult = await parseCsvData(csvText);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: parseResult.error });
+      }
+
+      // Process data to database with proper relationships
+      const companyId = req.session.user.companyId || 1; // Default to company 1 for super admins
+      const dbResult = await processCsvDataToDB(parseResult.data!, companyId);
+      
+      if (!dbResult.success) {
+        return res.status(500).json({ error: dbResult.error });
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully processed file. Created ${dbResult.clientsCreated} clients, ${dbResult.propertiesCreated} properties, and ${dbResult.buildingsCreated} buildings.`,
+        stats: {
+          clientsCreated: dbResult.clientsCreated,
+          propertiesCreated: dbResult.propertiesCreated,
+          buildingsCreated: dbResult.buildingsCreated
+        }
+      });
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      res.status(500).json({ error: "Failed to process file" });
+    }
+  });
 
   // Chat with AI Assistant
   app.post("/api/assistant/chat", async (req, res) => {

@@ -21,12 +21,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/client-form";
 import { BulkHousingUpload } from "@/components/BulkHousingUpload";
+import { CsvUpload } from "@/components/csv-upload";
 import type { Client } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function Clients() {
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showCsvUpload, setShowCsvUpload] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [, setLocation] = useLocation();
@@ -133,12 +135,35 @@ export default function Clients() {
               queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
             }}
           />
+          <Button 
+            onClick={() => setShowCsvUpload(true)} 
+            variant="outline"
+            className="text-primary border-primary hover:bg-primary/10"
+            data-testid="button-csv-upload"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import CSV/Excel
+          </Button>
           <Button onClick={() => setShowClientForm(true)} className="bg-primary text-white hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
             Add Client
           </Button>
         </div>
       </div>
+
+      {/* CSV Upload Dialog */}
+      {showCsvUpload && (
+        <div className="mb-6">
+          <CsvUpload 
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/buildings"] });
+              setShowCsvUpload(false);
+            }}
+          />
+        </div>
+      )}
 
       {/* Clients Display */}
       {filteredClients.length === 0 ? (

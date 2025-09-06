@@ -236,6 +236,18 @@ export default function Clients() {
                     <DollarSign className="w-4 h-4" />
                     <span>${parseFloat(client.monthlyIncome.toString()).toFixed(2)}/month</span>
                   </div>
+                  {(client as any).propertyName && (
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <MapPin className="w-4 h-4" />
+                      <span className="truncate">{(client as any).propertyName}</span>
+                    </div>
+                  )}
+                  {client.county && (
+                    <div className="flex items-center space-x-2 text-sm text-slate-600">
+                      <Grid3X3 className="w-4 h-4" />
+                      <span>{client.county}</span>
+                    </div>
+                  )}
                   <div className="pt-2">
                     <div className="flex items-center justify-between">
                       <div>

@@ -539,8 +539,45 @@ export class DatabaseStorage implements IStorage {
     
     if (companyId) {
       result = await db
-        .select()
+        .select({
+          id: clients.id,
+          companyId: clients.companyId,
+          caseNumber: clients.caseNumber,
+          firstName: clients.firstName,
+          lastName: clients.lastName,
+          email: clients.email,
+          phone: clients.phone,
+          dateOfBirth: clients.dateOfBirth,
+          ssn: clients.ssn,
+          currentAddress: clients.currentAddress,
+          employmentStatus: clients.employmentStatus,
+          monthlyIncome: clients.monthlyIncome,
+          county: clients.county,
+          propertyId: clients.propertyId,
+          buildingId: clients.buildingId,
+          countyAmount: clients.countyAmount,
+          notes: clients.notes,
+          status: clients.status,
+          isActive: clients.isActive,
+          vendorNumber: clients.vendorNumber,
+          site: clients.site,
+          cluster: clients.cluster,
+          subsidyStatus: clients.subsidyStatus,
+          grhStatus: clients.grhStatus,
+          maxHousingPayment: clients.maxHousingPayment,
+          clientObligationPercent: clients.clientObligationPercent,
+          currentBalance: clients.currentBalance,
+          creditLimit: clients.creditLimit,
+          createdAt: clients.createdAt,
+          // Include normalized relationship data
+          propertyName: properties.name,
+          buildingName: buildings.name,
+          buildingAddress: buildings.address,
+          landlordName: buildings.landlordName,
+        })
         .from(clients)
+        .leftJoin(properties, eq(clients.propertyId, properties.id))
+        .leftJoin(buildings, eq(clients.buildingId, buildings.id))
         .where(and(
           eq(clients.companyId, companyId),
           ne(clients.status, 'deleted')
@@ -548,8 +585,45 @@ export class DatabaseStorage implements IStorage {
         .orderBy(clients.createdAt);
     } else {
       result = await db
-        .select()
+        .select({
+          id: clients.id,
+          companyId: clients.companyId,
+          caseNumber: clients.caseNumber,
+          firstName: clients.firstName,
+          lastName: clients.lastName,
+          email: clients.email,
+          phone: clients.phone,
+          dateOfBirth: clients.dateOfBirth,
+          ssn: clients.ssn,
+          currentAddress: clients.currentAddress,
+          employmentStatus: clients.employmentStatus,
+          monthlyIncome: clients.monthlyIncome,
+          county: clients.county,
+          propertyId: clients.propertyId,
+          buildingId: clients.buildingId,
+          countyAmount: clients.countyAmount,
+          notes: clients.notes,
+          status: clients.status,
+          isActive: clients.isActive,
+          vendorNumber: clients.vendorNumber,
+          site: clients.site,
+          cluster: clients.cluster,
+          subsidyStatus: clients.subsidyStatus,
+          grhStatus: clients.grhStatus,
+          maxHousingPayment: clients.maxHousingPayment,
+          clientObligationPercent: clients.clientObligationPercent,
+          currentBalance: clients.currentBalance,
+          creditLimit: clients.creditLimit,
+          createdAt: clients.createdAt,
+          // Include normalized relationship data
+          propertyName: properties.name,
+          buildingName: buildings.name,
+          buildingAddress: buildings.address,
+          landlordName: buildings.landlordName,
+        })
         .from(clients)
+        .leftJoin(properties, eq(clients.propertyId, properties.id))
+        .leftJoin(buildings, eq(clients.buildingId, buildings.id))
         .where(ne(clients.status, 'deleted'))
         .orderBy(clients.createdAt);
     }

@@ -635,14 +635,68 @@ export class DatabaseStorage implements IStorage {
     
     if (companyId) {
       result = await db
-        .select()
+        .select({
+          id: properties.id,
+          companyId: properties.companyId,
+          buildingId: properties.buildingId,
+          name: properties.name,
+          unitNumber: properties.unitNumber,
+          floor: properties.floor,
+          rentAmount: properties.rentAmount,
+          depositAmount: properties.depositAmount,
+          bedrooms: properties.bedrooms,
+          bathrooms: properties.bathrooms,
+          squareFootage: properties.squareFootage,
+          unitAmenities: properties.unitAmenities,
+          hasBalcony: properties.hasBalcony,
+          hasPatio: properties.hasPatio,
+          hasWasherDryer: properties.hasWasherDryer,
+          petFriendly: properties.petFriendly,
+          utilities: properties.utilities,
+          status: properties.status,
+          currentTenantId: properties.currentTenantId,
+          leaseStartDate: properties.leaseStartDate,
+          leaseEndDate: properties.leaseEndDate,
+          lastInspection: properties.lastInspection,
+          notes: properties.notes,
+          createdAt: properties.createdAt,
+          updatedAt: properties.updatedAt,
+        })
         .from(properties)
+        .leftJoin(buildings, eq(properties.buildingId, buildings.id))
         .where(eq(properties.companyId, companyId))
         .orderBy(properties.createdAt);
     } else {
       result = await db
-        .select()
+        .select({
+          id: properties.id,
+          companyId: properties.companyId,
+          buildingId: properties.buildingId,
+          name: properties.name,
+          unitNumber: properties.unitNumber,
+          floor: properties.floor,
+          rentAmount: properties.rentAmount,
+          depositAmount: properties.depositAmount,
+          bedrooms: properties.bedrooms,
+          bathrooms: properties.bathrooms,
+          squareFootage: properties.squareFootage,
+          unitAmenities: properties.unitAmenities,
+          hasBalcony: properties.hasBalcony,
+          hasPatio: properties.hasPatio,
+          hasWasherDryer: properties.hasWasherDryer,
+          petFriendly: properties.petFriendly,
+          utilities: properties.utilities,
+          status: properties.status,
+          currentTenantId: properties.currentTenantId,
+          leaseStartDate: properties.leaseStartDate,
+          leaseEndDate: properties.leaseEndDate,
+          lastInspection: properties.lastInspection,
+          notes: properties.notes,
+          createdAt: properties.createdAt,
+          updatedAt: properties.updatedAt,
+        })
         .from(properties)
+        .leftJoin(buildings, eq(properties.buildingId, buildings.id))
         .orderBy(properties.createdAt);
     }
     

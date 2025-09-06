@@ -77,6 +77,14 @@ export const clientNotes = pgTable("client_notes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Counties - Reference table for counties served
+export const counties = pgTable("counties", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  state: text("state").notNull().default("Minnesota"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Sites - Housing sites/campuses with categorization
 export const sites = pgTable("sites", {
   id: serial("id").primaryKey(),

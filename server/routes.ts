@@ -20,6 +20,7 @@ import path from 'path';
 import fs from 'fs';
 import * as XLSX from 'xlsx';
 import { parseCsvData, processCsvDataToDB } from './csvParser';
+import { importCSVFile } from './csvImporter';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -3542,6 +3543,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get automation logs error:", error);
       res.status(500).json({ error: "Failed to fetch automation logs" });
+    }
+  });
+
+  // CSV Import API
+  app.post("/api/import/csv-clients", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // For now, use the attached file path directly
+      const filePath = "attached_assets/Pasted-Case-Number-Client-Name-Client-Number-Client-Address-Properties-Management-County-Cell-Number-Ema-1757188201646_1757188201648.txt";
+      
+      const companyId = req.session.user.companyId || 1;
+      
+      console.log(`Starting CSV import for company ${companyId}...`);
+      const result = await importCSVFile(filePath, companyId);
+      
+      res.json({
+        success: true,
+        message: "CSV import completed successfully",
+        ...result
+      });
+    } catch (error) {
+      console.error("CSV import error:", error);
+      res.status(500).json({ 
+        error: "Failed to import CSV file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

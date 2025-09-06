@@ -705,74 +705,53 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProperties(companyId?: number): Promise<Property[]> {
-    let result: Property[];
-    
     console.log(`getProperties: companyId=${companyId}`);
     
+    // For super admins (companyId undefined), show all properties
+    // For regular users, filter by their company
+    const query = db
+      .select({
+        id: properties.id,
+        companyId: properties.companyId,
+        buildingId: properties.buildingId,
+        name: properties.name,
+        unitNumber: properties.unitNumber,
+        floor: properties.floor,
+        rentAmount: properties.rentAmount,
+        depositAmount: properties.depositAmount,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareFootage: properties.squareFootage,
+        unitAmenities: properties.unitAmenities,
+        hasBalcony: properties.hasBalcony,
+        hasPatio: properties.hasPatio,
+        hasWasherDryer: properties.hasWasherDryer,
+        petFriendly: properties.petFriendly,
+        utilities: properties.utilities,
+        status: properties.status,
+        currentTenantId: properties.currentTenantId,
+        leaseStartDate: properties.leaseStartDate,
+        leaseEndDate: properties.leaseEndDate,
+        lastInspection: properties.lastInspection,
+        notes: properties.notes,
+        createdAt: properties.createdAt,
+        updatedAt: properties.updatedAt,
+        // Include company and building information
+        companyName: companies.name,
+        buildingName: buildings.name,
+        buildingAddress: buildings.address,
+      })
+      .from(properties)
+      .leftJoin(buildings, eq(properties.buildingId, buildings.id))
+      .leftJoin(companies, eq(properties.companyId, companies.id));
+    
+    let result;
     if (companyId) {
-      result = await db
-        .select({
-          id: properties.id,
-          companyId: properties.companyId,
-          buildingId: properties.buildingId,
-          name: properties.name,
-          unitNumber: properties.unitNumber,
-          floor: properties.floor,
-          rentAmount: properties.rentAmount,
-          depositAmount: properties.depositAmount,
-          bedrooms: properties.bedrooms,
-          bathrooms: properties.bathrooms,
-          squareFootage: properties.squareFootage,
-          unitAmenities: properties.unitAmenities,
-          hasBalcony: properties.hasBalcony,
-          hasPatio: properties.hasPatio,
-          hasWasherDryer: properties.hasWasherDryer,
-          petFriendly: properties.petFriendly,
-          utilities: properties.utilities,
-          status: properties.status,
-          currentTenantId: properties.currentTenantId,
-          leaseStartDate: properties.leaseStartDate,
-          leaseEndDate: properties.leaseEndDate,
-          lastInspection: properties.lastInspection,
-          notes: properties.notes,
-          createdAt: properties.createdAt,
-          updatedAt: properties.updatedAt,
-        })
-        .from(properties)
-        .leftJoin(buildings, eq(properties.buildingId, buildings.id))
+      result = await query
         .where(eq(properties.companyId, companyId))
         .orderBy(properties.createdAt);
     } else {
-      result = await db
-        .select({
-          id: properties.id,
-          companyId: properties.companyId,
-          buildingId: properties.buildingId,
-          name: properties.name,
-          unitNumber: properties.unitNumber,
-          floor: properties.floor,
-          rentAmount: properties.rentAmount,
-          depositAmount: properties.depositAmount,
-          bedrooms: properties.bedrooms,
-          bathrooms: properties.bathrooms,
-          squareFootage: properties.squareFootage,
-          unitAmenities: properties.unitAmenities,
-          hasBalcony: properties.hasBalcony,
-          hasPatio: properties.hasPatio,
-          hasWasherDryer: properties.hasWasherDryer,
-          petFriendly: properties.petFriendly,
-          utilities: properties.utilities,
-          status: properties.status,
-          currentTenantId: properties.currentTenantId,
-          leaseStartDate: properties.leaseStartDate,
-          leaseEndDate: properties.leaseEndDate,
-          lastInspection: properties.lastInspection,
-          notes: properties.notes,
-          createdAt: properties.createdAt,
-          updatedAt: properties.updatedAt,
-        })
-        .from(properties)
-        .leftJoin(buildings, eq(properties.buildingId, buildings.id))
+      result = await query
         .orderBy(properties.createdAt);
     }
     
@@ -2479,30 +2458,6 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // Building management methods
-  async getBuildings(companyId: number): Promise<Building[]> {
-    return db.select().from(buildings).where(eq(buildings.companyId, companyId));
-  }
-
-  async getBuilding(id: number): Promise<Building | null> {
-    const result = await db.select().from(buildings).where(eq(buildings.id, id)).limit(1);
-    return result[0] || null;
-  }
-
-  async createBuilding(data: InsertBuilding): Promise<Building> {
-    const result = await db.insert(buildings).values(data).returning();
-    return result[0];
-  }
-
-  async updateBuilding(id: number, data: Partial<InsertBuilding>): Promise<Building | null> {
-    const result = await db.update(buildings).set(data).where(eq(buildings.id, id)).returning();
-    return result[0] || null;
-  }
-
-  async deleteBuilding(id: number): Promise<boolean> {
-    const result = await db.delete(buildings).where(eq(buildings.id, id));
-    return result.rowCount > 0;
-  }
 
   // External Integrations Operations
   async getExternalIntegrations(companyId: number): Promise<ExternalIntegration[]> {

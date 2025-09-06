@@ -724,7 +724,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(401).json({ error: "Not authenticated" });
       }
+      
+      console.log("Properties API: User companyId:", user.companyId);
+      console.log("Properties API: isSuperAdmin:", user.isSuperAdmin);
+      
       const properties = await storage.getProperties(user.companyId || undefined);
+      console.log("Properties API: Found properties count:", properties.length);
+      
       res.json(properties);
     } catch (error) {
       console.error("Properties fetch error:", error);

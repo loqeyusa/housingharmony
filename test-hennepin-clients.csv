@@ -1,0 +1,6 @@
+Case Number,Client Name,Client Number,Client Address,Properties Management,County,Cell Number,Email,Comment,Rental Office Address,Rent Amount,County Amount,Notes
+HC001,John Smith,555-123-4567,123 Main St Minneapolis MN 55401,Sunset Apartments Management,Hennepin,555-123-4567,john.smith@email.com,First time applicant,1500 Sunset Blvd Minneapolis MN 55408,1200,800,Good tenant history
+HC002,Maria Garcia,555-234-5678,456 Oak Ave Minneapolis MN 55402,Riverside Properties LLC,Hennepin,555-234-5678,maria.garcia@email.com,Single mother with one child,2200 Riverside Dr Minneapolis MN 55454,950,650,Reliable payment history
+HC003,Michael Johnson,555-345-6789,789 Pine Rd Minneapolis MN 55403,Sunset Apartments Management,Hennepin,555-345-6789,m.johnson@email.com,Recent graduate,1500 Sunset Blvd Minneapolis MN 55408,1100,700,First apartment
+HC004,Sarah Williams,555-456-7890,321 Elm St St Paul MN 55101,Valley View Management,Ramsey,555-456-7890,s.williams@email.com,Working professional,800 Valley View Ave St Paul MN 55102,1300,850,No pets
+HC005,David Brown,555-567-8901,654 Maple Dr Minneapolis MN 55404,Riverside Properties LLC,Hennepin,555-567-8901,david.brown@email.com,Disability accommodation needed,2200 Riverside Dr Minneapolis MN 55454,875,575,Wheelchair accessible required

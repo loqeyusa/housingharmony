@@ -1,0 +1,1013 @@
+Case Number 	Client Name 	Client Number	Client Address	Properties Management 	County	Cell Number	Email	Comment	Rental Office Address 	Rent Amount 	County Amount 	Notes 
+2481012	Deborah Arehart	(612) 475-5525	1772 Oakdale Ave, #304 West St. Paul, MN 55118	Covington Court 	Dakota		bloomingsouth@aeon.org		364 Maria Ave E. West St.Paul MN 55118	$980		grh is 1145.00
+896606	Michael Robinson 		374 Maria Ave, Apt. C103 West St. Paul, MN 55118	Covington Court 	Dakota		bloomingsouth@aeon.org		364 Maria Ave E. West St.Paul MN 55118	$930.00		grh is 930 rent is 946
+	Jessica Johnson 		5300 Brookdale Ct, Brooklyn Park, MN 55445	 R&G Housing	Hennepin	651-503-3240	bloomingsouth@aeon.org	Not available on call, message left in voicemail	7040 Lakeland Ave N #110 Brooklyn Park, MN 55428	$575.00		
+	Michael Johnson 		5300 Brookdale Ct, Brooklyn Park, MN 55443	 R&G Housing	Hennepin	651-503-3240	bloomingsouth@aeon.org	Not available on call, message left in voicemail	7040 Lakeland Ave N #110 Brooklyn Park, MN 55428	$575.00		
+	Virgil Depratto 		NOT IN  THE DRIVE	2216 Pleasant LLC	Hennepin	 (612) 810-9293.	bloomingsouth@aeon.org	Alternative contact VOICE MESSAGE (651 362 3300)	333 N Washington Ave Suite 412 Minneapolis MN 55401	$975.00		
+2523880	Abdullahi Hayder 		410 West Lake Street #212 Minneapolis, MN 55408	2416 Blaisdell 	Hennepin	 (612) 872-7074	bloomingsouth@aeon.org	Balance $1198.19 	2825 Fremont Ave S #201 Minneapolis MN 55408	$1,050.00		
+1712294	Danellie Mack 		2809 Fremont Ave S, #203 Minneapolis, MN 55408	410 West Lake St LP 	Hennepin	(612) 688-9296	bloomingsouth@aeon.org	Balance $854.72	410 West Lake St Minneapolis MN 55408	$1,200.00		$1,200.00
+1075434	Lanis Hutchins		520 Second Street SE, #503 Minneapolis, MN 55414	520 second st apts LP	Hennepin	(612) 662-2047/(612)331-8100	bloomingsouth@aeon.org	Requested a call back	520 2nd st se Minneapolis MN 55414	$1,100.00		
+1856857	Fenesse Mills 	(612) 459-3039	32 Spruce Pl #302 Minneapolis MN 55403	600 Investment Company	Hennepin	612-326-5020	bloomingsouth@aeon.org	Not reachable	1401 6th st se Mpls MN	$0.00		
+2363527	Abdi Gure 		2016 Oakland Ave #1, MPLS, MN 55404	Abyssinia LLC 	Hennepin	952-564-5316	bloomingsouth@aeon.org	Not reachable	1617 East 24th Street Mpls MN 55404	$1,150.00		rent is 1150 
+	Amina Musse		3001 4th St SE #301 Minneapolis MN 55414	Aeon 	Hennepin	(612) 341-3148	bloomingsouth@aeon.org	Not a resident there	901 N 3rd St Mpls MN 55401	$1,095.00		Rent is 1700
+1408947	Najah Abdi		NO CAF/LEASE	Aeon LLC	Hennepin	"(612) 341-3148
+"	bloomingsouth@aeon.org	Current balance of $ 251.36 for utilities	1930 e 86th st Bloomington MN 55425	$1,100.00		
+2546345	Abdulrahman Mohamud		1910 East 86th St #340 Bloomington, MN 55425	Aeon LLC, Blooming Meadows South 	Hennepin	"(612) 341-3148
+"	bloomingsouth@aeon.org	Current balance of $ 550.77 for utilities 	1930 E 86 Street Bloomington MN 55425	$1,100.00		
+898603	Andrew Howard 		1920 E 86th St #346, Bloomington, MN 55425.	Aeon LLC, Blooming Meadows South 	Hennepin	"(612) 341-3148
+"	bloomingsouth@aeon.org	Current balance of $ 819.01 for utilities and rent	1930 E 86 Street Bloomington MN 55425	$828.00		999
+2535055	Jahaud Brown		1820 Stevens Ave South #1, Minneapolis, MN 55403.	Aeon LLC, Blooming Meadows South 	Hennepin	"(612) 341-3148
+"	bloomingsouth@aeon.org	Current balance of $2473.13 for utilities and rent	1930 E 86 Street Bloomington MN 55425	$1,095.00		Check gets picked up
+2445548	Mohammed Abdallah	(651) 977-3698	1920 East 86th Street, #333, Bloomington, MN 55425.	Aeon LLC, Blooming Meadows South 	Hennepin	"(612) 341-3148
+"	bloomingsouth@aeon.org	Current balance of $1292.26 for utilities	1930 E 86 Street Bloomington MN 55425	$1,100.00		
+2574770	Mohamed Hamza 	(952) 491-6038	 1920 E 86th St #340, Bloomington, MN 55425.	Aeon LLC, Blooming Meadows South 	Hennepin	"(612) 341-3148
+""(612) 341-3148"	bloomingsouth@aeon.org	Current balance of $137.83 for utilities	1930 E 86 Street Bloomington MN 55425	$1,100.00		$1,100.00
+2491208	Mustafe Dirie 		1930 E 86th Street, Apt. Number 206, Bloomington, MN 55425.	Aeon LLC, Blooming Meadows South 	Hennepin	(612) 341-3148	bloomingsouth@aeon.org	Moved out on 5/31/2025/They have to refund $1100	1930 E 86 Street Bloomington MN 55425	$1,150.00		check in on client end of march 
+1478622	Suhaib Ahmed 	763-329-8690	1930 E 86th Street, Bloomington, MN 55425.	Aeon LLC, Blooming Meadows South 	Hennepin	"""(612) 341-3148
+"""	bloomingsouth@aeon.org	They have been receiving payment has a credit of $2807	1930 E 86 Street Bloomington MN 55425	$1,100.00		
+2495117	Mohamedamin Hayder		 1005 Portland Ave, Minneapolis, MN 55404.	Aeon The Balmoral 	Hennepin	"""(612) 341-3148
+"""	bloomingsouth@aeon.org	Not a resident there	1005 Portland ave Miineapolis MN 55404 	$850.00		rent is $850 property - 612-338-3118
+2282130	Shania Oliver	651-295-7986	2535 Clinton Ave S, Apt 211, Minneapolis, MN 55404.	Amin Ask	Hennepin	612-695-4022	info@minnesotacare.com	Receives monthly check from Minnesota care, but she does not pay her part, hence has a balance of about $2000	1425 LaSalle ave s Minneapolis MN 55403	$1,095.00		grh is 1098
+2428221	Hadam Sukuna 		1820 W Broadway #109, Minneapolis, MN 55411	Beam Apartment	Hennepin	612-887-3104	Beam@sherman-associate.com	Current resident/Rent paid upto date/current rent $988	1820 West Broadway Mpls MN 55411	$964.00		1095 grh
+2475953	Abdimujiib Aideed	612-315-1278	2119 Hillsbury Ave South, Apt #407, Minneapolis, MN 55404.	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell ave s, Minneapolis MN 55404	$1,100.00		
+	Abdurahman Osman		NO CAF/LEASE	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell ave s, Minneapolis MN 55404	$765.00		rent is 900, grh 765
+2516487	Adrianna Mixon 	612-361-3984	2101 3rd Ave S #17, Minneapolis, MN 55404.	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell ave s, Minneapolis MN 55404	$1,095.00		rent is 1095
+2435063	Alexander Brooks	763-461-9106	345 Wabasha St. N #712, St-Paul MN 55101	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell ave s, Minneapolis MN 55404	$1,100.00		LTH
+1910302	Andre Johnson		1054 Edmund Ave, St. Paul, MN 55104.	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell ave s, Minneapolis MN 55404	$1,100.00		
+	Angeligue Hudson 		2741 Louisiana Ct #2, St. Louis Park, MN 55426	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell ave s, Minneapolis MN 55404	$1,095.00		
+	Ismail Aynanshe		2119 Pillsbury Ave South #305, Minneapolis, MN 55404	Blaisdell apartment	Hennepin	612-872-2489	blaisdell@ipgliving.com	Email sent/Responded	2200 Blaisdell Ave S Mpls MN 55404	$858.00		starting march 1 grh is 858 rent is 1100
+2487539	Cortez Drones		1910 E 86th St, Apartment Number 237, Bloomington, MN 55425.	Blooming Meadows	Hennepin	"(612) 341-3148
+"	bloomingsouth@aeon.org	Current balance of $1311.70 for rent and utilities	1910 E 86th #237 Bloomington MN 55425 	$1,186.00		
+	Mariyah Barnes 		NOT IN  THE DRIVE	Blue Goose Group 	Hennepin	NOT ON DRIVE	bloomingsouth@aeon.org	NOT ON DRIVE	1808 Riverside Ave #209 Mpls MN 55454	$1,175.00		
+1460323	Lamarco Bell		2340 E 32nd St, Apartment Number 124, Minneapolis, MN 55406.	Blue Line Flats	Hennepin	"(612) 722-0370
+"	bloomingsouth@aeon.org	NOT AVAILABLE ON CALL	2340 E 32nd street Minneapolis MN 55406	$1,170.00		
+1676689	Antoine Dunn		NO CAF/LEASE	Broadway Flats 	Hennepin	651-564-8030	broadwayflats-w@m.knck.io	Email sent	2505 Penn Ave N Mpls MN 55411	$1,010.00		
+2233284	Zechariah Palmer 		2505 Penn Ave N, Apt. No 320, Minneapolis, MN 55411	Broadway Flats 	Hennepin	651-564-8030	broadwayflats-w@m.knck.io	Email sent	2505 Penn Ave N Mpls MN 55411	$1,010.00		1072.53
+2302354	Anthony Frelix 		4755 Welcome Ave N #6, Crystal, MN 55429	Buzza Lofts of Uptown	Hennepin	(612) 825-4285	buzza@dominiuminc.com	Email sent	1006 W lake st Minneapolis MN 55408	$1,220.00		
+1795712	Calvin Howard 	(612) 814-2721	646 22nd Ave NE #3, Minneapolis, MN 55418	Buzza Lofts of Uptown	Hennepin	(612) 825-4285	buzza@dominiuminc.com	Email sent	1006 W lake st Minneapolis MN 55408	$1,095.00		
+	Jennifer Dillard 		NOT IN  THE DRIVE	Chad Harvey 	Hennepin	 (320) 297-0403	bloomingsouth@aeon.org		14406 Atwater Way Rosemount MN 55068	$1,150.00		
+1784698	Hinok Yacob		1174 Edgerton St, St. Paul, MN 55130	Charles K-Ward	Hennepin	612-990-2590	charleskward@gmail.com	Email Sent	4905 chicago ave Minneapolis MN 55417-1010	$1,091.00		LTH 
+	Montrell Smyers		3417 Portland Ave,#8 Minneapolis, MO 55407	Charles K-Ward	Hennepin	612-990-2590	charleskward@gmail.com	Email Sent	4905 chicago ave Minneapolis MN 55417-1010	$1,166.00		LTH
+	Deunta Burton 		3117 15th Ave S, Apt. #2, Minneapolis, MN 55407	Charles Ward(owner)	Hennepin	612-990-2590	charleskward@gmail.com	Email Sent	4905 chicago ave Minneapolis MN 55417-1010	$1,166.00		
+1884940	Hafsa Haji	(612) 802-8533	General Delivery Minneapolis MN5540	Cromwell Commons	Hennepin	612-887-3104	Beam@sherman-associate.com	Email sent/Does not live there	10 E 15th st Minneapolis MN 55403	$996.00		rent is 967 - 21.28 balance add to may rent
+976634	Thezandrea Sudduth		NO CAF/LEASE	Deluxe Properties LLC	Hennepin	763-568-9421	NOT LISTED	Not available on call, message left in voicemail	2525 Harriet ave s unit #211 mgmt office, Minneapolis MN 55405	$980.00		rent is 1095(only gets 980 as pf april 24)
+	Sherrica Campbell 		NO CAF/LEASE	Deluxe Properties LLC	Hennepin	763-568-9421	NOT LISTED	Not available on call, message left in voicemail	2525 Harriet Ave S Mpls MN 55405			
+1790174	Precious Hudson 		NO CAF/LEASE	Deluxe Properties LLC	Hennepin	763-568-9421	NOT LISTED	Not available on call, message left in voicemail	2525 Harriet Ave S Mpls MN 55405	$1,100.00		
+	Brandon Wright		1006 W Lake St #102, Minneapolis, MN 55408	Dominium	Hennepin	 (763) 354-5500	lexprieri@hotmail.com	Email sent	1006 W Lake Street Minneapolis MN 55408	$1,185.00		
+1684910	Quentin Durr		1006 W Lake St, Minneapolis, MN 55408	Dominium	Hennepin	 (763) 354-5500	lexprieri@hotmail.com	Email sent	2905 Northwest Blvd #150 Plymouth Hennepin MN 55441	$1,095.00		grh is 1095
+1995613	Kamal Ali		2726 Bloomington Ave S #305, Minneapolis, MN 55407	Doub Investments	Hennepin	(612) 724-7368	NOT LISTED	Have a balance of $ 3749	3750 Cedar ave s Minneapolis MN 55407	$1,528.00		rent is 1028 Add $500 each month til june to pay off
+2268481	Mario Williams		NO CAF/LEASE	Doub Investments	Hennepin	(612) 724-7368	NOT LISTED	Have a balance of $ 2737	3750 Cedar ave s Minneapolis MN 55407	$1,620.00		rent is 1120 Add $500 each month til june to pay off
+	Tina Grier Lewis 		NOT IN  THE DRIVE	DREH LLC 	Hennepin	NOT LISTED	NOT LISTED		15612 Highway 7 suite 340 Minnetonka MN 55345	$849.00		
+2489775	Jerea Morgan	651-207-9095	1814 9th Ave S #307, Minneapolis, MN 55415	East Town Apartments	Hennepin	(612) 452-4050	pamela@612rent.com	Mail bounced	618 s 9th ave Minneapolis MN 55415	$1,082.00		rent is 1082 grh is 1098
+1089686	Sergio Slaughter		1113 Logan Ave N, Minneapolis, MN 55411	East Town Apartments	Hennepin	(612) 452-4050	pamela@612rent.com	Mail bounced	618 s 9th ave Minneapolis MN 55415	$1,092.00		
+	Harvey Kelley		 Harvey Kelley, lives at 1415 S 11th Ave, Apartment No. 5075, Minneapolis, MN 55404.	East Village Apartments	Hennepin	612-339-5700	NOT LISTED	Balance $ 5042.36	1423 S 11th Ave Mpls MN 55404	$1,150.00		Rent is 1150
+	Amanda Thomas	612-413-8223	NO CAF/LEASE	Edith Property Management	Hennepin	NOT LISTED		NO LEASE/CAF IN THE DRIVE	6640 lyndale ave s #203 Richfield Mn 55423	Moved Out		
+1273293	Travis Darsow		 3753 Girard Ave N #3, Minneapolis, MN 55412.	Elite Property Management	Hennepin	952-886-7440	NOT LISTED	Balance $ 1026	7760 France ave s Bloomington MN 55435	$950.00		
+2068617	Fatma Mohamed		NO CAF/LEASE	Everlake Apartments 	Hennepin	763-363-6733	NOT LISTED		2615 E 29th Street Minneapolis,MN 55406	$1,095.00		rent is 1060 Check gets picked up
+1950152	Kiro Musse		515 E Grand St, Apartment 811, Minneapolis, MN 55404	Fit Apartments 	Hennepin	612-371-9319	"fit@athomeapartments.com
+
+"	Email sent	515 Grant St Mpls MN 55404	$1,095.00		Rent is 1735
+	David Bushy		NOT IN  THE DRIVE	GoodHands Home Healt care 	Hennepin	612-454-9393	NOT LISTED		7401 Metro Blvd #545 Mpls MN 55439	$946.00		
+	Katie Jenkins 		NOT IN  THE DRIVE	GoodHands Home Healt Care 	Hennepin	612-454-9393	NOT LISTED		7401 Metro Blvd Mpls MN 55439	$0.00		
+698691	Lamon Mason		238 Jefferson Street NE, Minneapolis, MN 55418.	Hook & Ladder Apartments	Hennepin	612-886-3696	handlapts@domusmc.com	Not allowed to give information/contact tenant	Office 640 24th ave ne  Mpls Mn 55418	$998.00		Rent is 998 Property number - 612-886-3696
+2415581	Hope Diorio		2722 Fremont Ave N, Minneapolis, MN 55411.	Hui Chen	Hennepin	(646) 240-2011	NOT LISTED		6501 Nicollet Ave Richfield MN 55423	$750.00		
+1980606	Phillip Jones 		2722 Fremont Ave N, Minneapolis, MN 55411.	Hui Chen	Hennepin	(646) 240-2011	NOT LISTED		6501 Nicollet Ave Richfield MN 55423	$750.00		750 LTH
+1129279	Abdikarim Omar		5817-73rd Ave N #046, Brooklyn Park, MN 55429.	Huntington Place Apts 	Hennepin	763-560-0244	huntington@aeon.org	No balance	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		
+927507	Liban Ahmed 		5841 73rd Ave N #103, Brooklyn Park, MN 55429.	Huntington Place Apts 	Hennepin	763-560-0244	huntington@aeon.org	No balance	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		rent is 899
+2129186	Lionell  pointer		 5801 73rd Ave N #107, Brooklyn Park, MN 55429.	Huntington Place Apts 	Hennepin	763-560-0244	huntington@aeon.org	No balance	5805 73rd Ave N. Brooklyn Park MN 55429	$925.00		rent is 925 
+2303601	Omar Diblawe 		 5841 73rd Ave N #132, Brooklyn Park, MN 55429.	Huntington Place Apts 	Hennepin	763-560-0244	huntington@aeon.org	No balance	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		rent is $899
+2617564	Wesley Reynolds		281 Birmingham St. #4, St. Paul, MN 55106.	Huntington Place Apts 	Hennepin	763-560-0244	huntington@aeon.org	No balance	5805 73rd Ave N. Brooklyn Park MN 55429	$899.00		
+	Kelvin Harris 		NOT IN  THE DRIVE	ICS 	Hennepin	507-517-9477	info@dayandnightservicesprogram.com	Email sent	MN Care - ICS Client 	$952.00	Give check to omar 	
+	Mwanaisha Mohamed 		NOT IN  THE DRIVE	Jasmine Davis 	Hennepin	NOT LISTED	NOT LISTED	NOT IN DRIVE	8162 Bloomington Ave S	$1,200.00		
+2091556	Maleko Hassan 	612-388-1007	8128 Bloomington Ave S, Bloomington, MN 55425.	Jim Bern Co LLC 	Hennepin	952-854-7788	NOT LISTED		8162 Bloomington ave s Bloomington MN 55425	$1,220.00		
+2349429	Saadia Mohamed		8108 Bloomington Avenue South, Bloomington, MN 55425.	Jim Bern Co LLC 	Hennepin	952-854-7788	NOT LISTED		8162 Bloomington ave s Bloomington MN 55425	$1,095.00		
+1781454	Aarion Durand 		2735 Aldrich Ave S Apt 103 Minneapolis, MN 55408	Konstantin Gizburg	Hennepin	952-513-0396	k_ginzburg@hotmail.com	Late on rent notice to pay delivered	18261 68th Place N Minneapolis MN 55311	$1,200.00		
+	Shana Ross		125 Cale Grave St Apt 52, Minneapolis, MN 55403	Konstantin Gizburg	Hennepin	952-513-0396	k_ginzburg@hotmail.com	Late on rent  notice to pay delivered	18261 68th Place N Minneapolis MN 55311	no remittance		rent is 1,000
+2116096	Alexander Johnson 		 410 W Lake St. #515 Minneapolis, MN 55408	Lake st dwelling	Hennepin	612-688-9296	lakestreetdwelling-w@m.knck.io 	Email sent	410 W Lake St Minneapolis MN 55408	$1,130.00		New Location Rent is 1130
+	Yussuf I Mohamed 		NOT IN  THE DRIVE	Lake State Management LLC 	Hennepin	612-760-7655	info@lakestatesmn.com	Email sent	4306 Bryant Ave S Mpls MN 55409	$1,150.00		
+1013672	Abdiaziz Abokar		 410 W Lake St, Apt: 317, Minneapolis MN 55408.	Lake Street Dwelling 	Hennepin	612-688-9296	lakestreetdwelling-w@m.knck.io 	Email sent	410 W Lake St Minneapolis MN 55408	$1,130.00		Check in with hafsa
+1022948	Cyrus Nimene		5817 73rd Ave N #214, Brooklyn Park, MN 55429.	Lake Street Dwelling 	Hennepin	612-688-9296	lakestreetdwelling-w@m.knck.io 	Email sent	410 West Lake St Minneapolis MN 55408	$1,099.00		
+2369552	Daenija Robinson Boston	(612) 202-6503	 410 West Lake Street, #601, Minneapolis, MN 55408.	Lake Street Dwelling 	Hennepin	612-688-9296	lakestreetdwelling-w@m.knck.io 	Email sent	410 W Lake St Minneapolis MN 55408	$1,095.00		
+542641	Elijah Powell	612-407-8701	410 W Lake Street, Apartment 316, Minneapolis, MN 55408.	Lake street Dwelling 	Hennepin	612-688-9296	lakestreetdwelling-w@m.knck.io 	Email sent	410 W Lake St Minneapolis MN 55408	$1,130.00		
+1260513	Kevin Brown		365 9th St, Apt #105, Minneapolis, MN 55402.	Lasalle Apartments	Hennepin	612-321-9888	NOT LISTED		36 south 9th street Minneapolis MN 55402	$1,100.00		
+1766170	Faduma Hassan		3845 Hiawatha Ave #303, Minneapolis, MN 55406.	Longfellow Station LLC 	Hennepin	612-294-9398	beam@sherman-associates.com	Email sent/Does not live there	3845 Hiawatha Ave Mpls MN 55406	$990.00		Check gets picked up
+1844937	Colette Cupery 	612-615-3892	NO CAF/LEASE	M and A Rentals LLC	Hennepin	NOT LISTED	NOT LISTED	NO CAF/LEASE IN THE DRIVE	3577 woodland ct Eagan MN 55123	$1,180.00		
+1654545	Amelia Lacplese-Martin 	612-601-5060	505 Malcolm Ave SE #522, Minneapolis, MN 55414.	Malcolm Housing Project LLC	Hennepin	612-284-3600 	NOT LISTED	Rent cleared	505 Malcolm Ave SE Mpls MN 55414	$1,128.00		
+	Jared Aurelius Terrel 		NOT IN  THE DRIVE	Malcolm Housing Project LLC	Hennepin	612-284-3600 	NOT LISTED	Rent cleared	505 Malcolm Ave SE Mpls MN 55414	$1,128.00		1128
+1732160	Cameron Durand		505 Malcolm Ave NE #516, Minneapolis, MN 55414.	Malcolm Housing Project LLC	Hennepin	612-284-3600 	NOT LISTED	No longer resides here	505 Malcolm Ave SE Mpls MN 55414	$1,128.00		
+	Ronald E Scott		NOT IN  THE DRIVE	Malcolm Housing Project LLC	Hennepin	612-284-3600 	NOT LISTED	Rent cleared	505 Malcolm Ave SE Mpls MN 55414	$1,200.00		
+	Quincy Adams		NOT IN  THE DRIVE	Malcolm Housing Project LLC	Hennepin	612-284-3600 	NOT LISTED		505 Malcolm Ave SE Minneapolis MN 55414	$1,200.00		
+963702	Andre Davenport 		618 5 9th Ave, Apt 126, Minneapolis, MN 55415.	Melissa Bishir/ East Town 	Hennepin	412-452-4050	NOT LISTED	Not reachable	618 S 9th St Mpls MN 	$0.00		
+1581665	Amina Rabi 		322 S 2nd St, Apt. #320, Minneapolis, MN 55401.	Mill City Quater	Hennepin	(651) 504-8916	asstmgr@millcityquaters.com	No balance	322 S 2nd St Mpls MN 55401	$1,095.00		
+	Atende Kabandilwa		1728 2nd Ave S, Apt. 106, Minneapolis, MN 55403.	Mint Properties LLC 	Hennepin	612-374-3339	office@mintproperties.com	Balance $ 870	2100 Pillsbury Ave S Minneapolis, MN 55404.	$860.00		930.00 grh
+1262578	Dayib Idd		 1929 3rd Ave S, Apt. 205, Minneapolis, MN 55404.	Mint Properties LLC 	Hennepin	612-374-3339	office@mintproperties.com	Balance $ 960	2100 Pillsbury Ave S Minneapolis, MN 55404.	$935.00		
+558333	Geesi Abdi 		 1817 2nd Ave S, Apt. 103, Minneapolis, MN 55403.	Mint Properties LLC 	Hennepin	612-374-3339	office@mintproperties.com	Balance $960	2100 Pillsbury Ave S Minneapolis, MN 55404.	$975.00		
+968767	Richard Pitman	651-360-4448	1522 Lasalle Ave, Apt. 105, Minneapolis, MN 55403.	Mint Properties LLC 	Hennepin	612-374-3339	office@mintproperties.com	Balance $1021	2100 Pillsbury Ave S Minneapolis, MN 55404.	$1,085.00		1010 plus 75 parking plus late fee for March 82.00
+2705507	Yvette Mulumba		 2711 Golden Valley Road, Apartment 202, Minneapolis, MN 55411.	Mk2 Property Management	Hennepin	507-497-2235	NOT LISTED	Balance Nil	4620 Pleasantwood Rd Minnetonka MN 55343	$1,098.00		
+	Calvin Jennings 		NOT IN  THE DRIVE	MN Care - ICS Client 	Hennepin	651-539-2099	NOT LISTED	Voicemail	MN Care - ICS Client 	$952.00	Give check to Omar	
+2463438	Da'Shiya Jackson 	(612) 452-0156	5605 Quebec Ave N, #204, New Hope, MN 55428.	MSA Properties	Hennepin	NOT LISTED	NOT LISTED	NO PHONE NUMBER IN CAF	2947 Bent Tree Hills Dr. New Brighton MN 55112	$1,095.00		
+2605440	Khadira Farah 		1709 26th Ave N, Apartment 3, Minneapolis, MN 55411.	Mukanya Properties LLC 	Hennepin	(612) 703-8989	NOT LISTED	Voicemail	P.O Box 28490 Crystal MN 55428	$1,095.00		Rent is 1200
+	Darius Branson 		2824 Aldrich Ave N, Minneapolis, MN 55411.	New Orleans Court	Hennepin	(612) 217-2926	lcsneworleanscourt@iloveleasing.com	Email sent	PO Box 24777 Edina MN 55424	$1,080.00		
+	Fathi Dahir		NO CAF/LEASE	Nico Apartments	Hennepin	(612) 326-5985	NOT LISTED	Voicemail	10 E 18th St Mpls MN 55403	$1,050.00		
+1690212	Andrew JR Vaughn 	763-202-9494	NOT IN  THE DRIVE	Oak Grove 	Hennepin	763-404-7000	utilities@ci.oak-grove.mn.us	Email sent	116 Oak Grove St Mpls MN 55403	$890.00		
+2167923	Ta'zhanique		2035 W River Rd, Unit 305, Minneapolis, MN 55411.	Peregrine Apartments	Hennepin	(612) 295-0744 	NOT LISTED	Balance of around $1098/Waiting to hear from us	2035 W. River Rd Minneapolis MN 55411	$1,113.00		
+	Ibrahim Yusuf		 303 Birmingham Street, #14, Saint Paul, MN 55106.	Pillsbury Duo, LLC	Hennepin	(612) 810-9293	NOT LISTED	Voicemail	333 N Washington Ave Suite 412 minneopolis ,MN 55401	$1,045.00		LTH
+1938613	Moses Hubert		NO CAF/LEASE	PPL Inc	Hennepin	(612) 455-5100	ppl@ppl-inc.org	Email responded	1035 e franklin ave Minneapolis MN 55404	$1,120.00		
+2167461	Marc Smith		NO CAF/LEASE	Property Solutions & Services Inc	Hennepin	(612) 746-0400	info@propertyss.com	Needs an ROI yet its not in his file	901 23rd ave ne ste #1 MPLS MN 55418	$1,113.00		
+2370319	Shaun Knight		 601 Jackson St NE #102, Minneapolis, MN 55413.	Rachel Labey	Hennepin	(651) 278-1782	scatter763@msn.com	Email sent	2837 Ulysses st NE Minneapolis MN 55418	$0.00		Client has income rent is $1200
+1431167	Abdimahad Kariye 		2535 Clinton Ave S. Minneapolis, MN 55404.	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 Lasalle Ave S Minneapolis MN 55406	$855.00		Banked Bed
+	Destiny Beaton 		1944 Wilson Ave, Apartment 303, St. Paul, MN 55119.	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 Lasalle Ave S Minneapolis MN 55406	$1,000.00	2different address for Rental MN	
+	Liya Gessesse		1812 1st Ave S, Apt 106, Minneapolis, MN 55406.	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	3401 Nevada ave n Minneapolis MN 55427	$920.00		BANKED BED - Check gets picked up
+628025	Melissa Kovarik		2545 Blassalill Aves, Monncopalis.	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,060.00		rent is 1000 plus 60 for parking plus 60 from march
+2304660	Mowlid Hassan		2547 Blaisdell Avenue #16, Minneapolis, MN 55404.	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,150.00		
+2553683	Octivious Doe 	(651) 359-6162	201 3rd Ave S, Minneapolis MN 55404.	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,100.00		
+586002	Paul Demars	612-842-4904	924 Stevens Aes #6 Minneapolis MN 55403	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,150.00		
+	Roosevelt Scott		22 E 15th St #6 MPCS MN 55403	Rental Minnesota LLC	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,060.00		
+1439434	Farah Mohamud 		2609 Hennepin Ave S, Suite 101 Minneapolis, MN 55408.	Rental Minnesota LLC 	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,150.00		Banked Bed$945.00
+2033703	Hadija Tambwe		2535 Clinton Ave S, #103 Minneapolis, MN 55404.	Rental Minnesota LLC 	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 lasalle ave s Minneapolis mn 55403	$1,095.00	2different address for Rental MN	
+	Ahmed Farah 		NOT IN  THE DRIVE	Rental MN LLC 	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 LaSalle Ave S Mpls MN 55403	$1,150.00		
+	Majaliwa Lugusha		NOT IN  THE DRIVE	Rental MN LLC 	Hennepin	612-990-4985	info@rentalminnesota.com	Email responded	1425 LaSalle Ave S Mpls MN 55403	$0.00	Case inactive	
+1908821	Marquel singleton		5734 Sander Dr #4, Minneapolis, MN 55417	Sernee LLC	Hennepin	(651) 276-0607	NOT LISTED	Balance Nil	2233 Hamline Ave #550 Roseville Mn 55113	$1,185.00		
+935791	Abdikadir Warfa	"(952) 201-4545
+"	1820 STEVENS AVE 9, MINNEAPOLIS, MN 55405	Sernee LLC 	Hennepin	(651) 276-0607	NOT LISTED	Balance Nil	2233 Hamline Ave #550, Roseville MN 55113	$950.00		
+771922	Carl Hunter 		NO CAF/LEASE	Sernee LLC 	Hennepin	(651) 276-0607	NOT LISTED	Balance Nil	2233 Hamline Ave #550, Roseville MN 55113	$1,050.00		rent is 1050 grh is 1098.00
+	Fatuma Osman	(612) 997-4793	233 Oak Grove #307, Minneapolis, MN 55403	Seven Property Management	Hennepin	(763) 333-2052	info@rentwithseven.com	Rent paid	2177 Youngman ave Saint Paul MN 55116	$995.00		grh is 1203
+2140041	Terrance Barnes 	612-707-2252	188 Glenwood Ave #409, Minneapolis, MN 55405	Shelby Commons	Hennepin	(952) 256-5143	shelbycommons@wodagroup.com		188 glenwood ave Minneapolis Mn 55405	$1,220.00		
+1522591	Duane Brooks 		4755 Welcome Ave N Apt 1, Crystal, MN 55429.	Step Of Strategy 	Hennepin	 (612) 431-4354	info@stepsofstrategy.com	Email sent	1803 Bryant Ave North Minneapolis MN 55411	$1,050.00		
+2561613	Aniya Hill 	(952) 381-2771	NOT IN  THE DRIVE	Stevens Community 	Hennepin	(612) 870-8010	leasing@stevenscommunity.com	Email sent	128 E 18th St Mpls MN 55403			rent is 1060 - grh is 21.00
+2454916	Kylijuan McDowell		1020 N 3rd Street, Apartment 103, Minneapolis, MN 55401.	The Redwell LLLP 	Hennepin	(651) 386-2269	NOT LISTED	Voicemail	1020 North 3rd street Minneapolis MN 55401	$1,120.00		
+2026191	Loulo Ahmed		900 14th Ave NE, Apartment 320, Minneapolis, MN 55418.	Timber & Tie	Hennepin	(612) 249-8903	NOT LISTED	Voicemail	900 14th Ave Ne Mpls Mn 55418	$930.00		
+1287073	Timothy Thomas		3655 Penn Avenue #B, MPLS, MN 55412	Tranquility Housing	Hennepin	(612) 426-0856	NOT LISTED	Not available	3701 Penn Ave N Minneapolis MN 55411	$1,100.00		
+1584820	Dujwan Shabazz		2726 Bloomington Ave #304, MPLS, MN 55407	Trellis Management 	Hennepin	(612) 371-0766	NOT LISTED	Need client address	618 9th Ave Mpls MN 55415 	$1,050.00		$1,050.00
+	Georgio Wright 		2804 Blaisdell Ave S #106, Minneapolis, MN 55408	Trellis Management 	Hennepin	(612) 371-0766	NOT LISTED	Need client address	618 9th Ave Mpls MN 55415 	Working		
+1346747	Marcus Milon 		618 Ninth Ave South #411, Minneapolis, MN 55415	Trellis Management 	Hennepin	(612) 371-0766	NOT LISTED	Need client address	618 9th Ave Mpls MN 55415 	$1,050.00		grh is 1098
+327814	Craig Tidwell		3551 Queen Ave N #1, Minneapolis, MN 55410	Tyrone Hutchins	Hennepin	763-458-9010	NOT LISTED	Balance Nil	3511 Queen ave n Minneapolis MN 55412	$1,100.00		
+888029	Che'von Taylor 	612-913-2480	2035 West River Road #328, Minneapolis, MN 55411	West River Rd LLP 	Hennepin	612-295-0744	NOT LISTED	Not available	2035 W River Rd Mpls MN 55411	$997.50		Rent is 1995
+565785	Paula Cooper 	763-227-1577	2035 West River Road #328, Minneapolis, MN 55411	West River Rd LLP 	Hennepin	612-295-0744	NOT LISTED	Not available	2035 W River Rd Mpls MN 55411	$997.50		Rent is 1995
+2690966	Hani Dahir 		2035 W River Rd N #512, Minneapolis, MN 55411	West River Rd LLP 	Hennepin	612-295-0744	NOT LISTED	Not available	2035 W River Rd Mpls MN 55411	$1,095.00		Rent is 1111
+	Mikia Madison 		2119 Blaisdell Ave S #204, Minneapolis, MN 55404		Hennepin		NOT LISTED			no remittance		1100 ( grh is 545 )
+1798187	Muse Ahmed 	612-695-7948	116 Oak Grove Street, Apartment 204, Minneapolis, MN 55403.		Hennepin		NOT LISTED			$0.00		gets 1129.84
+2406627	John Boney		345 Wabasha Ave N #515 St Paul, Mn 55101.	All Area Management LLC	Ramsey	(612) 824-0056	mail4alish@gmail.com	No balance	3328 East Lake Street Minneapolis MN 55406	$950.00		
+414043	Dominic Archambault 		345 Wabasha St N unit # 620 Saint Paul 55102.	Anisa Mohamed 	Ramsey	651-335-1968/6513985085	NOT LISTED	Not Available	3577 woodland ct Eagan MN 55123	$1,180.00		
+	Mohamud Osbale 		NOT IN  THE DRIVE	Anisa Mohamed 	Ramsey	651-335-1968	NOT LISTED	Not Available	3577 woodland ct Eagan MN 55123	case inactive		1180
+2439043	Shawn Pride 		 345 Wabasha St N #507, Saint Paul, MN 55101.	Anisa Mohamed 	Ramsey	651-335-1968	NOT LISTED	Not Available	3577 woodland ct Eagan MN 55123	$930.00		875 grh is 930.00 starting 01/01
+959398	Tony Black 		345 Wabasha Street N., Apartment 715, St. Paul, MN 55102.	Anisa Mohamed 	Ramsey	651-335-1968	NOT LISTED	Not Available	3577 woodland ct Eagan MN 55123	$1,180.00		
+1409942	Damarrian Agnew 		2030 9th Ave East #103, North St. Paul, MN 55109.	Cedar Commons 	Ramsey	651-777-9323	cedarviewcommons@tcgmanagement.net	Mail Sent	2376 Ariel St North St.Paul MN 55109	$1,100.00		
+551881	Brian Scott 		1318 Sherburne, St. Paul, MN 55104.	Chang Wang	Ramsey	651-734-3958	NOT LISTED	Not Available	4136 Cashell GLN Eagan MN 55122	$ 775.00 		
+532911	Victoria Morales 		1318 Sherborne Ave, St. Paul, MN 55104.	Chang Wang	Ramsey	651-734-3958	NOT LISTED	Not Available	4136 Cashell GLN Eagan MN 55122	$ 775.00 		
+2353755	Damijah Hopkins 		1345 Wabasha Ave, Apt. 602, St. Paul, MN 55101.	L&M Management company	Ramsey	(651) 451-2633	NOT LISTED	Not available	800 Rice St., Saint Paul MN 55117	$977.50		651-374-1157 - rent is 977.50
+2484500	Andrew Evans 		1023 Grand Ave #2 St. Paul, MN 55105.	Lexington Management	Ramsey	(920) 883-9219	rent@lexingtonmanagement.com	Email sent	P.O. Box 40096 St. Paul MN 55104	$1,084.00		
+1340076	Awad Awad 		 281 Birmingham St. #B St. Paul, MN 55106.	Lion Rock  Property Management	Ramsey	(952) 303-5982	info@lrprop.com	Email sent	5871 Cedar Lake Rd #103 Saint Louis Park, MN 55416	$1,185.00		
+2349149	Abdi Gabaire		NO CAF/LEASE	McCarrons Views 	Ramsey	(651) 489-5854	NOT LISTED	Voicemail	195 W Larpenteur Ave #19 Roseville MN 55113	$950.00		
+	Ashley Jenkins		1739 Marion St #17, Roseville, MN 55113.	McCarrons Views 	Ramsey	(651) 489-5854	NOT LISTED	Voicemail	195 W Larpenteur Ave #19 Roseville MN 55113	$1,045.00		
+1924472	Calitta Jones 		1739 Marion St #17, Roseville, MN 55113.	McCarrons Views 	Ramsey	(651) 489-5854	NOT LISTED	Voicemail	195 W Larpenteur Ave #19 Roseville MN 55113	$900.00		
+283828	Heather Reynolds 		NO CAF/LEASE	Mint Properties	Ramsey	612-374-3339	office@mintproperties.com	Balance $1,072	2100 Pillsbury Ave S Minneapolis, MN 55404.	$938.00		rent is 1038.00 - only pay 938(grh amount)
+	Ahmed Warfa 		960 Goodrich Ave #104, St. Paul, MN 55105.	Mint Properties 	Ramsey	612-374-3339	office@mintproperties.com	Balance $875	2100 Pillsbury Ave S Minneapolis, MN 55404.	$875.00		rent is 875 plus balance of 170 for may rent
+615492	Quentin Perkins 		810 N. Hazel St., Apt. #203, St. Paul, MN 55119.	Pine Tree Park Apts	Ramsey	(651) 731-8123	NOT LISTED	Voicemail	828 Hazel Street #202 Saint Paul MN 55119	$965.00		Send $1930 For August & Sept Rent (Khaalid 8/22)
+	LeRoy Newman		NO CAF/LEASE	Stephen Burks	Ramsey	651-815-7279	NOT LISTED	Not available	691 St Anthony #1 Saint Paul MN 55104	$400.00		unable to reach client 875
+312182	Tony Cotton 		 1054 Edmund Ave, St Paul, MN 55104.	Stephen Burks	Ramsey	651-815-7279	NOT LISTED	Not available	691 St Anthony #1 Saint Paul MN 55104	$875.00		$875.00
+	Cherie Tracy 		1949 Wilson Ave #307, St Paul, mn 55119	Straus Lofts Apartments-Sherman Associates	Ramsey	612-887-3104	beam@sherman-associates.com	Email sent/Does not live there	233 park ave south suite 201 Minneapolis MN 55415	$1,029.00		
+865229	Anthony Thomas 	763-501-0938	1054 Edmund Ave, St. Paul, MN 55104.	The Commerce Building 	Ramsey	(651) 292-0200	commerce@hpgltd.net	Email sent	10 East 4th st. St.Paul MN 55101	$925.00		
+159207	Lesli LeTexier 	651-515-3659	10th East 4th, Apt. Number 309, St. Paul, MN 55101.	The Commerce Building 	Ramsey	(651) 292-0200	mvoff@hpgltd.net	Email sent	10 East 4th st. St.Paul MN 55101	$895.00		
+	Michelle Vue 		10 E. 4th St., Apt. 401, St. Paul, MN 55101.	The Commerce Building 	Ramsey	(651) 292-0200	commerce@hpgltd.net	Email sent	10 East 4th st. St.Paul MN 55101	$858.00		
+	Montinez  Bernhardt 		10 East 4th St. #1107 St Paul, MN 55101	The Commerce Building 	Ramsey	(651) 292-0200	commerce@hpgltd.net	Email sent	10 East 4th st. St.Paul MN 55101	$895.00		
+2039965	Monica Burns 		1949 Wilson Ave #204 St. Paul, MN 55119	Vailwood Apartments	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$895.00		rent is 900
+1016441	Tara Lewis 		1957 Wilson Ave #103 St. Paul, MN 55119	Vailwood Apartments	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$900.00		
+2409976	William Medina-Garcia		1949 Wilson Ave #107 St. Paul, MN 55114	Vailwood Apartments	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$900.00		
+1020828	Antonio William Juaraz 		NOT IN  THE DRIVE	Vailwood Apartments 	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$900.00		
+1024145	Antoine Jones 		1957 Wilson Ave. #303 St Paul, MN 55119	Vailwood Apartments 	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$210.00		rent is 850 grh is 210.00
+1219982	Avis Gustavson 		NOT IN  THE DRIVE	Vailwood Apartments 	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$900.00		
+1146784	Edward Temple 	763-501-9008	1957 Wilson Ave #204 St Paul, MN 55108	Vailwood Apartments 	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$900.00		rent is 900--- new financial worker Gaokangshing - 651-266-4064
+2420275	Rico Bapist 		1935 Wilson Ave St. Paul, MN 55119	Vailwood Apartments 	Ramsey	(651) 730-9533/9522888959	NOT LISTED	Voice mail	1935 Wilson Ave St.Paul MN 55119	$900.00		
+266720	Carlos Degree		345 Wabash Ave N #512 St. Paul, MN 55101	Verdant Apartments	Ramsey	(651) 615-2580	Verdant@sherman-associates.com	Ledger attached/Almost caught up on rent & deposit	85 Livingston ave Saint Paul MN 55107	$1,089.00		
+1160540	Demetrius Marble 		1517 St-Paul St, 1909-01 St-Paul, Mn 55114		Ramsey		NOT LISTED			$250.00		grh amount is 1053 
+	Tyler Lockman		NOT IN  THE DRIVE	Brycen Gregor	Steele	(507) 573-3709	brycengregor@gmail.com	Email sent	404 N Elm Ave Owatonna MN 55060	 $ 858.00 		$850
+	Zachary "Zach" Engel 		NOT IN  THE DRIVE	Eastgate Apartments	Steele	(651) 770-6029	eastgateleasing@reacor.com	No records of him living there	407 Cherry St. Owatonna, MN 55060	 $ 950.00 		$950
+1319756	Misty Jordan 		NO CAF/LEASE	Kate Julian 	Steele	NOT LISTED	NOT LISTED	NO CAF/LEASE	1363 rice lake st Owatonna, MN 55060	 $ -   		
+1809039	Eric Gumbusky 		NO CAF/LEASE	Kate Julian 	Steele	NOT LISTED	NOT LISTED	NO CAF/LEASE	1363 rice lake st Owatonna, MN 55060	 $ 1,065.00 		
+	Cory Heley		NOT IN  THE DRIVE	KEG investments	Steele	(507) 456-7495	NOT LISTED	Resides Here & not confirmed rent status	614 E Rice Lake st, Owatonna MN 55060	 $ -   		
+635244	Dennis Hedberg 		NO CAF/LEASE	Northgate Apartment 	Steele	(651) 349-4608	NOT LISTED	Voice Mail	131 West Rose St. Owatonna, MN 55060	 $ 949.00 		rent is 949 going forward
+	Marcy Busho		NOT IN  THE DRIVE	Northgate Apartment 	Steele	(651) 349-4608	NOT LISTED	Voice Mail	131 West Rose St. Owatonna, MN 55060	 $ 600.00 		 rent is 935 plus balance of 30 for may 
+88827	Tammy Gustavson 		NO CAF/LEASE	Northgate Apartment 	Steele	(651) 349-4608	NOT LISTED	Voice Mail	131 West Rose St. Owatonna, MN 55060	$938.00		
+	Megan Janning 		NOT IN  THE DRIVE	Susan Johnson 	Steele	NOT LISTED	NOT LISTED	NOT IN THE DRIVE	3818-28th St S.W Owatonna MN 55060	 $ 900.00 		rent is ($900
+2145169	Andrew Buzzard		1920 E 86th St, #346 Bloomington, MN 55425	Viggco LLC 	Steele	NOT LISTED	NOT LISTED	NO LEASE/CAF IN THE DRIVE	85 Spruce Mahtomedi MN 55115	 $ 775.00 		
+1945661	Ruben Rodriguez 		NOT IN  THE DRIVE	Viggco LLC 	Steele	NOT LISTED	NOT LISTED	NO LEASE/CAF IN THE DRIVE	85 Spruce Mahtomedi MN 55115	 $ 400.00 		$935
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												
+												

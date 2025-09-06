@@ -45,11 +45,10 @@ export const clients = pgTable("clients", {
   currentAddress: text("current_address").notNull(),
   employmentStatus: text("employment_status").notNull(),
   monthlyIncome: decimal("monthly_income", { precision: 10, scale: 2 }).notNull(),
-  // New mandatory fields for client management
-  county: text("county"), // County where client is served (e.g., Ramsey County)
-  propertiesManagement: text("properties_management"), // Properties Management - can be blank initially
-  rentalOfficeAddress: text("rental_office_address"), // Rental Office Address - can be blank initially
-  rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }), // Rent Amount - can be blank initially
+  // Normalized foreign key relationships
+  county: text("county"), // County where client is served (e.g., Ramsey County, Dakota)
+  propertyId: integer("property_id"), // FK to properties table
+  buildingId: integer("building_id"), // FK to buildings table for easier queries
   countyAmount: decimal("county_amount", { precision: 10, scale: 2 }), // County Amount - can be blank initially
   notes: text("notes"), // Notes - can be blank initially
   status: text("status").notNull().default("active"), // active, inactive, pending, deleted
@@ -120,7 +119,8 @@ export const properties = pgTable("properties", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").notNull(),
   buildingId: integer("building_id").notNull(), // Reference to building
-  unitNumber: text("unit_number").notNull(), // Unit number (e.g. "101", "2A", "Apt 5")
+  name: text("name").notNull(), // Property name/identifier (from Properties Management column)
+  unitNumber: text("unit_number"), // Unit number (e.g. "101", "2A", "Apt 5")
   floor: integer("floor"), // Floor number
   rentAmount: decimal("rent_amount", { precision: 10, scale: 2 }).notNull(),
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }).notNull(),
@@ -483,6 +483,58 @@ export const auditLogs = pgTable("audit_logs", {
   userAgent: text("user_agent"),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
+
+// Define proper database relations
+export const clientsRelations = relations(clients, ({ one }) => ({
+  company: one(companies, {
+    fields: [clients.companyId],
+    references: [companies.id],
+  }),
+  property: one(properties, {
+    fields: [clients.propertyId],
+    references: [properties.id],
+  }),
+  building: one(buildings, {
+    fields: [clients.buildingId],
+    references: [buildings.id],
+  }),
+}));
+
+export const propertiesRelations = relations(properties, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [properties.companyId],
+    references: [companies.id],
+  }),
+  building: one(buildings, {
+    fields: [properties.buildingId],
+    references: [buildings.id],
+  }),
+  clients: many(clients),
+  currentTenant: one(clients, {
+    fields: [properties.currentTenantId],
+    references: [clients.id],
+  }),
+}));
+
+export const buildingsRelations = relations(buildings, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [buildings.companyId],
+    references: [companies.id],
+  }),
+  site: one(sites, {
+    fields: [buildings.siteId],
+    references: [sites.id],
+  }),
+  properties: many(properties),
+  clients: many(clients),
+}));
+
+export const companiesRelations = relations(companies, ({ many }) => ({
+  clients: many(clients),
+  properties: many(properties),
+  buildings: many(buildings),
+  sites: many(sites),
+}));
 
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({

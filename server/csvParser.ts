@@ -1,7 +1,7 @@
 import * as Papa from 'papaparse';
 import { eq, and } from 'drizzle-orm';
 import { db } from './db';
-import { clients, buildings, properties } from '@shared/schema';
+import { clients, buildings, properties, counties } from '@shared/schema';
 
 export interface CsvClientData {
   'Case Number': string;

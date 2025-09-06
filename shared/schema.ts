@@ -898,7 +898,14 @@ export const insertWebAutomationLogSchema = createInsertSchema(webAutomationLogs
   id: true,
 });
 
+export const insertCountySchema = createInsertSchema(counties).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
+export type County = typeof counties.$inferSelect;
+export type InsertCounty = z.infer<typeof insertCountySchema>;
 export type ExternalIntegration = typeof externalIntegrations.$inferSelect;
 export type AutomationTask = typeof automationTasks.$inferSelect;
 export type QuickbooksSyncLog = typeof quickbooksSyncLog.$inferSelect;

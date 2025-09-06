@@ -707,6 +707,8 @@ export class DatabaseStorage implements IStorage {
   async getProperties(companyId?: number): Promise<Property[]> {
     let result: Property[];
     
+    console.log(`getProperties: companyId=${companyId}`);
+    
     if (companyId) {
       result = await db
         .select({
@@ -774,6 +776,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(properties.createdAt);
     }
     
+    console.log(`getProperties: found ${result.length} properties`);
     return result.reverse();
   }
 
@@ -2385,11 +2388,24 @@ export class DatabaseStorage implements IStorage {
 
   // Buildings Operations
   async getBuildings(companyId?: number): Promise<Building[]> {
-    const query = db.select().from(buildings);
+    let result: Building[];
+    
     if (companyId) {
-      return await query.where(eq(buildings.companyId, companyId)).orderBy(buildings.createdAt);
+      result = await db
+        .select()
+        .from(buildings)
+        .where(eq(buildings.companyId, companyId))
+        .orderBy(buildings.createdAt);
+    } else {
+      // For super admins (companyId undefined), show all buildings
+      result = await db
+        .select()
+        .from(buildings)
+        .orderBy(buildings.createdAt);
     }
-    return await query.orderBy(buildings.createdAt);
+    
+    console.log(`getBuildings: companyId=${companyId}, found ${result.length} buildings`);
+    return result.reverse();
   }
 
   async getBuilding(id: number): Promise<Building | undefined> {

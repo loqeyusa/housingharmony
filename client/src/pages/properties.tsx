@@ -55,13 +55,26 @@ export default function Properties() {
   );
 
   const filteredProperties = properties.filter(property => {
-    const building = buildings.find(b => b.id === property.buildingId);
-    if (!building) return false;
+    // If no search term, show all properties
+    if (!searchTerm) return true;
     
-    return building.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           building.landlordName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           (building.name && building.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-           property.unitNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const building = buildings.find(b => b.id === property.buildingId);
+    const searchLower = searchTerm.toLowerCase();
+    
+    // Search in property fields
+    const propertyMatches = 
+      (property.name && property.name.toLowerCase().includes(searchLower)) ||
+      (property.unitNumber && property.unitNumber.toLowerCase().includes(searchLower)) ||
+      property.status.toLowerCase().includes(searchLower);
+    
+    // Search in building fields (if building exists)
+    const buildingMatches = building ? (
+      building.address.toLowerCase().includes(searchLower) ||
+      building.landlordName.toLowerCase().includes(searchLower) ||
+      (building.name && building.name.toLowerCase().includes(searchLower))
+    ) : false;
+    
+    return propertyMatches || buildingMatches;
   });
 
   const getStatusColor = (status: string) => {
@@ -106,15 +119,27 @@ export default function Properties() {
       {filteredProperties.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <div className="text-slate-400 text-lg mb-2">No properties found</div>
+            <div className="text-slate-400 text-lg mb-2">
+              {properties.length === 0 ? "No properties available" : "No properties found"}
+            </div>
             <p className="text-slate-600 mb-4">
-              {searchTerm ? "Try adjusting your search terms" : "Get started by adding your first property"}
+              {searchTerm 
+                ? "Try adjusting your search terms" 
+                : properties.length === 0
+                ? "No properties have been uploaded to the system yet"
+                : "Get started by adding your first property"
+              }
             </p>
-            {!searchTerm && (
-              <Button onClick={() => setShowPropertyForm(true)} className="bg-primary text-white hover:bg-primary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Property
-              </Button>
+            {!searchTerm && properties.length === 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-slate-500">
+                  Properties are automatically created when you upload client data via CSV
+                </p>
+                <Button onClick={() => setShowPropertyForm(true)} className="bg-primary text-white hover:bg-primary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Property Manually
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -125,12 +150,20 @@ export default function Properties() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-base flex items-start space-x-2">
+                    <CardTitle className="text-lg font-semibold mb-1">
+                      {property.name || 'Unnamed Property'}
+                    </CardTitle>
+                    <div className="flex items-start space-x-2 text-sm text-slate-600">
                       <MapPin className="w-4 h-4 mt-0.5 text-slate-500 flex-shrink-0" />
                       <span className="line-clamp-2">
                         {buildings.find(b => b.id === property.buildingId)?.address || 'Address not found'}
                       </span>
-                    </CardTitle>
+                    </div>
+                    {property.unitNumber && (
+                      <div className="text-sm text-slate-500 mt-1">
+                        Unit: {property.unitNumber}
+                      </div>
+                    )}
                   </div>
                   <Badge className={getStatusColor(property.status)}>
                     {property.status}

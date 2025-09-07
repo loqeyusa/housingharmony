@@ -23,6 +23,7 @@ import { parseCsvData, processCsvDataToDB } from './csvParser';
 import { importCSVFile } from './csvImporter';
 import { importRamseyCSVFile } from './ramseyImporter';
 import { importHennepinCSVFile } from './hennepinImporter';
+import { importDakotaCSVFile } from './dakotaImporter';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -3630,6 +3631,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Hennepin County CSV import error:", error);
       res.status(500).json({ 
         error: "Failed to import Hennepin County CSV file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Dakota County CSV Import API
+  app.post("/api/import/dakota-clients", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Use the new Dakota County file
+      const filePath = "attached_assets/Pasted--Case-Number-Client-Properties-Management-Rental-Office-Address-Rent-Amount-County-Amount-1757253563711_1757253563713.txt";
+      
+      const companyId = req.session.user.companyId || 1;
+      
+      console.log(`Starting Dakota County CSV import for company ${companyId}...`);
+      const result = await importDakotaCSVFile(filePath, companyId);
+      
+      res.json({
+        success: true,
+        message: "Dakota County CSV import completed successfully",
+        ...result
+      });
+    } catch (error) {
+      console.error("Dakota County CSV import error:", error);
+      res.status(500).json({ 
+        error: "Failed to import Dakota County CSV file",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }

@@ -22,6 +22,7 @@ import * as XLSX from 'xlsx';
 import { parseCsvData, processCsvDataToDB } from './csvParser';
 import { importCSVFile } from './csvImporter';
 import { importRamseyCSVFile } from './ramseyImporter';
+import { importHennepinCSVFile } from './hennepinImporter';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -3600,6 +3601,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Ramsey County CSV import error:", error);
       res.status(500).json({ 
         error: "Failed to import Ramsey County CSV file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Hennepin County CSV Import API
+  app.post("/api/import/hennepin-clients", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Use the new Hennepin County file
+      const filePath = "attached_assets/Pasted-Client-Properties-Management-Rental-Office-Address-Rent-Amount-County-Amount-Notes-Aarion-Dura-1757252925446_1757252925448.txt";
+      
+      const companyId = req.session.user.companyId || 1;
+      
+      console.log(`Starting Hennepin County CSV import for company ${companyId}...`);
+      const result = await importHennepinCSVFile(filePath, companyId);
+      
+      res.json({
+        success: true,
+        message: "Hennepin County CSV import completed successfully",
+        ...result
+      });
+    } catch (error) {
+      console.error("Hennepin County CSV import error:", error);
+      res.status(500).json({ 
+        error: "Failed to import Hennepin County CSV file",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }

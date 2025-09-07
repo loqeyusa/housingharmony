@@ -24,6 +24,7 @@ import { importCSVFile } from './csvImporter';
 import { importRamseyCSVFile } from './ramseyImporter';
 import { importHennepinCSVFile } from './hennepinImporter';
 import { importDakotaCSVFile } from './dakotaImporter';
+import { importSteeleCSVFile } from './steeleImporter';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -3660,6 +3661,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Dakota County CSV import error:", error);
       res.status(500).json({ 
         error: "Failed to import Dakota County CSV file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Steele County CSV Import API
+  app.post("/api/import/steele-clients", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Use the new Steele County file
+      const filePath = "attached_assets/Pasted-Case-Number-Client-Properties-Management-Rental-Office-Address-Rent-Amount-County-Amount-Not-1757254241777_1757254241778.txt";
+      
+      const companyId = req.session.user.companyId || 1;
+      
+      console.log(`Starting Steele County CSV import for company ${companyId}...`);
+      const result = await importSteeleCSVFile(filePath, companyId);
+      
+      res.json({
+        success: true,
+        message: "Steele County CSV import completed successfully",
+        ...result
+      });
+    } catch (error) {
+      console.error("Steele County CSV import error:", error);
+      res.status(500).json({ 
+        error: "Failed to import Steele County CSV file",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }

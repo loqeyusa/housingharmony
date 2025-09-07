@@ -21,6 +21,7 @@ import fs from 'fs';
 import * as XLSX from 'xlsx';
 import { parseCsvData, processCsvDataToDB } from './csvParser';
 import { importCSVFile } from './csvImporter';
+import { importRamseyCSVFile } from './ramseyImporter';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -3546,7 +3547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // CSV Import API
+  // CSV Import API - Original Hennepin County format
   app.post("/api/import/csv-clients", async (req, res) => {
     try {
       if (!req.session.user) {
@@ -3570,6 +3571,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("CSV import error:", error);
       res.status(500).json({ 
         error: "Failed to import CSV file",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Ramsey County CSV Import API
+  app.post("/api/import/ramsey-clients", async (req, res) => {
+    try {
+      if (!req.session.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Use the new Ramsey County file
+      const filePath = "attached_assets/Pasted-Client-Properties-Rental-Office-Address-Rent-Amount-County-Amount-Notes-Abdi-Gabaire-McCarrons--1757252438447_1757252438447.txt";
+      
+      const companyId = req.session.user.companyId || 1;
+      
+      console.log(`Starting Ramsey County CSV import for company ${companyId}...`);
+      const result = await importRamseyCSVFile(filePath, companyId);
+      
+      res.json({
+        success: true,
+        message: "Ramsey County CSV import completed successfully",
+        ...result
+      });
+    } catch (error) {
+      console.error("Ramsey County CSV import error:", error);
+      res.status(500).json({ 
+        error: "Failed to import Ramsey County CSV file",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }

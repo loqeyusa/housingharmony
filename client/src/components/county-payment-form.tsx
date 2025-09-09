@@ -21,6 +21,8 @@ const countyPaymentSchema = z.object({
   expectedAmount: z.string().min(1, "Expected amount is required"),
   county: z.string().min(1, "County is required"),
   paymentMethod: z.enum(["check", "direct_deposit", "wire_transfer"]),
+  benefitPeriodStart: z.string().min(1, "Benefit period start date is required"),
+  benefitPeriodEnd: z.string().min(1, "Benefit period end date is required"),
   referenceNumber: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -48,6 +50,22 @@ export default function CountyPaymentForm({
 }: CountyPaymentFormProps) {
   const { toast } = useToast();
 
+  // Helper function to get current month dates
+  const getCurrentMonthDates = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-based
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+    
+    return {
+      start: startDate.toISOString().split('T')[0], // YYYY-MM-DD format
+      end: endDate.toISOString().split('T')[0]
+    };
+  };
+
+  const { start: defaultStartDate, end: defaultEndDate } = getCurrentMonthDates();
+
   const form = useForm<CountyPaymentData>({
     resolver: zodResolver(countyPaymentSchema),
     defaultValues: {
@@ -55,6 +73,8 @@ export default function CountyPaymentForm({
       expectedAmount: countyAmount.toString(),
       county: county,
       paymentMethod: "check",
+      benefitPeriodStart: defaultStartDate,
+      benefitPeriodEnd: defaultEndDate,
       referenceNumber: "",
       notes: "",
     },
@@ -76,6 +96,8 @@ export default function CountyPaymentForm({
         type: "deposit",
         description: `County payment received - ${data.paymentMethod} ${data.referenceNumber ? `(${data.referenceNumber})` : ''}`,
         county: data.county,
+        benefitPeriodStart: data.benefitPeriodStart,
+        benefitPeriodEnd: data.benefitPeriodEnd,
       };
 
       const poolFundResponse = await fetch("/api/pool-fund", {
@@ -245,6 +267,38 @@ export default function CountyPaymentForm({
                 <SelectItem value="wire_transfer">Wire Transfer</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Benefit Period */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Benefit Period</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="benefitPeriodStart">From Date</Label>
+                <Input
+                  id="benefitPeriodStart"
+                  type="date"
+                  {...form.register("benefitPeriodStart")}
+                />
+                {form.formState.errors.benefitPeriodStart && (
+                  <p className="text-xs text-red-500 mt-1">{form.formState.errors.benefitPeriodStart.message}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="benefitPeriodEnd">To Date</Label>
+                <Input
+                  id="benefitPeriodEnd"
+                  type="date"
+                  {...form.register("benefitPeriodEnd")}
+                />
+                {form.formState.errors.benefitPeriodEnd && (
+                  <p className="text-xs text-red-500 mt-1">{form.formState.errors.benefitPeriodEnd.message}</p>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              This payment covers the benefit period from the start date to the end date
+            </p>
           </div>
 
           <div>

@@ -111,14 +111,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply no-cache middleware to all API routes
   app.use('/api', noCacheMiddleware);
 
-  // Authentication middleware
-  const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.session.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-    next();
-  };
-
   // Dashboard
   app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
     try {

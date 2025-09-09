@@ -1138,14 +1138,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate unique document ID for tracking
       const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      res.json({
+      const responseData = {
         documentId,
         analysis,
         matchResults: matchResults.filter(result => result.matchedClient !== null), // Only include actual matches
         allResults: matchResults, // Include all results for debugging
         totalMatches: matchResults.filter(result => result.matchedClient !== null).length,
         success: true
-      });
+      };
+
+      console.log('Sending response data:', JSON.stringify(responseData, null, 2));
+      res.json(responseData);
 
     } catch (error) {
       console.error('Payment document analysis error:', error);

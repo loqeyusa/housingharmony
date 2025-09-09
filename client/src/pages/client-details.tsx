@@ -603,7 +603,7 @@ export default function ClientDetails() {
                               <div>
                                 <p className="text-gray-600">Expected</p>
                                 <p className="font-bold text-blue-700">
-                                  ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                                  ${(parseFloat(client.countyAmount?.toString() || '0') || 1242).toFixed(2)}
                                 </p>
                               </div>
                               <div>
@@ -913,7 +913,7 @@ export default function ClientDetails() {
                             <div>
                               <p className="text-gray-600">Expected</p>
                               <p className="font-bold text-blue-700">
-                                ${parseFloat(client.monthlyIncome?.toString() || '0').toFixed(2)}
+                                ${(parseFloat(client.countyAmount?.toString() || '0') || 1242).toFixed(2)}
                               </p>
                             </div>
                             <div>

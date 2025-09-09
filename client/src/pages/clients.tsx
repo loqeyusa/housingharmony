@@ -149,7 +149,8 @@ export default function Clients() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col gap-4">
+        {/* Search Bar */}
         <div className="flex-1 max-w-sm">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -161,63 +162,78 @@ export default function Clients() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLocation('/clients/deleted')}
-            className="text-slate-600"
-          >
-            <Archive className="w-4 h-4 mr-2" />
-            Deleted Clients
-          </Button>
-          <div className="flex items-center border rounded-lg p-1">
+        
+        {/* Action Buttons - Mobile Friendly */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          {/* Left side buttons */}
+          <div className="flex flex-wrap items-center gap-2">
             <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              variant="outline"
               size="sm"
-              onClick={() => setViewMode('grid')}
-              className="h-8 px-2"
+              onClick={() => setLocation('/clients/deleted')}
+              className="text-slate-600"
             >
-              <Grid3X3 className="w-4 h-4" />
+              <Archive className="w-4 h-4 mr-2" />
+              Deleted Clients
             </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 px-2"
+            <div className="flex items-center border rounded-lg p-1">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="h-8 px-2"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="h-8 px-2"
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Right side buttons - wrapped for mobile */}
+          <div className="flex flex-wrap items-center gap-2">
+            <BulkHousingUpload 
+              onUploadComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
+              }}
+            />
+            <Button 
+              onClick={() => setShowCsvUpload(true)} 
+              variant="outline"
+              className="text-primary border-primary hover:bg-primary/10 whitespace-nowrap"
+              data-testid="button-csv-upload"
             >
-              <List className="w-4 h-4" />
+              <Upload className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Import CSV/Excel</span>
+              <span className="sm:hidden">Import</span>
+            </Button>
+            <Button 
+              onClick={() => setShowDocumentCapture(true)} 
+              variant="outline"
+              className="text-blue-600 border-blue-600 hover:bg-blue-50 whitespace-nowrap"
+              data-testid="button-capture-payment"
+            >
+              <Camera className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Capture Payment</span>
+              <span className="sm:hidden">Capture</span>
+            </Button>
+            <Button 
+              onClick={() => setShowClientForm(true)} 
+              className="bg-primary text-white hover:bg-primary/90 whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Add Client</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
-          <BulkHousingUpload 
-            onUploadComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-              queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
-              queryClient.invalidateQueries({ queryKey: ["/api/applications"] });
-            }}
-          />
-          <Button 
-            onClick={() => setShowCsvUpload(true)} 
-            variant="outline"
-            className="text-primary border-primary hover:bg-primary/10"
-            data-testid="button-csv-upload"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import CSV/Excel
-          </Button>
-          <Button 
-            onClick={() => setShowDocumentCapture(true)} 
-            variant="outline"
-            className="text-blue-600 border-blue-600 hover:bg-blue-50"
-            data-testid="button-capture-payment"
-          >
-            <Camera className="w-4 h-4 mr-2" />
-            Capture Payment
-          </Button>
-          <Button onClick={() => setShowClientForm(true)} className="bg-primary text-white hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Client
-          </Button>
         </div>
       </div>
 

@@ -1053,7 +1053,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payment Document Analysis
+  // Payment Document Analysis - simplified without database save
   app.post("/api/payment-documents/analyze", requireAuth, async (req, res) => {
     try {
       const user = req.session.user;
@@ -1066,49 +1066,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Image data is required" });
       }
 
-      console.log('Analyzing payment document...');
-      
-      // Create payment document record
-      const paymentDoc = await storage.createPaymentDocument({
-        companyId: user.companyId!,
-        documentType: 'county_payment_advice',
-        status: 'pending',
-        createdBy: user.id
-      });
+      console.log('Analyzing payment document with OpenAI...');
 
       // Analyze document with OpenAI
       const analysis = await analyzePaymentDocument(imageData);
-      console.log('OpenAI Analysis result:', analysis);
+      console.log('OpenAI Analysis result:', analysis.success);
       
       if (!analysis.success) {
-        await storage.updatePaymentDocument(paymentDoc.id, {
-          status: 'error',
-          errorMessage: analysis.error || 'Analysis failed'
+        return res.status(400).json({ 
+          error: analysis.error || 'Document analysis failed',
+          details: 'OpenAI could not process the document image'
         });
-        return res.status(400).json({ error: analysis.error || 'Document analysis failed' });
       }
 
-      // Find matching clients
-      const matchResults = await findMatchingClients(analysis.extractedData, user.companyId!, storage);
-      console.log('Client match results:', matchResults);
+      console.log('Finding matching clients in database...');
       
-      // Update document with analysis results
-      await storage.updatePaymentDocument(paymentDoc.id, {
-        analysisData: analysis,
-        extractedClients: matchResults,
-        status: 'processed'
-      });
+      // Find matching clients in database
+      const matchResults = [];
+      for (const extracted of analysis.extractedData) {
+        try {
+          const clientMatches = await storage.getClients().then(clients =>
+            clients.filter(client => {
+              // Only include clients from the same company
+              if (client.companyId !== user.companyId) return false;
+              
+              const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
+              const extractedName = extracted.clientName.toLowerCase();
+              return fullName.includes(extractedName) || extractedName.includes(fullName);
+            })
+          );
+
+          matchResults.push({
+            extractedData: extracted,
+            clientMatches: clientMatches.map(client => ({
+              id: client.id,
+              name: `${client.firstName} ${client.lastName}`,
+              caseNumber: client.caseNumber,
+              currentBalance: client.currentBalance
+            }))
+          });
+        } catch (error) {
+          console.error("Error matching client:", error);
+          matchResults.push({
+            extractedData: extracted,
+            clientMatches: []
+          });
+        }
+      }
+
+      console.log(`Found ${matchResults.length} extraction results with matches`);
+
+      // Generate unique document ID for tracking
+      const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       res.json({
-        documentId: paymentDoc.id,
+        documentId,
         analysis,
         matchResults,
+        totalMatches: matchResults.reduce((sum, result) => sum + result.clientMatches.length, 0),
         success: true
       });
 
     } catch (error) {
       console.error('Payment document analysis error:', error);
-      res.status(500).json({ error: 'Failed to analyze payment document' });
+      res.status(500).json({ 
+        error: 'Failed to analyze payment document',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -3910,8 +3934,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/payment-documents/process-payments", async (req, res) => {
+  app.post("/api/payment-documents/process-payments", requireAuth, async (req, res) => {
     try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
       console.log("Processing payments from document analysis");
       
       const { documentId, selectedClients } = req.body;
@@ -3925,7 +3954,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const { clientId, paymentAmount, paymentDate, extracted } = clientData;
           
-          // Create transaction record
+          // Verify client belongs to the same company
+          const client = await storage.getClient(parseInt(clientId));
+          if (!client || client.companyId !== user.companyId) {
+            processedPayments.push({
+              clientId,
+              success: false,
+              error: "Client not found or access denied"
+            });
+            continue;
+          }
+          
+          // Create transaction record  
           const transactionData = {
             clientId: parseInt(clientId),
             type: 'payment' as const,
@@ -3933,27 +3973,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             description: `County payment - ${extracted.county || 'Unknown County'}`,
             transactionDate: paymentDate || new Date().toISOString().split('T')[0],
             paymentMethod: extracted.paymentMethod || 'check',
-            checkNumber: extracted.checkNumber || null,
-            documentId
+            checkNumber: extracted.checkNumber || null
           };
 
           const transaction = await storage.createTransaction(transactionData);
           
           // Update client balance
-          const client = await storage.getClient(parseInt(clientId));
-          if (client) {
-            const currentBalance = parseFloat(client.currentBalance || '0');
-            const newBalance = currentBalance + paymentAmount;
-            
-            await storage.updateClient(parseInt(clientId), {
-              currentBalance: newBalance.toFixed(2)
-            });
-          }
+          const currentBalance = parseFloat(client.currentBalance || '0');
+          const newBalance = currentBalance + paymentAmount;
+          
+          await storage.updateClient(parseInt(clientId), {
+            currentBalance: newBalance.toFixed(2)
+          });
+
+          console.log(`Processed payment for client ${clientId}: $${paymentAmount} (new balance: $${newBalance.toFixed(2)})`);
 
           processedPayments.push({
             clientId,
             transactionId: transaction.id,
             amount: paymentAmount,
+            newBalance: newBalance.toFixed(2),
             success: true
           });
           
@@ -3971,7 +4010,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentId,
         processedPayments,
         totalProcessed: processedPayments.filter(p => p.success).length,
-        totalFailed: processedPayments.filter(p => !p.success).length
+        totalFailed: processedPayments.filter(p => !p.success).length,
+        success: true
       });
 
     } catch (error) {

@@ -1950,33 +1950,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return result;
       }
 
-      // Create the transaction
-      const transactionData = {
-        clientId,
-        type: paymentType,
+      // Get client county for pool fund entry
+      const clientData = await storage.getClient(clientId);
+      const county = clientData?.county || clientData?.site || 'Unknown';
+      
+      // Create pool fund entry (same as manual county payment button)
+      const poolFundData = {
+        transactionId: null, // No transaction ID since this is direct
         amount: amount.toString(),
-        description,
-        paymentMethod: 'check', // default
-        month: new Date().toISOString().substring(0, 7), // YYYY-MM format
-        notes: `Payment processed via AI assistant from message: "${message}"`,
-        paymentDate: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+        type: 'deposit' as const,
+        description: description,
+        county: county,
+        clientId: clientId
       };
 
-      console.log('Creating transaction via AI:', transactionData);
+      console.log('Creating pool fund entry via AI:', poolFundData);
       
-      const transaction = await storage.createTransaction(transactionData);
+      const poolFundEntry = await storage.createPoolFundEntry(poolFundData);
       
       result.success = true;
       result.response = `✅ **Payment Processed Successfully!**
 
-**Transaction Details:**
+**Payment Details:**
 - **Amount:** $${amount}
 - **Client ID:** ${clientId}
 - **Type:** ${paymentType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-- **Transaction ID:** ${transaction.id}
-- **Date:** ${transactionData.paymentDate}
+- **Pool Fund Entry ID:** ${poolFundEntry.id}
+- **County:** ${county}
+- **Date:** ${new Date().toISOString().split('T')[0]}
 
-The payment has been recorded in the system and the client's account has been updated.`;
+The payment has been recorded in the system and the client's account balance has been updated.`;
 
       result.suggestions = [
         `View client #${clientId} details`,

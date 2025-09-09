@@ -70,7 +70,7 @@ export default function CountyPaymentForm({
     resolver: zodResolver(countyPaymentSchema),
     defaultValues: {
       amount: "1242",
-      expectedAmount: countyAmount.toString(),
+      expectedAmount: (countyAmount > 0 ? countyAmount : 1242).toString(),
       county: county,
       paymentMethod: "check",
       benefitPeriodStart: defaultStartDate,
@@ -89,6 +89,19 @@ export default function CountyPaymentForm({
 
   const createCountyPaymentMutation = useMutation({
     mutationFn: async (data: CountyPaymentData) => {
+      // Update client's expected amount if it's different from what they had before
+      const newExpectedAmount = parseFloat(data.expectedAmount);
+      const currentExpectedAmount = countyAmount > 0 ? countyAmount : 1242;
+      if (newExpectedAmount !== currentExpectedAmount) {
+        await fetch(`/api/clients/${clientId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            countyAmount: newExpectedAmount
+          }),
+        });
+      }
+
       // Create pool fund deposit
       const poolFundData = {
         transactionId: 1, // Will be set by backend
@@ -135,6 +148,8 @@ export default function CountyPaymentForm({
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/pool-fund`] });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/notes`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
       
       toast({
         title: "County Payment Recorded",
@@ -179,10 +194,21 @@ export default function CountyPaymentForm({
                 id="expectedAmount"
                 type="text"
                 {...form.register("expectedAmount")}
-                className="bg-gray-50"
-                readOnly
+                onChange={(e) => {
+                  // Allow only numbers and decimal point
+                  const value = e.target.value.replace(/[^0-9.]/g, '');
+                  // Ensure only one decimal point
+                  const parts = value.split('.');
+                  if (parts.length > 2) {
+                    return;
+                  }
+                  form.setValue("expectedAmount", value);
+                }}
               />
-              <p className="text-xs text-gray-500 mt-1">Monthly income</p>
+              <p className="text-xs text-gray-500 mt-1">Expected county payment amount (editable)</p>
+              {form.formState.errors.expectedAmount && (
+                <p className="text-xs text-red-500 mt-1">{form.formState.errors.expectedAmount.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="amount">Amount Received</Label>

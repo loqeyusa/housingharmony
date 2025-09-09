@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User, Circle, CheckCircle2, Trash2, Archive } from "lucide-react";
+import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User, Circle, CheckCircle2, Trash2, Archive, Camera, FileText } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import ClientForm from "@/components/client-form";
 import { BulkHousingUpload } from "@/components/BulkHousingUpload";
 import { CsvUpload } from "@/components/csv-upload";
+import { DocumentCapture } from "@/components/DocumentCapture";
+import { PaymentProcessingModal } from "@/components/PaymentProcessingModal";
 import type { Client } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 import { useAuth } from "@/contexts/auth-context";
@@ -36,6 +38,10 @@ export default function Clients() {
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [showDocumentCapture, setShowDocumentCapture] = useState(false);
+  const [isProcessingDocument, setIsProcessingDocument] = useState(false);
+  const [documentAnalysisResult, setDocumentAnalysisResult] = useState<any>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const { data: clients = [], isLoading } = useQuery<Client[]>({
     queryKey: ["/api/clients"],
@@ -73,6 +79,61 @@ export default function Clients() {
   const handleDeleteConfirm = () => {
     if (clientToDelete) {
       deleteClientMutation.mutate(clientToDelete.id);
+    }
+  };
+
+  const handleDocumentCaptured = async (imageData: string) => {
+    setIsProcessingDocument(true);
+    try {
+      const response = await apiRequest('POST', '/api/payment-documents/analyze', {
+        imageData
+      });
+      
+      setDocumentAnalysisResult(response);
+      setShowDocumentCapture(false);
+      setShowPaymentModal(true);
+      
+      toast({
+        title: "Document Analyzed",
+        description: `Found ${response.matchResults?.length || 0} client matches for processing.`,
+      });
+    } catch (error) {
+      console.error('Document analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze the payment document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingDocument(false);
+    }
+  };
+
+  const handleProcessPayments = async (selectedClients: any[]) => {
+    try {
+      const response = await apiRequest('POST', '/api/payment-documents/process-payments', {
+        documentId: documentAnalysisResult.documentId,
+        selectedClients
+      });
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      
+      setShowPaymentModal(false);
+      setDocumentAnalysisResult(null);
+      
+      toast({
+        title: "Payments Processed",
+        description: `Successfully processed ${response.processedCount} payment transactions.`,
+      });
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast({
+        title: "Processing Failed",
+        description: "Could not process payments. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -143,6 +204,15 @@ export default function Clients() {
           >
             <Upload className="w-4 h-4 mr-2" />
             Import CSV/Excel
+          </Button>
+          <Button 
+            onClick={() => setShowDocumentCapture(true)} 
+            variant="outline"
+            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            data-testid="button-capture-payment"
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Capture Payment
           </Button>
           <Button onClick={() => setShowClientForm(true)} className="bg-primary text-white hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
@@ -356,6 +426,40 @@ export default function Clients() {
       {/* Client Form Modal */}
       {showClientForm && (
         <ClientForm onClose={() => setShowClientForm(false)} />
+      )}
+
+      {/* Document Capture Modal */}
+      {showDocumentCapture && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Payment Document Capture</h2>
+            <DocumentCapture 
+              onDocumentCaptured={handleDocumentCaptured}
+              isProcessing={isProcessingDocument}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDocumentCapture(false)}
+                disabled={isProcessingDocument}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Processing Modal */}
+      {showPaymentModal && documentAnalysisResult && (
+        <PaymentProcessingModal 
+          analysisResult={documentAnalysisResult}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setDocumentAnalysisResult(null);
+          }}
+          onProcessPayments={handleProcessPayments}
+        />
       )}
 
       {/* Delete Confirmation Dialog */}

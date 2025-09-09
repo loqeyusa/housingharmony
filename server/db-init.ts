@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { companies, users } from "@shared/schema";
+import { companies, users, counties } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -35,6 +35,20 @@ export async function initializeDatabase(): Promise<void> {
 
     const [company] = await db.insert(companies).values(defaultCompany).returning();
     console.log(`Created default company: ${company.name} (ID: ${company.id})`);
+
+    // Create default counties
+    const defaultCounties = [
+      { name: "Ramsey County", state: "Minnesota" },
+      { name: "Hennepin County", state: "Minnesota" },
+      { name: "Dakota County", state: "Minnesota" },
+      { name: "Steele County", state: "Minnesota" }
+    ];
+
+    const createdCounties = await db.insert(counties).values(defaultCounties).returning();
+    console.log(`Created ${createdCounties.length} counties:`);
+    createdCounties.forEach(county => {
+      console.log(`  - ${county.name} (ID: ${county.id})`);
+    });
 
     // Create default admin user
     const adminPassword = process.env.ADMIN_PASSWORD || "admin123";

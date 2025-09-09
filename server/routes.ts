@@ -1954,9 +1954,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientData = await storage.getClient(clientId);
       const county = clientData?.county || clientData?.site || 'Unknown';
       
-      // Create pool fund entry (same as manual county payment button)
+      // Create transaction first (same as manual county payment button)
+      const transactionData = {
+        clientId,
+        type: paymentType,
+        amount: amount.toString(),
+        description,
+        paymentMethod: 'check',
+        month: new Date().toISOString().substring(0, 7), // YYYY-MM format
+        notes: `Payment processed via AI assistant from message: "${message}"`,
+        paymentDate: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+      };
+
+      console.log('Creating transaction via AI:', transactionData);
+      const transaction = await storage.createTransaction(transactionData);
+      
+      // Then create pool fund entry (same as manual county payment button)
       const poolFundData = {
-        transactionId: null, // No transaction ID since this is direct
+        transactionId: transaction.id, // Use the transaction ID we just created
         amount: amount.toString(),
         type: 'deposit' as const,
         description: description,
@@ -1975,6 +1990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 - **Amount:** $${amount}
 - **Client ID:** ${clientId}
 - **Type:** ${paymentType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+- **Transaction ID:** ${transaction.id}
 - **Pool Fund Entry ID:** ${poolFundEntry.id}
 - **County:** ${county}
 - **Date:** ${new Date().toISOString().split('T')[0]}

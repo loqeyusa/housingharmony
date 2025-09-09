@@ -100,13 +100,28 @@ async function importClientDataIfExists(companyId: number): Promise<void> {
     console.log("🔄 Importing client data from export file...");
     
     const exportData = JSON.parse(fs.readFileSync(exportPath, 'utf8'));
-    console.log(`📊 Found export with ${exportData.totalClients} clients from ${exportData.exportDate}`);
+    console.log(`📊 COMPREHENSIVE IMPORT - Found export from ${exportData.exportDate}`);
+    console.log(`   - ${exportData.totalClients || 0} clients`);
+    console.log(`   - ${exportData.totalTransactions || 0} transactions`);
+    console.log(`   - ${exportData.totalPoolFund || 0} pool fund entries`);
 
+    // Import properties first (needed by applications)
+    if (exportData.properties && exportData.properties.length > 0) {
+      console.log(`🏠 Importing ${exportData.properties.length} properties...`);
+      const propertiesToImport = exportData.properties.map((property: any) => ({
+        ...property,
+        companyId
+      }));
+      await db.insert(properties).values(propertiesToImport);
+      console.log(`✅ Imported ${propertiesToImport.length} properties!`);
+    }
+
+    // Import clients 
     if (exportData.clients && exportData.clients.length > 0) {
-      // Prepare clients with correct company ID
+      console.log(`👥 Importing ${exportData.clients.length} clients...`);
       const clientsToImport = exportData.clients.map((client: any) => ({
         ...client,
-        companyId, // Set to the current company ID
+        companyId,
         monthlyIncome: client.monthlyIncome ? client.monthlyIncome.toString() : "0.00",
         countyAmount: client.countyAmount ? client.countyAmount.toString() : "0.00",
         maxHousingPayment: client.maxHousingPayment ? client.maxHousingPayment.toString() : "1220.00",
@@ -115,18 +130,51 @@ async function importClientDataIfExists(companyId: number): Promise<void> {
         creditLimit: client.creditLimit ? client.creditLimit.toString() : "-100.00",
       }));
 
-      // Insert clients in batches
       const batchSize = 50;
       let imported = 0;
-      
       for (let i = 0; i < clientsToImport.length; i += batchSize) {
         const batch = clientsToImport.slice(i, i + batchSize);
         await db.insert(clients).values(batch);
         imported += batch.length;
         console.log(`📥 Imported ${imported}/${clientsToImport.length} clients...`);
       }
-
       console.log(`✅ Successfully imported ${imported} clients!`);
+    }
+
+    // Import applications  
+    if (exportData.applications && exportData.applications.length > 0) {
+      console.log(`📋 Importing ${exportData.applications.length} applications...`);
+      const applicationsToImport = exportData.applications.map((app: any) => ({
+        ...app,
+        companyId
+      }));
+      await db.insert(applications).values(applicationsToImport);
+      console.log(`✅ Imported ${applicationsToImport.length} applications!`);
+    }
+
+    // Import transactions
+    if (exportData.transactions && exportData.transactions.length > 0) {
+      console.log(`💰 Importing ${exportData.transactions.length} transactions...`);
+      const transactionsToImport = exportData.transactions.map((transaction: any) => ({
+        ...transaction,
+        companyId,
+        amount: transaction.amount ? transaction.amount.toString() : "0.00"
+      }));
+      await db.insert(transactions).values(transactionsToImport);
+      console.log(`✅ Imported ${transactionsToImport.length} transactions!`);
+    }
+
+    // Import pool fund entries
+    if (exportData.poolFund && exportData.poolFund.length > 0) {
+      console.log(`🏦 Importing ${exportData.poolFund.length} pool fund entries...`);
+      const poolFundToImport = exportData.poolFund.map((fund: any) => ({
+        ...fund,
+        companyId,
+        amount: fund.amount ? fund.amount.toString() : "0.00"
+      }));
+      await db.insert(poolFund).values(poolFundToImport);
+      console.log(`✅ Imported ${poolFundToImport.length} pool fund entries!`);
+    }
       
       // Show summary by county
       const countiesSummary = exportData.clients.reduce((acc: any, client: any) => {

@@ -1743,7 +1743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment Detection and Processing Function
-  async function detectAndProcessPayment(message: string, user: any) {
+  async function detectAndProcessPayment(message: string, user: any, conversationHistory?: any[]) {
     const result = {
       isPaymentRequest: false,
       success: false,
@@ -1824,16 +1824,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let clientId = null;
       const clients = await storage.getClients(user.companyId);
       
-      // Look for client reference in recent context (this is a simplified approach)
-      // In a real implementation, we'd maintain conversation context
+      // Try multiple strategies to find the client:
       if (clients && clients.length > 0) {
-        // For now, try to find Wesley Reynolds specifically mentioned in your example
-        const wesleyClient = clients.find(c => 
-          c.firstName?.toLowerCase().includes('wesley') && 
-          c.lastName?.toLowerCase().includes('reynolds')
-        );
-        if (wesleyClient) {
-          clientId = wesleyClient.id;
+        // 1. Look for client names mentioned in the message itself
+        for (const client of clients) {
+          const fullName = `${client.firstName || ''} ${client.lastName || ''}`.trim().toLowerCase();
+          const firstName = (client.firstName || '').toLowerCase();
+          const lastName = (client.lastName || '').toLowerCase();
+          
+          if (fullName && message.toLowerCase().includes(fullName)) {
+            clientId = client.id;
+            break;
+          } else if (firstName && lastName && 
+                     message.toLowerCase().includes(firstName) && 
+                     message.toLowerCase().includes(lastName)) {
+            clientId = client.id;
+            break;
+          }
+        }
+        
+        // 2. Look for client ID numbers mentioned in the message
+        if (!clientId) {
+          const idMatch = message.match(/(?:client\s*#?|id\s*#?)(\d+)/i);
+          if (idMatch) {
+            const possibleId = parseInt(idMatch[1]);
+            const foundClient = clients.find(c => c.id === possibleId);
+            if (foundClient) {
+              clientId = possibleId;
+            }
+          }
+        }
+        
+        // 3. For context-aware matching using conversation history
+        if (!clientId && conversationHistory && conversationHistory.length > 0) {
+          // Look through recent conversation history for mentioned clients
+          for (let i = conversationHistory.length - 1; i >= Math.max(0, conversationHistory.length - 5); i--) {
+            const historyMessage = conversationHistory[i];
+            if (historyMessage.role === 'assistant' && historyMessage.content) {
+              // Look for client information in AI responses (like "Wesley Reynolds", "ID: 522", etc.)
+              
+              // Check for "ID: xxx" pattern
+              const idMatch = historyMessage.content.match(/(?:ID|id):\s*(\d+)/);
+              if (idMatch) {
+                const possibleId = parseInt(idMatch[1]);
+                const foundClient = clients.find(c => c.id === possibleId);
+                if (foundClient) {
+                  clientId = possibleId;
+                  break;
+                }
+              }
+              
+              // Check for client names in the assistant's previous response
+              for (const client of clients) {
+                const fullName = `${client.firstName || ''} ${client.lastName || ''}`.trim().toLowerCase();
+                const firstName = (client.firstName || '').toLowerCase();
+                const lastName = (client.lastName || '').toLowerCase();
+                
+                if (fullName && historyMessage.content.toLowerCase().includes(fullName)) {
+                  clientId = client.id;
+                  break;
+                } else if (firstName && lastName && 
+                          historyMessage.content.toLowerCase().includes(firstName) && 
+                          historyMessage.content.toLowerCase().includes(lastName)) {
+                  clientId = client.id;
+                  break;
+                }
+              }
+              
+              if (clientId) break;
+            }
+          }
         }
       }
 
@@ -1905,7 +1965,7 @@ The payment has been recorded in the system and the client's account has been up
       }
 
       // Check if this is a payment request before processing with AI
-      const paymentResult = await detectAndProcessPayment(message, req.session.user);
+      const paymentResult = await detectAndProcessPayment(message, req.session.user, conversationHistory);
       
       if (paymentResult.isPaymentRequest) {
         // Return payment processing result instead of AI response

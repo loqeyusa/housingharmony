@@ -1956,7 +1956,7 @@ The payment has been recorded in the system and the client's account has been up
   }
 
   // Chat with AI Assistant
-  app.post("/api/assistant/chat", async (req, res) => {
+  app.post("/api/assistant/chat", requireAuth, async (req, res) => {
     try {
       const { message, context, conversationHistory } = req.body;
       

@@ -107,9 +107,84 @@ export function PaymentProcessingModal({ analysisResult, onClose, onProcessPayme
             </CardContent>
           </Card>
 
-          {/* Client Matches */}
+          {/* AI Extracted Data */}
+          {analysis.extractedData && analysis.extractedData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span>AI Extracted Payment Data</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {analysis.extractedData.map((extracted, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-blue-50">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Client Name:</span>
+                          <div className="text-lg font-semibold text-blue-900">{extracted.clientName}</div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Payment Amount:</span>
+                          <div className="text-lg font-semibold text-green-600">
+                            ${extracted.paymentAmount?.toLocaleString() || 'N/A'}
+                          </div>
+                        </div>
+                        {extracted.caseNumber && (
+                          <div>
+                            <span className="font-medium text-gray-700">Case Number:</span>
+                            <div className="font-mono">{extracted.caseNumber}</div>
+                          </div>
+                        )}
+                        {extracted.county && (
+                          <div>
+                            <span className="font-medium text-gray-700">County:</span>
+                            <div>{extracted.county}</div>
+                          </div>
+                        )}
+                        {extracted.paymentDate && (
+                          <div>
+                            <span className="font-medium text-gray-700">Payment Date:</span>
+                            <div>{extracted.paymentDate}</div>
+                          </div>
+                        )}
+                        {extracted.checkNumber && (
+                          <div>
+                            <span className="font-medium text-gray-700">Check Number:</span>
+                            <div className="font-mono">{extracted.checkNumber}</div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <Badge variant="secondary" className="text-xs">
+                          {extracted.documentType} • {extracted.paymentMethod}
+                        </Badge>
+                        <Badge variant={extracted.confidence > 0.8 ? 'default' : 'secondary'} className="text-xs">
+                          {Math.round((extracted.confidence || 0) * 100)}% Confidence
+                        </Badge>
+                      </div>
+                      {extracted.address && (
+                        <div className="mt-2 text-xs text-gray-600">
+                          <span className="font-medium">Address: </span>{extracted.address}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Matched Clients in System */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Select Clients to Process</h3>
+            <h3 className="text-lg font-medium flex items-center space-x-2">
+              <User className="w-5 h-5 text-green-600" />
+              <span>Matched Clients in System</span>
+              {matchResults.length > 0 && (
+                <Badge variant="default">{matchResults.length} Found</Badge>
+              )}
+            </h3>
             
             {matchResults.length === 0 ? (
               <Card>
@@ -118,7 +193,7 @@ export function PaymentProcessingModal({ analysisResult, onClose, onProcessPayme
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Client Matches Found</h3>
                   <p className="text-gray-600">
                     The system couldn't match any clients from the payment document. 
-                    You may need to process these payments manually.
+                    You may need to process these payments manually or check client names.
                   </p>
                 </CardContent>
               </Card>

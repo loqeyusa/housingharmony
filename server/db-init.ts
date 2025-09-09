@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { companies, users, counties, clients } from "@shared/schema";
+import { companies, users, counties, clients, properties, applications, transactions, poolFund } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import fs from "fs";
@@ -175,8 +175,9 @@ async function importClientDataIfExists(companyId: number): Promise<void> {
       await db.insert(poolFund).values(poolFundToImport);
       console.log(`✅ Imported ${poolFundToImport.length} pool fund entries!`);
     }
-      
-      // Show summary by county
+
+    // Show summary by county if clients exist
+    if (exportData.clients && exportData.clients.length > 0) {
       const countiesSummary = exportData.clients.reduce((acc: any, client: any) => {
         acc[client.county] = (acc[client.county] || 0) + 1;
         return acc;

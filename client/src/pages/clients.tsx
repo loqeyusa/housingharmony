@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User, Circle, CheckCircle2, Trash2, Archive, Camera, FileText } from "lucide-react";
+import { Search, Plus, Mail, Phone, Calendar, DollarSign, Grid3X3, List, MapPin, User, Circle, CheckCircle2, Trash2, Archive, Camera, FileText, Upload } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
@@ -95,7 +95,7 @@ export default function Clients() {
       
       toast({
         title: "Document Analyzed",
-        description: `Found ${response.matchResults?.length || 0} client matches for processing.`,
+        description: `Found ${response?.matchResults?.length || 0} client matches for processing.`,
       });
     } catch (error) {
       console.error('Document analysis error:', error);
@@ -125,7 +125,7 @@ export default function Clients() {
       
       toast({
         title: "Payments Processed",
-        description: `Successfully processed ${response.processedCount} payment transactions.`,
+        description: `Successfully processed ${response?.processedCount || selectedClients.length} payment transactions.`,
       });
     } catch (error) {
       console.error('Payment processing error:', error);

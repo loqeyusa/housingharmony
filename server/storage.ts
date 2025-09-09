@@ -72,7 +72,10 @@ import {
   type InsertAutomationTask,
   type QuickbooksSyncLog,
   type WebAutomationLog,
-  rentChanges
+  rentChanges,
+  paymentDocuments,
+  type PaymentDocument,
+  type InsertPaymentDocument,
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { db } from "./db";
@@ -132,6 +135,17 @@ export interface IStorage {
   getTransaction(id: number): Promise<Transaction | undefined>;
   getTransactionsByClient(clientId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+
+  // Payment Document Analysis
+  getPaymentDocuments(companyId?: number): Promise<PaymentDocument[]>;
+  getPaymentDocument(id: number): Promise<PaymentDocument | undefined>;
+  createPaymentDocument(document: InsertPaymentDocument): Promise<PaymentDocument>;
+  updatePaymentDocument(id: number, document: Partial<InsertPaymentDocument>): Promise<PaymentDocument | undefined>;
+  processPaymentDocument(documentId: number, transactionIds: number[]): Promise<PaymentDocument | undefined>;
+
+  // Client search helpers for payment processing
+  getClientsByCaseNumber(caseNumber: string, companyId?: number): Promise<Client[]>;
+  getClientsByName(firstName: string, lastName: string, companyId?: number): Promise<Client[]>;
 
   // Pool Fund
   getPoolFundEntries(): Promise<PoolFund[]>;
@@ -948,6 +962,90 @@ export class DatabaseStorage implements IStorage {
       .where(eq(applications.clientId, clientId))
       .orderBy(transactions.createdAt);
     return result.map(r => r.transactions).reverse();
+  }
+
+  // Payment Document Analysis Methods
+  async getPaymentDocuments(companyId?: number): Promise<PaymentDocument[]> {
+    if (companyId) {
+      const result = await db
+        .select()
+        .from(paymentDocuments)
+        .where(eq(paymentDocuments.companyId, companyId))
+        .orderBy(paymentDocuments.createdAt);
+      return result.reverse();
+    } else {
+      const result = await db.select().from(paymentDocuments).orderBy(paymentDocuments.createdAt);
+      return result.reverse();
+    }
+  }
+
+  async getPaymentDocument(id: number): Promise<PaymentDocument | undefined> {
+    const [document] = await db.select().from(paymentDocuments).where(eq(paymentDocuments.id, id));
+    return document || undefined;
+  }
+
+  async createPaymentDocument(document: InsertPaymentDocument): Promise<PaymentDocument> {
+    const [paymentDoc] = await db
+      .insert(paymentDocuments)
+      .values(document)
+      .returning();
+    return paymentDoc;
+  }
+
+  async updatePaymentDocument(id: number, document: Partial<InsertPaymentDocument>): Promise<PaymentDocument | undefined> {
+    const [updated] = await db
+      .update(paymentDocuments)
+      .set(document)
+      .where(eq(paymentDocuments.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async processPaymentDocument(documentId: number, transactionIds: number[]): Promise<PaymentDocument | undefined> {
+    const [updated] = await db
+      .update(paymentDocuments)
+      .set({ 
+        status: 'processed',
+        processedTransactionIds: transactionIds,
+        processedAt: new Date()
+      })
+      .where(eq(paymentDocuments.id, documentId))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Client search helpers for payment processing
+  async getClientsByCaseNumber(caseNumber: string, companyId?: number): Promise<Client[]> {
+    let query = db
+      .select()
+      .from(clients)
+      .where(eq(clients.caseNumber, caseNumber));
+    
+    if (companyId) {
+      query = query.where(and(eq(clients.caseNumber, caseNumber), eq(clients.companyId, companyId)));
+    }
+    
+    return await query;
+  }
+
+  async getClientsByName(firstName: string, lastName: string, companyId?: number): Promise<Client[]> {
+    let query = db
+      .select()
+      .from(clients)
+      .where(and(
+        ilike(clients.firstName, `%${firstName}%`),
+        ilike(clients.lastName, `%${lastName}%`)
+      ));
+    
+    if (companyId) {
+      query = query.where(and(
+        ilike(clients.firstName, `%${firstName}%`),
+        ilike(clients.lastName, `%${lastName}%`),
+        eq(clients.companyId, companyId)
+      ));
+    }
+    
+    return await query;
   }
 
   async getPoolFundEntries(companyId?: number): Promise<PoolFund[]> {

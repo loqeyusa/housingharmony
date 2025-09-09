@@ -13,7 +13,8 @@ const noCacheMiddleware = (req: any, res: any, next: any) => {
   });
   next();
 };
-import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, insertBuildingSchema, insertRentChangeSchema, PERMISSIONS } from "@shared/schema";
+import { insertClientSchema, insertPropertySchema, insertApplicationSchema, insertTransactionSchema, insertPoolFundSchema, insertHousingSupportSchema, insertVendorSchema, insertOtherSubsidySchema, insertCompanySchema, insertUserSchema, insertRoleSchema, insertUserRoleSchema, insertAuditLogSchema, insertClientNoteSchema, insertRecurringBillSchema, insertRecurringBillInstanceSchema, insertSiteSchema, insertBuildingSchema, insertRentChangeSchema, insertPaymentDocumentSchema, PERMISSIONS } from "@shared/schema";
+import { analyzePaymentDocument, findMatchingClients, determineCountyFromAddress } from './openai';
 import { propertyAssistant } from "./ai-assistant";
 import multer from 'multer';
 import path from 'path';
@@ -32,6 +33,14 @@ import session from 'express-session';
 import MemoryStore from 'memorystore';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authenticated middleware
+  const requireAuth = (req: any, res: any, next: any) => {
+    if (!req.session.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    next();
+  };
+
   // Configure session middleware with memory store
   const MemoryStoreSession = MemoryStore(session);
   app.use(session({
@@ -1049,6 +1058,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(400).json({ error: "Invalid transaction data" });
       }
+    }
+  });
+
+  // Payment Document Analysis
+  app.post("/api/payment-documents/analyze", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { imageData } = req.body;
+      if (!imageData) {
+        return res.status(400).json({ error: "Image data is required" });
+      }
+
+      console.log('Analyzing payment document...');
+      
+      // Create payment document record
+      const paymentDoc = await storage.createPaymentDocument({
+        companyId: user.companyId!,
+        documentType: 'county_payment_advice',
+        status: 'pending',
+        createdBy: user.id
+      });
+
+      // Analyze document with OpenAI
+      const analysis = await analyzePaymentDocument(imageData);
+      console.log('OpenAI Analysis result:', analysis);
+      
+      if (!analysis.success) {
+        await storage.updatePaymentDocument(paymentDoc.id, {
+          status: 'error',
+          errorMessage: analysis.error || 'Analysis failed'
+        });
+        return res.status(400).json({ error: analysis.error || 'Document analysis failed' });
+      }
+
+      // Find matching clients
+      const matchResults = await findMatchingClients(analysis.extractedData, user.companyId!, storage);
+      console.log('Client match results:', matchResults);
+      
+      // Update document with analysis results
+      await storage.updatePaymentDocument(paymentDoc.id, {
+        analysisData: analysis,
+        extractedClients: matchResults,
+        status: 'processed'
+      });
+
+      res.json({
+        documentId: paymentDoc.id,
+        analysis,
+        matchResults,
+        success: true
+      });
+
+    } catch (error) {
+      console.error('Payment document analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze payment document' });
+    }
+  });
+
+  app.post("/api/payment-documents/process-payments", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { documentId, selectedClients } = req.body;
+      if (!documentId || !selectedClients || !Array.isArray(selectedClients)) {
+        return res.status(400).json({ error: "Document ID and selected clients are required" });
+      }
+
+      const createdTransactions = [];
+      
+      // Create payment transactions for selected clients
+      for (const clientData of selectedClients) {
+        const { client, paymentAmount, paymentDate, paymentMethod, checkNumber, notes } = clientData;
+        
+        if (!client || !paymentAmount) {
+          console.warn('Skipping client due to missing data:', clientData);
+          continue;
+        }
+
+        try {
+          const transaction = await storage.createTransaction({
+            clientId: client.id,
+            type: 'county_reimbursement',
+            amount: paymentAmount.toString(),
+            description: `County payment received - ${notes || 'Automated from document analysis'}`,
+            paymentMethod: paymentMethod || 'check',
+            checkNumber: checkNumber || undefined,
+            paymentDate: paymentDate || new Date().toISOString().split('T')[0],
+            month: new Date().toISOString().slice(0, 7), // YYYY-MM format
+            notes: `Processed from payment document ${documentId}. ${notes || ''}`
+          });
+          
+          createdTransactions.push({
+            transactionId: transaction.id,
+            clientId: client.id,
+            clientName: `${client.firstName} ${client.lastName}`,
+            amount: paymentAmount
+          });
+          
+        } catch (transactionError) {
+          console.error('Error creating transaction for client:', client.id, transactionError);
+        }
+      }
+
+      // Update payment document with processed transaction IDs
+      if (createdTransactions.length > 0) {
+        const transactionIds = createdTransactions.map(t => t.transactionId);
+        await storage.processPaymentDocument(documentId, transactionIds);
+      }
+
+      res.json({
+        success: true,
+        processedCount: createdTransactions.length,
+        transactions: createdTransactions
+      });
+
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      res.status(500).json({ error: 'Failed to process payments' });
+    }
+  });
+
+  app.get("/api/payment-documents", requireAuth, async (req, res) => {
+    try {
+      const user = req.session.user;
+      if (!user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const documents = await storage.getPaymentDocuments(user.companyId || undefined);
+      res.json(documents);
+    } catch (error) {
+      console.error('Payment documents fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch payment documents' });
     }
   });
 

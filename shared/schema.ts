@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, decimal, timestamp, boolean, date, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, timestamp, boolean, date, json, jsonb, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -403,6 +403,28 @@ export const insertRecurringBillInstanceSchema = createInsertSchema(recurringBil
   paidAt: true,
 });
 
+// Payment document analysis table
+export const paymentDocuments = pgTable('payment_documents', {
+  id: serial('id').primaryKey(),
+  companyId: integer('company_id').notNull(),
+  originalImageUrl: varchar('original_image_url', { length: 500 }),
+  documentType: varchar('document_type', { length: 50 }).notNull().default('county_payment_advice'),
+  analysisData: jsonb('analysis_data'), // Store OpenAI analysis results
+  extractedClients: jsonb('extracted_clients'), // Array of client data found
+  processedTransactionIds: integer('processed_transaction_ids').array().default([]), // Track created transactions
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, processed, error
+  errorMessage: varchar('error_message', { length: 500 }),
+  processedAt: timestamp('processed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdBy: integer('created_by').notNull()
+});
+
+export const insertPaymentDocumentSchema = createInsertSchema(paymentDocuments).omit({
+  id: true,
+  createdAt: true,
+  processedAt: true,
+});
+
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 
@@ -441,6 +463,9 @@ export type InsertRecurringBill = z.infer<typeof insertRecurringBillSchema>;
 
 export type RecurringBillInstance = typeof recurringBillInstances.$inferSelect;
 export type InsertRecurringBillInstance = z.infer<typeof insertRecurringBillInstanceSchema>;
+
+export type PaymentDocument = typeof paymentDocuments.$inferSelect;
+export type InsertPaymentDocument = z.infer<typeof insertPaymentDocumentSchema>;
 
 // User Management Schema
 export const users = pgTable("users", {

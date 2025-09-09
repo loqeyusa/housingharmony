@@ -1379,12 +1379,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Client Pool Fund Summary
+  // Client Pool Fund Summary - Enhanced to include transaction data
   app.get("/api/clients/:clientId/pool-fund", async (req, res) => {
     try {
       const clientId = parseInt(req.params.clientId);
+      
+      // Get traditional pool fund data
       const poolFundData = await storage.getClientPoolFundInfo(clientId);
-      res.json(poolFundData);
+      
+      // Get transactions for this client to include in totals
+      const clientTransactions = await storage.getTransactionsByClient(clientId);
+      
+      // Calculate current month's transaction deposits
+      const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM format
+      const monthlyTransactionDeposits = clientTransactions
+        .filter(t => t.month === currentMonth && parseFloat(t.amount) > 0)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      // Calculate total transaction deposits (all time)
+      const totalTransactionDeposits = clientTransactions
+        .filter(t => parseFloat(t.amount) > 0)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      console.log(`Client ${clientId} pool fund data:`, {
+        originalTotalDeposits: poolFundData.totalDeposits,
+        transactionDeposits: totalTransactionDeposits,
+        monthlyTransactionDeposits: monthlyTransactionDeposits
+      });
+      
+      // Enhance the response to include transaction data
+      const enhancedData = {
+        ...poolFundData,
+        totalDeposits: poolFundData.totalDeposits + totalTransactionDeposits,
+        recentEntries: [
+          ...poolFundData.recentEntries,
+          ...clientTransactions.map(t => ({
+            id: t.id,
+            amount: parseFloat(t.amount),
+            type: t.type,
+            description: t.description || 'Transaction',
+            created_at: t.createdAt?.toISOString() || new Date().toISOString(),
+            county: 'Transaction'
+          }))
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10)
+      };
+      
+      res.json(enhancedData);
     } catch (error) {
       console.error('Client pool fund error:', error);
       res.status(500).json({ error: "Failed to fetch client pool fund data" });

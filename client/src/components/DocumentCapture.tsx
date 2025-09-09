@@ -208,10 +208,21 @@ function CameraModal({ isOpen, onClose, onCapture }: CameraModalProps) {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-auto max-h-96 rounded-lg shadow-lg bg-black"
+                  controls={false}
+                  className="w-full h-auto max-h-96 rounded-lg shadow-lg bg-gray-900"
                   style={{ 
                     aspectRatio: '4/3',
-                    objectFit: 'cover'
+                    objectFit: 'cover',
+                    minHeight: '240px'
+                  }}
+                  onCanPlay={() => {
+                    console.log('Video can play - attempting to start');
+                    if (videoRef.current) {
+                      videoRef.current.play().catch(e => console.log('onCanPlay play failed:', e));
+                    }
+                  }}
+                  onLoadedData={() => {
+                    console.log('Video data loaded');
                   }}
                   data-testid="camera-video"
                 />

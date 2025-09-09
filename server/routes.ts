@@ -3837,5 +3837,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // Payment Document Analysis Routes
+  app.post("/api/payment-documents/analyze", async (req, res) => {
+    try {
+      console.log("Payment document analysis request received");
+      
+      const { imageData } = req.body;
+      if (!imageData) {
+        return res.status(400).json({ error: "Image data is required" });
+      }
+
+      console.log("Analyzing payment document with OpenAI...");
+      const { analyzePaymentDocument } = await import("./openai");
+      const analysis = await analyzePaymentDocument(imageData);
+      
+      console.log("Payment document analysis completed:", analysis.success);
+      
+      if (!analysis.success) {
+        return res.status(422).json({ 
+          error: "Analysis failed", 
+          details: analysis.error 
+        });
+      }
+
+      // Generate unique document ID
+      const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Find matching clients in database
+      const matchResults = [];
+      for (const extracted of analysis.extractedData) {
+        try {
+          // Search for client by name (case insensitive)
+          const clientMatches = await storage.getClients().then(clients =>
+            clients.filter(client => {
+              const fullName = `${client.firstName} ${client.lastName}`.toLowerCase();
+              const extractedName = extracted.clientName.toLowerCase();
+              return fullName.includes(extractedName) || extractedName.includes(fullName);
+            })
+          );
+
+          matchResults.push({
+            extractedData: extracted,
+            clientMatches: clientMatches.map(client => ({
+              id: client.id,
+              name: `${client.firstName} ${client.lastName}`,
+              caseNumber: client.caseNumber,
+              currentBalance: client.currentBalance
+            }))
+          });
+        } catch (error) {
+          console.error("Error matching client:", error);
+          matchResults.push({
+            extractedData: extracted,
+            clientMatches: []
+          });
+        }
+      }
+
+      res.json({
+        documentId,
+        analysis,
+        matchResults,
+        totalMatches: matchResults.reduce((sum, result) => sum + result.clientMatches.length, 0)
+      });
+
+    } catch (error) {
+      console.error("Payment document analysis error:", error);
+      res.status(500).json({ 
+        error: "Analysis failed", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.post("/api/payment-documents/process-payments", async (req, res) => {
+    try {
+      console.log("Processing payments from document analysis");
+      
+      const { documentId, selectedClients } = req.body;
+      if (!documentId || !selectedClients || !Array.isArray(selectedClients)) {
+        return res.status(400).json({ error: "Invalid request data" });
+      }
+
+      const processedPayments = [];
+      
+      for (const clientData of selectedClients) {
+        try {
+          const { clientId, paymentAmount, paymentDate, extracted } = clientData;
+          
+          // Create transaction record
+          const transactionData = {
+            clientId: parseInt(clientId),
+            type: 'payment' as const,
+            amount: paymentAmount.toString(),
+            description: `County payment - ${extracted.county || 'Unknown County'}`,
+            transactionDate: paymentDate || new Date().toISOString().split('T')[0],
+            paymentMethod: extracted.paymentMethod || 'check',
+            checkNumber: extracted.checkNumber || null,
+            documentId
+          };
+
+          const transaction = await storage.createTransaction(transactionData);
+          
+          // Update client balance
+          const client = await storage.getClient(parseInt(clientId));
+          if (client) {
+            const currentBalance = parseFloat(client.currentBalance || '0');
+            const newBalance = currentBalance + paymentAmount;
+            
+            await storage.updateClient(parseInt(clientId), {
+              currentBalance: newBalance.toFixed(2)
+            });
+          }
+
+          processedPayments.push({
+            clientId,
+            transactionId: transaction.id,
+            amount: paymentAmount,
+            success: true
+          });
+          
+        } catch (error) {
+          console.error("Error processing payment for client:", clientData.clientId, error);
+          processedPayments.push({
+            clientId: clientData.clientId,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      res.json({
+        documentId,
+        processedPayments,
+        totalProcessed: processedPayments.filter(p => p.success).length,
+        totalFailed: processedPayments.filter(p => !p.success).length
+      });
+
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      res.status(500).json({ 
+        error: "Payment processing failed", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   return httpServer;
 }

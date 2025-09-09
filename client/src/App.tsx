@@ -1,5 +1,5 @@
 import { useEffect, Suspense } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import Layout from "@/components/layout";
 import ProtectedRoute from "@/components/protected-route";
-import MobileRedirect from "@/components/mobile-redirect";
 import Dashboard from "@/pages/dashboard";
 import Clients from "@/pages/clients";
 import ClientDetails from "@/pages/client-details";
@@ -100,6 +99,7 @@ function AuthenticatedRouter() {
 
 function Router() {
   const { isAuthenticated, loading } = useAuth();
+  const [location, setLocation] = useLocation();
 
   // Simple mobile detection
   const isMobile = () => {
@@ -111,12 +111,12 @@ function Router() {
     return mobileRegex.test(userAgent) || (touchDevice && smallScreen);
   };
 
-  // Redirect mobile users to mobile interface
+  // Redirect mobile users to mobile interface using router navigation
   useEffect(() => {
-    if (isAuthenticated && isMobile() && !window.location.pathname.includes('/mobile')) {
-      window.location.href = '/mobile';
+    if (isAuthenticated && isMobile() && !location.includes('/mobile')) {
+      setLocation('/mobile');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, location, setLocation]);
 
   if (loading) {
     return (

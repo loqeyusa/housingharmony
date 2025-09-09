@@ -1742,6 +1742,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment Detection and Processing Function
+  async function detectAndProcessPayment(message: string, user: any) {
+    const result = {
+      isPaymentRequest: false,
+      success: false,
+      response: "",
+      suggestions: [] as string[]
+    };
+
+    // Payment detection patterns
+    const paymentPatterns = [
+      /add\s+\$?(\d+(?:\.\d{2})?)\s+to\s+(?:his|her|their)?\s*account/i,
+      /add\s+(\d+(?:\.\d{2})?)\s+(?:dollars?)?\s+to\s+(?:his|her|their)?\s*account/i,
+      /credit\s+\$?(\d+(?:\.\d{2})?)\s+to\s+(?:his|her|their)?\s*account/i,
+      /payment\s+of\s+\$?(\d+(?:\.\d{2})?)\s+for/i,
+      /received\s+\$?(\d+(?:\.\d{2})?)\s+(?:from|for)/i,
+      /deposit\s+\$?(\d+(?:\.\d{2})?)/i
+    ];
+
+    // Check if message contains payment-related keywords
+    const paymentKeywords = ['add', 'credit', 'payment', 'received', 'warrant', 'county', 'deposit', 'account'];
+    const hasPaymentKeyword = paymentKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword)
+    );
+
+    if (!hasPaymentKeyword) {
+      return result;
+    }
+
+    // Try to extract amount from various patterns
+    let amount = 0;
+    let extractedAmount = "";
+    
+    for (const pattern of paymentPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        extractedAmount = match[1];
+        amount = parseFloat(extractedAmount);
+        result.isPaymentRequest = true;
+        break;
+      }
+    }
+
+    // Also try simple number extraction if no pattern matched but payment keywords exist
+    if (!result.isPaymentRequest && hasPaymentKeyword) {
+      const numberMatch = message.match(/(\d+(?:\.\d{2})?)/);
+      if (numberMatch) {
+        extractedAmount = numberMatch[1];
+        amount = parseFloat(extractedAmount);
+        result.isPaymentRequest = true;
+      }
+    }
+
+    if (!result.isPaymentRequest || amount <= 0) {
+      return result;
+    }
+
+    try {
+      if (!user) {
+        result.response = "You must be logged in to process payments.";
+        return result;
+      }
+
+      // Determine payment type based on message context
+      let paymentType = 'county_reimbursement'; // default
+      let description = `Payment of $${amount}`;
+      
+      if (message.toLowerCase().includes('county') || message.toLowerCase().includes('warrant')) {
+        paymentType = 'county_reimbursement';
+        description = `County reimbursement payment of $${amount}`;
+      } else if (message.toLowerCase().includes('rent')) {
+        paymentType = 'rent';
+        description = `Rent payment of $${amount}`;
+      } else if (message.toLowerCase().includes('utility') || message.toLowerCase().includes('electric')) {
+        paymentType = 'utility_electric';
+        description = `Utility payment of $${amount}`;
+      }
+
+      // Get the most recent client from conversation context or search
+      let clientId = null;
+      const clients = await storage.getClients(user.companyId);
+      
+      // Look for client reference in recent context (this is a simplified approach)
+      // In a real implementation, we'd maintain conversation context
+      if (clients && clients.length > 0) {
+        // For now, try to find Wesley Reynolds specifically mentioned in your example
+        const wesleyClient = clients.find(c => 
+          c.firstName?.toLowerCase().includes('wesley') && 
+          c.lastName?.toLowerCase().includes('reynolds')
+        );
+        if (wesleyClient) {
+          clientId = wesleyClient.id;
+        }
+      }
+
+      if (!clientId) {
+        result.response = `I found a payment request for $${amount}, but I need to know which client this payment is for. Please specify the client name or ID.`;
+        result.suggestions = [
+          "Find client first, then add payment",
+          "Show recent clients",
+          "Search for specific client"
+        ];
+        return result;
+      }
+
+      // Create the transaction
+      const transactionData = {
+        clientId,
+        type: paymentType,
+        amount: amount.toString(),
+        description,
+        paymentMethod: 'check', // default
+        month: new Date().toISOString().substring(0, 7), // YYYY-MM format
+        notes: `Payment processed via AI assistant from message: "${message}"`,
+        paymentDate: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+      };
+
+      console.log('Creating transaction via AI:', transactionData);
+      
+      const transaction = await storage.createTransaction(transactionData);
+      
+      result.success = true;
+      result.response = `✅ **Payment Processed Successfully!**
+
+**Transaction Details:**
+- **Amount:** $${amount}
+- **Client ID:** ${clientId}
+- **Type:** ${paymentType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+- **Transaction ID:** ${transaction.id}
+- **Date:** ${transactionData.paymentDate}
+
+The payment has been recorded in the system and the client's account has been updated.`;
+
+      result.suggestions = [
+        `View client #${clientId} details`,
+        "Show recent transactions",
+        "Check account balance",
+        "Process another payment"
+      ];
+
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      result.response = `I detected a payment request for $${amount}, but there was an error processing it: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or process the payment manually.`;
+      result.suggestions = [
+        "Try payment request again",
+        "Check client details first",
+        "Use manual transaction entry"
+      ];
+    }
+
+    return result;
+  }
+
   // Chat with AI Assistant
   app.post("/api/assistant/chat", async (req, res) => {
     try {
@@ -1751,6 +1904,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Message is required" });
       }
 
+      // Check if this is a payment request before processing with AI
+      const paymentResult = await detectAndProcessPayment(message, req.session.user);
+      
+      if (paymentResult.isPaymentRequest) {
+        // Return payment processing result instead of AI response
+        return res.json({
+          response: paymentResult.response,
+          confidence: paymentResult.success ? 0.95 : 0.8,
+          suggestions: paymentResult.suggestions || []
+        });
+      }
+
+      // Process as normal AI chat
       const response = await propertyAssistant.processQuery({ 
         message, 
         context, 

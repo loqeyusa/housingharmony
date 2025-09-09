@@ -64,6 +64,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// Fix mobile redirect issue by ensuring proper headers for mobile browsers
+app.use((req, res, next) => {
+  // Add headers to prevent mobile redirects to Replit IDE
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Force serving the app for mobile user agents
+  const userAgent = req.get('User-Agent') || '';
+  const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  
+  if (isMobile) {
+    // Add specific headers for mobile to ensure proper rendering
+    res.setHeader('Viewport', 'width=device-width, initial-scale=1.0');
+    res.setHeader('X-UA-Compatible', 'IE=edge');
+  }
+  
+  next();
+});
+
 // Increase body parser limits for image uploads (base64 images can be large)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));

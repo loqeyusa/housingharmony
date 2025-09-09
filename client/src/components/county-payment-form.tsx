@@ -49,7 +49,7 @@ export default function CountyPaymentForm({
   const form = useForm<CountyPaymentData>({
     resolver: zodResolver(countyPaymentSchema),
     defaultValues: {
-      amount: "",
+      amount: "1242",
       expectedAmount: monthlyIncome.toString(),
       county: county,
       paymentMethod: "check",

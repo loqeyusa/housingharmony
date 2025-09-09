@@ -65,8 +65,8 @@ export default function PoolFundForm({ onClose, onSuccess }: PoolFundFormProps) 
     resolver: zodResolver(insertPoolFundSchema),
     defaultValues: {
       transactionId: 1, // This will be set by the backend
-      amount: "0.00",
-      type: "withdrawal",
+      amount: "1242.00",
+      type: "deposit",
       description: "",
       county: "",
     },

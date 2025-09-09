@@ -140,6 +140,8 @@ export default function Mobile() {
         imageData
       });
       
+      console.log('Document Analysis Response:', JSON.stringify(response, null, 2));
+      
       setDocumentAnalysisResult(response);
       setShowDocumentCapture(false);
       setShowPaymentModal(true);

@@ -66,6 +66,11 @@ export function PaymentProcessingModal({ analysisResult, onClose, onProcessPayme
   };
 
   const { matchResults = [], analysis = {} } = analysisResult;
+  
+  console.log('PaymentProcessingModal - analysisResult:', JSON.stringify(analysisResult, null, 2));
+  console.log('PaymentProcessingModal - matchResults:', matchResults);
+  console.log('PaymentProcessingModal - analysis:', analysis);
+  console.log('PaymentProcessingModal - analysis.extractedData:', analysis.extractedData);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>

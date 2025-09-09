@@ -1969,6 +1969,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Creating transaction via AI:', transactionData);
       const transaction = await storage.createTransaction(transactionData);
       
+      // Get current month dates for benefit period
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth(); // 0-based
+      const benefitPeriodStart = new Date(year, month, 1).toISOString().split('T')[0];
+      const benefitPeriodEnd = new Date(year, month + 1, 0).toISOString().split('T')[0];
+      
       // Then create pool fund entry (same as manual county payment button)
       const poolFundData = {
         transactionId: transaction.id, // Use the transaction ID we just created
@@ -1976,7 +1983,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'deposit' as const,
         description: description,
         county: county,
-        clientId: clientId
+        clientId: clientId,
+        benefitPeriodStart: benefitPeriodStart,
+        benefitPeriodEnd: benefitPeriodEnd
       };
 
       console.log('Creating pool fund entry via AI:', poolFundData);
@@ -1993,9 +2002,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 - **Transaction ID:** ${transaction.id}
 - **Pool Fund Entry ID:** ${poolFundEntry.id}
 - **County:** ${county}
+- **Benefit Period:** ${benefitPeriodStart} to ${benefitPeriodEnd}
 - **Date:** ${new Date().toISOString().split('T')[0]}
 
-The payment has been recorded in the system and the client's account balance has been updated.`;
+The payment has been recorded in the system with the benefit period and the client's account balance has been updated.`;
 
       result.suggestions = [
         `View client #${clientId} details`,

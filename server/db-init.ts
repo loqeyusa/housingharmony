@@ -62,7 +62,7 @@ export async function initializeDatabase(): Promise<void> {
       email: "jamal@admin.com",
       firstName: "Jamal",
       lastName: "Admin",
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       isEnabled: true,
       isSuperAdmin: true,
       createdById: null,

@@ -1023,11 +1023,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
       const { clientId } = req.query;
+      console.log('Transactions API: clientId query param:', clientId);
       if (clientId) {
         const transactions = await storage.getTransactionsByClient(parseInt(clientId as string));
+        console.log(`Transactions for client ${clientId}:`, transactions);
         res.json(transactions);
       } else {
         const transactions = await storage.getTransactions(user.companyId || undefined);
+        console.log('All transactions for company:', transactions.length);
         res.json(transactions);
       }
     } catch (error) {

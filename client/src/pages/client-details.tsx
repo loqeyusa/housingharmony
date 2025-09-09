@@ -1328,7 +1328,8 @@ export default function ClientDetails() {
           clientId={parseInt(clientId!)}
           clientName={`${client.firstName} ${client.lastName}`}
           monthlyIncome={parseFloat(client.monthlyIncome?.toString() || '0')}
-          county={client.site || ''}
+          county={client.county || client.site || ''}
+          countyAmount={parseFloat(client.countyAmount?.toString() || '1242')}
           onClose={() => setShowCountyPaymentForm(false)}
           onSuccess={() => {
             // Refresh all relevant data

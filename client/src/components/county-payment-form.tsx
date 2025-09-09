@@ -32,6 +32,7 @@ interface CountyPaymentFormProps {
   clientName: string;
   monthlyIncome: number;
   county?: string;
+  countyAmount?: number; // Expected amount from client profile
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -41,6 +42,7 @@ export default function CountyPaymentForm({
   clientName,
   monthlyIncome,
   county = "",
+  countyAmount = 1242,
   onClose,
   onSuccess,
 }: CountyPaymentFormProps) {
@@ -50,7 +52,7 @@ export default function CountyPaymentForm({
     resolver: zodResolver(countyPaymentSchema),
     defaultValues: {
       amount: "1242",
-      expectedAmount: monthlyIncome.toString(),
+      expectedAmount: countyAmount.toString(),
       county: county,
       paymentMethod: "check",
       referenceNumber: "",
@@ -218,9 +220,11 @@ export default function CountyPaymentForm({
             <Label htmlFor="county">County</Label>
             <Input
               id="county"
-              placeholder="e.g., Hennepin County"
               {...form.register("county")}
+              className="bg-gray-50"
+              readOnly
             />
+            <p className="text-xs text-gray-500 mt-1">Auto-populated from client profile</p>
             {form.formState.errors.county && (
               <p className="text-xs text-red-500 mt-1">{form.formState.errors.county.message}</p>
             )}

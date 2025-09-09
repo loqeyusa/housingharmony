@@ -100,7 +100,10 @@ app.use((req, res, next) => {
 
 (async () => {
   // Initialize database with default admin user if needed
-  if (process.env.NODE_ENV === "production") {
+  // Run initialization in production OR if we detect this is a deployed environment
+  const isDeployed = process.env.REPLIT_DEPLOYMENT === "1" || process.env.NODE_ENV === "production";
+  if (isDeployed || process.env.NODE_ENV === "production") {
+    console.log("🚀 Detected deployed environment, initializing database...");
     await ensureDatabaseInitialized();
   }
   

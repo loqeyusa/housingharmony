@@ -205,6 +205,8 @@ export const poolFund = pgTable("pool_fund", {
   county: text("county").notNull(), // county/site designation
   siteId: integer("site_id"), // Link to site for categorization
   month: text("month"), // YYYY-MM format for transaction month
+  benefitPeriodStart: date("benefit_period_start"), // Start date for benefit period
+  benefitPeriodEnd: date("benefit_period_end"), // End date for benefit period
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

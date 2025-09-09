@@ -1096,20 +1096,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
             })
           );
 
-          matchResults.push({
-            extractedData: extracted,
-            clientMatches: clientMatches.map(client => ({
-              id: client.id,
-              name: `${client.firstName} ${client.lastName}`,
-              caseNumber: client.caseNumber,
-              currentBalance: client.currentBalance
-            }))
-          });
+          // For each extracted data, create one match result per client match
+          if (clientMatches.length > 0) {
+            clientMatches.forEach(client => {
+              matchResults.push({
+                extractedData: extracted,
+                matchedClient: {
+                  id: client.id,
+                  firstName: client.firstName,
+                  lastName: client.lastName,
+                  name: `${client.firstName} ${client.lastName}`,
+                  caseNumber: client.caseNumber,
+                  currentBalance: client.currentBalance
+                },
+                matchType: 'name',
+                confidence: 0.85
+              });
+            });
+          } else {
+            // No matches found for this extracted data
+            matchResults.push({
+              extractedData: extracted,
+              matchedClient: null,
+              matchType: 'no_match',
+              confidence: 0
+            });
+          }
         } catch (error) {
           console.error("Error matching client:", error);
           matchResults.push({
             extractedData: extracted,
-            clientMatches: []
+            matchedClient: null,
+            matchType: 'error',
+            confidence: 0
           });
         }
       }
@@ -1122,8 +1141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         documentId,
         analysis,
-        matchResults,
-        totalMatches: matchResults.reduce((sum, result) => sum + result.clientMatches.length, 0),
+        matchResults: matchResults.filter(result => result.matchedClient !== null), // Only include actual matches
+        allResults: matchResults, // Include all results for debugging
+        totalMatches: matchResults.filter(result => result.matchedClient !== null).length,
         success: true
       });
 

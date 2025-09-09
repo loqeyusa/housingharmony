@@ -28,7 +28,7 @@ export interface PaymentDocumentAnalysis {
 export async function analyzePaymentDocument(base64Image: string): Promise<PaymentDocumentAnalysis> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      model: "gpt-4o", // Using GPT-4o for vision capabilities with payment documents
       messages: [
         {
           role: "system",
@@ -95,7 +95,7 @@ CRITICAL: Response must be valid JSON only, no other text.`
         },
       ],
       response_format: { type: "json_object" },
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
     });
 
     const analysisText = response.choices[0].message.content;

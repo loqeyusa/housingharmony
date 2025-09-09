@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("🗄️ Using PostgreSQL session store for production");
     const PgStore = connectPgSimple(session);
     sessionStore = new PgStore({
-      pool: (db as any).pool || db, // Use the database connection
+      conString: process.env.DATABASE_URL, // Use connection string directly
       tableName: 'user_sessions',
       createTableIfMissing: true,
     });

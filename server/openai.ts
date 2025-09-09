@@ -218,3 +218,44 @@ export function determineCountyFromAddress(address: string): string {
 
   return 'Unknown County';
 }
+
+export async function analyzeImage(imageData: string) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Please analyze this image in detail. Describe what you see, identify any text, objects, people, or important elements. Provide a comprehensive analysis including colors, composition, context, and any notable features or details."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageData
+              }
+            }
+          ],
+        },
+      ],
+      max_completion_tokens: 1000,
+    });
+
+    const analysis = response.choices[0].message.content;
+    
+    return {
+      analysis: analysis || "I can see the image but couldn't generate a detailed analysis.",
+      confidence: 0.9,
+      details: {
+        model: "gpt-4o",
+        tokens_used: response.usage?.total_tokens || 0
+      },
+      success: true
+    };
+  } catch (error) {
+    console.error('OpenAI image analysis error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Image analysis failed');
+  }
+}

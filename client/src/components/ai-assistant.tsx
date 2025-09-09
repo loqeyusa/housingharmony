@@ -15,7 +15,10 @@ import {
   User,
   Loader2,
   Lightbulb,
-  X
+  X,
+  Image as ImageIcon,
+  Upload,
+  Eye
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +29,8 @@ interface Message {
   content: string;
   timestamp: Date;
   suggestions?: string[];
+  imageUrl?: string;
+  analysisData?: any;
 }
 
 interface AssistantResponse {
@@ -59,8 +64,45 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Image analysis mutation
+  const imageAnalysisMutation = useMutation({
+    mutationFn: async (imageData: string) => {
+      const response = await fetch("/api/assistant/analyze-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageData }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to analyze image');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: data.analysis,
+        timestamp: new Date(),
+        analysisData: data
+      };
+      setMessages(prev => [...prev, newMessage]);
+    },
+    onError: (error) => {
+      toast({
+        title: "Image Analysis Failed",
+        description: "Could not analyze the image. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -224,6 +266,61 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
     scrollToBottom();
   }, [messages]);
 
+  // Handle image upload
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 10MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string;
+        setSelectedImage(imageData);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle image analysis
+  const handleAnalyzeImage = () => {
+    if (!selectedImage) return;
+
+    setIsAnalyzingImage(true);
+    
+    // Add user message with image
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: "Please analyze this image",
+      timestamp: new Date(),
+      imageUrl: selectedImage
+    };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Analyze image
+    imageAnalysisMutation.mutate(selectedImage);
+    setSelectedImage(null);
+    setIsAnalyzingImage(false);
+  };
+
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
 
@@ -368,6 +465,16 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
                       <User className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     )}
                     <div className="flex-1">
+                      {/* Display image if present */}
+                      {message.imageUrl && (
+                        <div className="mb-3">
+                          <img 
+                            src={message.imageUrl} 
+                            alt="User uploaded image" 
+                            className="max-w-xs rounded-lg border shadow-sm"
+                          />
+                        </div>
+                      )}
                       <p className="whitespace-pre-wrap">{message.content}</p>
                       <p className="text-xs opacity-70 mt-1">
                         {message.timestamp.toLocaleTimeString()}
@@ -494,6 +601,27 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
                   </>
                 )}
               </Button>
+              
+              {/* Image Upload Button */}
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={imageAnalysisMutation.isPending}
+                className="h-12 px-6 font-medium"
+              >
+                {imageAnalysisMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="w-5 h-5 mr-2" />
+                    Upload Image
+                  </>
+                )}
+              </Button>
             </div>
             
             {isRecording && (
@@ -504,6 +632,53 @@ export default function AIAssistant({ onClose }: AIAssistantProps) {
                 </div>
               </div>
             )}
+            
+            {/* Image Preview */}
+            {selectedImage && (
+              <div className="mt-3 flex items-center justify-between bg-slate-50 rounded-lg p-3">
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src={selectedImage} 
+                    alt="Selected for analysis" 
+                    className="w-16 h-16 object-cover rounded border"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">Image ready for analysis</p>
+                    <p className="text-xs text-slate-600">Click "Analyze" to send to AI</p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    onClick={handleAnalyzeImage}
+                    disabled={isAnalyzingImage}
+                  >
+                    {isAnalyzingImage ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    ) : (
+                      <Eye className="w-4 h-4 mr-1" />
+                    )}
+                    Analyze
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedImage(null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Hidden File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
           </div>
         </CardContent>
       </Card>

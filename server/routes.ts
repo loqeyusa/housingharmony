@@ -1798,6 +1798,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image Analysis with OpenAI Vision
+  app.post("/api/assistant/analyze-image", async (req, res) => {
+    try {
+      const { imageData } = req.body;
+      
+      if (!imageData || typeof imageData !== 'string') {
+        return res.status(400).json({ error: "Image data is required" });
+      }
+
+      // Import image analysis function
+      const { analyzeImage } = await import('./openai');
+      
+      // Use OpenAI Vision API to analyze the image
+      const analysisResult = await analyzeImage(imageData);
+      
+      res.json({
+        analysis: analysisResult.analysis,
+        confidence: analysisResult.confidence,
+        details: analysisResult.details,
+        success: true
+      });
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      res.status(500).json({ error: "Image analysis temporarily not available. Please try again." });
+    }
+  });
+
   // ========================
   // USER MANAGEMENT & AUTHENTICATION API ROUTES
   // ========================

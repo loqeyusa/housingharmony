@@ -101,10 +101,22 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize database with default admin user if needed
   // Run initialization in production OR if we detect this is a deployed environment
-  const isDeployed = process.env.REPLIT_DEPLOYMENT === "1" || process.env.NODE_ENV === "production";
-  if (isDeployed || process.env.NODE_ENV === "production") {
+  const isDeployed = process.env.REPLIT_DEPLOYMENT === "1" || 
+                    process.env.NODE_ENV === "production" || 
+                    process.env.REPLIT_ENVIRONMENT === "production" ||
+                    process.env.DATABASE_URL?.includes("neon.tech");
+  
+  console.log("🔍 Environment check:");
+  console.log("  NODE_ENV:", process.env.NODE_ENV);
+  console.log("  REPLIT_DEPLOYMENT:", process.env.REPLIT_DEPLOYMENT);
+  console.log("  DATABASE_URL contains neon.tech:", process.env.DATABASE_URL?.includes("neon.tech"));
+  console.log("  Is deployed:", isDeployed);
+  
+  if (isDeployed) {
     console.log("🚀 Detected deployed environment, initializing database...");
     await ensureDatabaseInitialized();
+  } else {
+    console.log("🏠 Running in development mode, skipping database initialization");
   }
   
   const server = await registerRoutes(app);

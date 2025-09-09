@@ -31,6 +31,8 @@ import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
 import session from 'express-session';
 import MemoryStore from 'memorystore';
+import connectPgSimple from 'connect-pg-simple';
+import { db } from './db';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authenticated middleware
@@ -41,22 +43,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
-  // Configure session middleware with memory store
-  const MemoryStoreSession = MemoryStore(session);
-  app.use(session({
-    store: new MemoryStoreSession({
+  // Configure session middleware - use PostgreSQL store for production, memory for development
+  const isProduction = process.env.NODE_ENV === 'production' || 
+                      process.env.REPLIT_DEPLOYMENT === "1" || 
+                      process.env.DATABASE_URL?.includes("neon.tech");
+  
+  let sessionStore;
+  if (isProduction) {
+    console.log("🗄️ Using PostgreSQL session store for production");
+    const PgStore = connectPgSimple(session);
+    sessionStore = new PgStore({
+      pool: (db as any).pool || db, // Use the database connection
+      tableName: 'user_sessions',
+      createTableIfMissing: true,
+    });
+  } else {
+    console.log("💾 Using memory session store for development");
+    const MemoryStoreSession = MemoryStore(session);
+    sessionStore = new MemoryStoreSession({
       checkPeriod: 86400000, // prune expired entries every 24h
-    }),
-    secret: process.env.SESSION_SECRET || 'default-session-secret-change-in-production',
+    });
+  }
+
+  app.use(session({
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || 'housing-mgmt-secret-key-change-in-production',
     name: 'connect.sid',
-    resave: false, // Changed to false to prevent race conditions
-    saveUninitialized: false, // Don't save uninitialized sessions
+    resave: false,
+    saveUninitialized: false,
     rolling: true, // Reset expiration on every request
     cookie: {
-      secure: false, // Set to false for development
-      httpOnly: false, // Allow JavaScript access for debugging
+      secure: false, // Keep false even in production for Replit
+      httpOnly: false, // Allow frontend access for deployed environment  
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
       sameSite: 'lax', // Allow cross-site requests
+      domain: undefined, // Let the browser handle the domain
     },
   }));
 

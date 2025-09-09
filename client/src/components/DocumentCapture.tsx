@@ -46,11 +46,30 @@ function CameraModal({ isOpen, onClose, onCapture }: CameraModalProps) {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        // Add event listeners for better mobile support
+        console.log('Video element found, setting srcObject');
+        
+        // Force video to load and play on mobile
         videoRef.current.onloadedmetadata = () => {
           console.log('Video metadata loaded, attempting play');
-          videoRef.current?.play().catch(e => console.error('Play failed:', e));
+          if (videoRef.current) {
+            videoRef.current.play()
+              .then(() => console.log('Video playing successfully'))
+              .catch(e => {
+                console.error('Play failed:', e);
+                // Try to force play after a short delay
+                setTimeout(() => {
+                  videoRef.current?.play().catch(e2 => console.error('Retry play failed:', e2));
+                }, 100);
+              });
+          }
         };
+        
+        // Also try to play immediately for some browsers
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            videoRef.current.play().catch(e => console.log('Immediate play attempt failed:', e));
+          }
+        }, 200);
       }
     } catch (error: any) {
       console.error('Error accessing camera:', error);

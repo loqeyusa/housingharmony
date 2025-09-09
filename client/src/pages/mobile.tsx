@@ -26,16 +26,21 @@ import {
   WifiOff,
   Download,
   Share,
-  Smartphone
+  Smartphone,
+  Camera
 } from "lucide-react";
 import ClientForm from "@/components/client-form";
 import PropertyForm from "@/components/property-form";
 import ApplicationForm from "@/components/application-form";
 import PoolFundForm from "@/components/pool-fund-form";
 import AIAssistant from "@/components/ai-assistant";
+import { DocumentCapture } from "@/components/DocumentCapture";
+import { PaymentProcessingModal } from "@/components/PaymentProcessingModal";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Client, Property, Application, Transaction } from "@shared/schema";
 
-type TabType = 'dashboard' | 'clients' | 'properties' | 'applications' | 'pool-fund' | 'reports';
+type TabType = 'dashboard' | 'clients' | 'properties' | 'applications' | 'pool-fund' | 'reports' | 'capture';
 
 export default function Mobile() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
@@ -45,6 +50,11 @@ export default function Mobile() {
   const [showPoolFundForm, setShowPoolFundForm] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [showDocumentCapture, setShowDocumentCapture] = useState(false);
+  const [isProcessingDocument, setIsProcessingDocument] = useState(false);
+  const [documentAnalysisResult, setDocumentAnalysisResult] = useState<any>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const { toast } = useToast();
   
   // PWA State Management
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -119,6 +129,64 @@ export default function Mobile() {
       // Fallback to clipboard
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
+    }
+  };
+
+  // Document capture handlers
+  const handleDocumentCaptured = async (imageData: string) => {
+    setIsProcessingDocument(true);
+    try {
+      const response = await apiRequest('POST', '/api/payment-documents/analyze', {
+        imageData
+      });
+      
+      setDocumentAnalysisResult(response);
+      setShowDocumentCapture(false);
+      setShowPaymentModal(true);
+      setActiveTab('dashboard'); // Navigate back to dashboard
+      
+      toast({
+        title: "Document Analyzed",
+        description: `Found ${response?.matchResults?.length || 0} client matches for processing.`,
+      });
+    } catch (error) {
+      console.error('Document analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze the payment document. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingDocument(false);
+    }
+  };
+
+  const handleProcessPayments = async (selectedClients: any[]) => {
+    try {
+      const response = await apiRequest('POST', '/api/payment-documents/process-payments', {
+        documentId: documentAnalysisResult.documentId,
+        selectedClients
+      });
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      setShowPaymentModal(false);
+      setDocumentAnalysisResult(null);
+      
+      toast({
+        title: "Payments Processed",
+        description: `Successfully processed ${response?.processedCount || selectedClients.length} payment transactions.`,
+      });
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast({
+        title: "Processing Failed",
+        description: "Could not process payments. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -822,6 +890,69 @@ export default function Mobile() {
     );
   };
 
+  const CaptureTab = () => (
+    <div className="space-y-4">
+      <div className="text-center">
+        <h2 className="text-lg font-semibold mb-2">Payment Document Capture</h2>
+        <p className="text-sm text-slate-600 mb-6">Capture county payment documents to automatically process payments for multiple clients.</p>
+      </div>
+
+      <Card>
+        <CardContent className="p-6 text-center">
+          <Camera className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+          <h3 className="font-semibold text-lg mb-2">Ready to Capture</h3>
+          <p className="text-sm text-slate-600 mb-4">
+            Use your device camera to capture payment documents like Minnesota DHS checks or county payment advices.
+          </p>
+          <Button 
+            onClick={() => setShowDocumentCapture(true)}
+            className="w-full"
+            disabled={isProcessingDocument}
+          >
+            {isProcessingDocument ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Processing...
+              </>
+            ) : (
+              <>
+                <Camera className="w-4 h-4 mr-2" />
+                Start Capture
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center">
+            <FileText className="w-4 h-4 mr-2" />
+            How It Works
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-xs text-slate-600 space-y-2">
+          <div className="flex items-start space-x-2">
+            <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold">1</span>
+            <p>Take a photo of the county payment document</p>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold">2</span>
+            <p>AI analyzes the document and identifies clients</p>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold">3</span>
+            <p>Review and confirm payment details</p>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="bg-blue-100 text-blue-800 rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold">4</span>
+            <p>Payments are automatically processed</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -836,6 +967,8 @@ export default function Mobile() {
         return <PoolFundTab />;
       case 'reports':
         return <ReportsTab />;
+      case 'capture':
+        return <CaptureTab />;
       default:
         return <DashboardTab />;
     }
@@ -845,7 +978,7 @@ export default function Mobile() {
     { id: 'dashboard', label: 'Home', icon: Home },
     { id: 'clients', label: 'Clients', icon: Users },
     { id: 'properties', label: 'Properties', icon: Building },
-    { id: 'applications', label: 'Apps', icon: FileText },
+    { id: 'capture', label: 'CAP', icon: Camera },
     { id: 'pool-fund', label: 'Fund', icon: PiggyBank },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
   ];
@@ -897,6 +1030,40 @@ export default function Mobile() {
       )}
       {showPoolFundForm && (
         <PoolFundForm onClose={() => setShowPoolFundForm(false)} />
+      )}
+
+      {/* Document Capture Modal */}
+      {showDocumentCapture && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Payment Document Capture</h2>
+            <DocumentCapture 
+              onDocumentCaptured={handleDocumentCaptured}
+              isProcessing={isProcessingDocument}
+            />
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDocumentCapture(false)}
+                disabled={isProcessingDocument}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Processing Modal */}
+      {showPaymentModal && documentAnalysisResult && (
+        <PaymentProcessingModal 
+          analysisResult={documentAnalysisResult}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setDocumentAnalysisResult(null);
+          }}
+          onProcessPayments={handleProcessPayments}
+        />
       )}
 
       {/* Floating AI Assistant Button */}

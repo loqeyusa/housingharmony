@@ -925,12 +925,19 @@ export class DatabaseStorage implements IStorage {
 
   async getTransactions(companyId?: number): Promise<Transaction[]> {
     if (companyId) {
-      // Join with applications and clients to filter by company
+      // Get transactions that either:
+      // 1. Have applications (traditional flow) - join with applications and clients
+      // 2. Have direct client references (AI assistant payments) - join directly with clients
       const result = await db
-        .select()
+        .select({
+          transactions: transactions,
+        })
         .from(transactions)
-        .innerJoin(applications, eq(transactions.applicationId, applications.id))
-        .innerJoin(clients, eq(applications.clientId, clients.id))
+        .leftJoin(applications, eq(transactions.applicationId, applications.id))
+        .leftJoin(clients, or(
+          eq(applications.clientId, clients.id), // Traditional: through applications
+          eq(transactions.clientId, clients.id)   // Direct: AI assistant payments
+        ))
         .where(eq(clients.companyId, companyId))
         .orderBy(transactions.createdAt);
       return result.map(r => r.transactions).reverse();
@@ -954,12 +961,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTransactionsByClient(clientId: number): Promise<Transaction[]> {
-    // Get transactions through applications belonging to this client
+    // Get transactions that either:
+    // 1. Have applications belonging to this client (traditional flow)
+    // 2. Are directly linked to this client (AI assistant payments)
     const result = await db
-      .select()
+      .select({
+        transactions: transactions,
+      })
       .from(transactions)
       .leftJoin(applications, eq(transactions.applicationId, applications.id))
-      .where(eq(applications.clientId, clientId))
+      .where(or(
+        eq(applications.clientId, clientId),    // Traditional: through applications
+        eq(transactions.clientId, clientId)     // Direct: AI assistant payments
+      ))
       .orderBy(transactions.createdAt);
     return result.map(r => r.transactions).reverse();
   }

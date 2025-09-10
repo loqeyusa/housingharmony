@@ -1831,8 +1831,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    try {
+      console.log(`🔍 Looking up user by username: ${username}`);
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      console.log(`👤 User lookup result: ${user ? 'FOUND' : 'NOT FOUND'}`);
+      if (user) {
+        console.log(`✅ Found user: ID ${user.id}, Company ${user.companyId}, Enabled: ${user.isEnabled}`);
+      }
+      return user || undefined;
+    } catch (error) {
+      console.error(`❌ Error looking up user by username ${username}:`, error);
+      throw error;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {

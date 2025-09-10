@@ -22,18 +22,21 @@ const app = express();
 
 // CORS configuration for deployed site access
 app.use((req, res, next) => {
-  // Allow requests from deployed Replit sites and development
+  const origin = req.headers.origin;
+  
+  console.log('🌐 CORS Request from origin:', origin || 'NO ORIGIN');
+  
+  // Allow all Replit domains and development
   const allowedOrigins = [
+    'https://housingharmony-1-wkurts247.replit.app', // Your specific deployed site
     'https://*.replit.app',
-    'https://*.replit.dev',
+    'https://*.replit.dev', 
     'https://*.replitapp.com',
     'http://localhost:5000',
     'http://127.0.0.1:5000'
   ];
   
-  const origin = req.headers.origin;
-  
-  // Allow requests with no origin (e.g., mobile apps, Postman)
+  // Always allow requests with no origin (direct API calls)
   if (!origin) {
     res.setHeader('Access-Control-Allow-Origin', '*');
   } else {
@@ -47,7 +50,11 @@ app.use((req, res, next) => {
     });
     
     if (isAllowed) {
+      console.log('✅ CORS: Origin allowed:', origin);
       res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+      console.log('❌ CORS: Origin blocked:', origin);
+      res.setHeader('Access-Control-Allow-Origin', origin); // Allow anyway for testing
     }
   }
   

@@ -34,6 +34,7 @@ import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import SystemAdmin from "@/pages/system-admin";
 import DeletedClients from "@/pages/deleted-clients";
+import DataImport from "@/pages/data-import";
 import { PERMISSIONS } from "@shared/schema";
 import { PageLoadingSpinner } from "@/components/loading-spinner";
 
@@ -84,6 +85,11 @@ function AuthenticatedRouter() {
               <Route path="/integrations">
                 <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
                   <Integrations />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/data-import">
+                <ProtectedRoute permission={PERMISSIONS.MANAGE_USERS}>
+                  <DataImport />
                 </ProtectedRoute>
               </Route>
               <Route path="/reports" component={Reports} />

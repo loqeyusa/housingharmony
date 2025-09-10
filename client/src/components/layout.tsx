@@ -19,7 +19,8 @@ import {
   MapPin,
   Settings,
   CreditCard,
-  Zap
+  Zap,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -49,6 +50,7 @@ const navigationItems = [
   { path: "/account-settings", label: "Account Settings", icon: Settings },
   { path: "/bill-management", label: "Bill Management", icon: CreditCard },
   { path: "/integrations", label: "Integrations", icon: Zap },
+  { path: "/data-import", label: "Data Import", icon: Upload },
   { path: "/user-management", label: "User Management", icon: Shield },
   { path: "/reports", label: "Reports", icon: BarChart3 },
 ];
@@ -110,6 +112,7 @@ export default function Layout({ children }: LayoutProps) {
       "/account-settings": "Configure recurring bills and account settings",
       "/bill-management": "Track and manage pending recurring bill payments",
       "/integrations": "Manage external system integrations and automation",
+      "/data-import": "Import data from CSV files into database tables",
       "/user-management": "Manage users, roles, and system permissions",
       "/reports": "Generate reports and analytics",
     };

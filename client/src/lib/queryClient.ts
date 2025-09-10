@@ -64,12 +64,12 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: 60000, // Refetch every 60 seconds to reduce server load
-      refetchOnWindowFocus: true, // Refetch when user comes back to tab
-      refetchOnMount: true, // Always refetch when component mounts
-      refetchOnReconnect: true, // Refetch when network reconnects
-      staleTime: 30000, // Data is fresh for 30 seconds
-      gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes for better performance
+      refetchInterval: false, // Disable automatic polling
+      refetchOnWindowFocus: false, // Disable refetch on focus
+      refetchOnMount: false, // Only fetch when explicitly needed
+      refetchOnReconnect: true, // Keep network reconnect for reliability
+      staleTime: 1000 * 60 * 15, // Data is fresh for 15 minutes
+      gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
       retry: (failureCount, error: any) => {
         // Don't retry on auth errors
         if (error?.message?.includes('401') || error?.message?.includes('403')) {

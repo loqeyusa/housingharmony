@@ -4398,10 +4398,19 @@ The payment has been recorded in the system with the benefit period and the clie
     dest: 'uploads/',
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     fileFilter: (req, file, cb) => {
-      if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+      const allowedTypes = [
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain'
+      ];
+      const allowedExtensions = ['.csv', '.xls', '.xlsx', '.txt'];
+      
+      if (allowedTypes.includes(file.mimetype) || 
+          allowedExtensions.some(ext => file.originalname.toLowerCase().endsWith(ext))) {
         cb(null, true);
       } else {
-        cb(new Error('Only CSV files are allowed'));
+        cb(new Error('Only CSV, Excel (.xls, .xlsx), and text files are allowed'));
       }
     }
   });
@@ -4412,10 +4421,8 @@ The payment has been recorded in the system with the benefit period and the clie
       const availableTables = [
         { key: 'buildings', label: 'Buildings', description: 'Building/property information with landlord details' },
         { key: 'clients', label: 'Clients', description: 'Client personal and housing information' },
-        { key: 'companies', label: 'Companies', description: 'Housing organizations and companies' },
-        { key: 'counties', label: 'Counties', description: 'County reference data' },
-        { key: 'pool_fund', label: 'Pool Fund', description: 'Pool fund transactions and entries' },
-        { key: 'properties', label: 'Properties', description: 'Individual housing units and properties' }
+        { key: 'properties', label: 'Properties', description: 'Individual housing units and properties' },
+        { key: 'pool_fund', label: 'Pool Fund', description: 'Pool fund transactions and entries' }
       ];
       
       res.json(availableTables);
@@ -4434,7 +4441,7 @@ The payment has been recorded in the system with the benefit period and the clie
       switch (table) {
         case 'buildings':
           schema = {
-            required: ['companyId', 'name', 'address', 'landlordName', 'landlordPhone', 'landlordEmail'],
+            required: ['name', 'address', 'landlordName', 'landlordPhone', 'landlordEmail'],
             optional: ['siteId', 'totalUnits', 'buildingType', 'propertyManager', 'propertyManagerPhone', 'amenities', 'parkingSpaces', 'notes', 'status']
           };
           break;
@@ -4487,14 +4494,44 @@ The payment has been recorded in the system with the benefit period and the clie
       }
 
       const filePath = req.file.path;
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+      let parseResult;
       
-      // Parse CSV using Papa Parse
-      const parseResult = Papa.parse(fileContent, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: (header) => header.trim()
-      });
+      // Check if it's an Excel file
+      if (req.file.originalname.toLowerCase().endsWith('.xlsx') || req.file.originalname.toLowerCase().endsWith('.xls')) {
+        // Parse Excel file
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonData.length === 0) {
+          fs.unlinkSync(filePath);
+          return res.status(400).json({ error: "Excel file is empty" });
+        }
+        
+        const headers = jsonData[0] as string[];
+        const rows = jsonData.slice(1).map(row => {
+          const obj: Record<string, any> = {};
+          headers.forEach((header, index) => {
+            obj[header] = (row as any[])[index] || '';
+          });
+          return obj;
+        });
+        
+        parseResult = {
+          data: rows,
+          meta: { fields: headers },
+          errors: []
+        };
+      } else {
+        // Parse CSV using Papa Parse
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        parseResult = Papa.parse(fileContent, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: (header) => header.trim()
+        });
+      }
 
       if (parseResult.errors.length > 0) {
         console.error('CSV parsing errors:', parseResult.errors);

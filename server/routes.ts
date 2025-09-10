@@ -26,6 +26,8 @@ import { importRamseyCSVFile } from './ramseyImporter';
 import { importHennepinCSVFile } from './hennepinImporter';
 import { importDakotaCSVFile } from './dakotaImporter';
 import { importSteeleCSVFile } from './steeleImporter';
+import * as csv from 'csv-parser';
+import Papa from 'papaparse';
 import { ObjectStorageService } from "./objectStorage";
 import QuickBooksService from "./quickbooks-service";
 import WebAutomationService from "./web-automation-service";
@@ -4390,6 +4392,268 @@ The payment has been recorded in the system with the benefit period and the clie
         details: error instanceof Error ? error.message : "Unknown error" 
       });
     }
+  });
+
+  // CSV Import Routes
+  const upload = multer({ 
+    dest: 'uploads/',
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only CSV files are allowed'));
+      }
+    }
+  });
+
+  // Get available tables for import
+  app.get("/api/import/tables", requireAuth, async (req, res) => {
+    try {
+      const availableTables = [
+        { key: 'buildings', label: 'Buildings', description: 'Building/property information with landlord details' },
+        { key: 'clients', label: 'Clients', description: 'Client personal and housing information' },
+        { key: 'companies', label: 'Companies', description: 'Housing organizations and companies' },
+        { key: 'counties', label: 'Counties', description: 'County reference data' },
+        { key: 'pool_fund', label: 'Pool Fund', description: 'Pool fund transactions and entries' },
+        { key: 'properties', label: 'Properties', description: 'Individual housing units and properties' }
+      ];
+      
+      res.json(availableTables);
+    } catch (error) {
+      console.error('Get import tables error:', error);
+      res.status(500).json({ error: "Failed to get available tables" });
+    }
+  });
+
+  // Get table schema/columns for mapping
+  app.get("/api/import/schema/:table", requireAuth, async (req, res) => {
+    try {
+      const { table } = req.params;
+      let schema = {};
+      
+      switch (table) {
+        case 'buildings':
+          schema = {
+            required: ['companyId', 'name', 'address', 'landlordName', 'landlordPhone', 'landlordEmail'],
+            optional: ['siteId', 'totalUnits', 'buildingType', 'propertyManager', 'propertyManagerPhone', 'amenities', 'parkingSpaces', 'notes', 'status']
+          };
+          break;
+        case 'clients':
+          schema = {
+            required: ['companyId', 'firstName', 'lastName', 'email', 'phone', 'dateOfBirth', 'ssn', 'currentAddress', 'employmentStatus', 'monthlyIncome'],
+            optional: ['caseNumber', 'county', 'propertyId', 'buildingId', 'countyAmount', 'notes', 'status', 'vendorNumber', 'site', 'cluster', 'subsidyStatus', 'grhStatus']
+          };
+          break;
+        case 'companies':
+          schema = {
+            required: ['name', 'displayName', 'email', 'phone', 'address', 'contactPersonName', 'contactPersonEmail', 'contactPersonPhone'],
+            optional: ['website', 'registrationNumber', 'taxId', 'licenseNumber', 'licenseExpirationDate', 'status', 'subscriptionPlan', 'maxClients', 'maxUsers', 'notes']
+          };
+          break;
+        case 'counties':
+          schema = {
+            required: ['name'],
+            optional: ['state']
+          };
+          break;
+        case 'pool_fund':
+          schema = {
+            required: ['transactionId', 'amount', 'type', 'description', 'county'],
+            optional: ['clientId', 'siteId', 'month', 'benefitPeriodStart', 'benefitPeriodEnd']
+          };
+          break;
+        case 'properties':
+          schema = {
+            required: ['companyId', 'buildingId', 'name', 'rentAmount', 'depositAmount', 'bedrooms', 'bathrooms'],
+            optional: ['unitNumber', 'floor', 'squareFootage', 'unitAmenities', 'hasBalcony', 'hasPatio', 'hasWasherDryer', 'petFriendly', 'utilities', 'status', 'currentTenantId', 'notes']
+          };
+          break;
+        default:
+          return res.status(400).json({ error: "Invalid table name" });
+      }
+      
+      res.json(schema);
+    } catch (error) {
+      console.error('Get table schema error:', error);
+      res.status(500).json({ error: "Failed to get table schema" });
+    }
+  });
+
+  // Upload and preview CSV file
+  app.post("/api/import/upload", requireAuth, upload.single('csvFile'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const filePath = req.file.path;
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      
+      // Parse CSV using Papa Parse
+      const parseResult = Papa.parse(fileContent, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim()
+      });
+
+      if (parseResult.errors.length > 0) {
+        console.error('CSV parsing errors:', parseResult.errors);
+        fs.unlinkSync(filePath); // Clean up file
+        return res.status(400).json({ 
+          error: "CSV parsing failed", 
+          details: parseResult.errors 
+        });
+      }
+
+      const preview = {
+        headers: parseResult.meta.fields || [],
+        rows: parseResult.data.slice(0, 5), // First 5 rows for preview
+        totalRows: parseResult.data.length,
+        filePath: filePath // Keep file for actual import
+      };
+
+      res.json(preview);
+    } catch (error) {
+      console.error('CSV upload error:', error);
+      if (req.file?.path) {
+        fs.unlinkSync(req.file.path); // Clean up file on error
+      }
+      res.status(500).json({ error: "Failed to process CSV file" });
+    }
+  });
+
+  // Import CSV data to database
+  app.post("/api/import/process", requireAuth, async (req, res) => {
+    try {
+      const { filePath, tableName, columnMapping, skipFirstRow } = req.body;
+      const user = req.session.user;
+
+      if (!filePath || !tableName || !columnMapping) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(400).json({ error: "File not found" });
+      }
+
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      
+      // Parse CSV
+      const parseResult = Papa.parse(fileContent, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim()
+      });
+
+      if (parseResult.errors.length > 0) {
+        fs.unlinkSync(filePath); // Clean up file
+        return res.status(400).json({ 
+          error: "CSV parsing failed", 
+          details: parseResult.errors 
+        });
+      }
+
+      let successful = 0;
+      let failed = 0;
+      const errors = [];
+
+      // Process each row
+      for (let i = 0; i < parseResult.data.length; i++) {
+        try {
+          const row = parseResult.data[i];
+          const mappedData = {};
+
+          // Map CSV columns to database columns
+          for (const [dbColumn, csvColumn] of Object.entries(columnMapping)) {
+            if (csvColumn && row[csvColumn] !== undefined && row[csvColumn] !== '') {
+              mappedData[dbColumn] = row[csvColumn];
+            }
+          }
+
+          // Add required fields
+          if (tableName !== 'companies' && tableName !== 'counties') {
+            mappedData.companyId = user.companyId;
+          }
+
+          // Import to specific table
+          let result;
+          switch (tableName) {
+            case 'buildings':
+              result = await storage.createBuilding(mappedData);
+              break;
+            case 'clients':
+              result = await storage.createClient(mappedData, user.id);
+              break;
+            case 'companies':
+              result = await storage.createCompany(mappedData);
+              break;
+            case 'counties':
+              result = await storage.createCounty(mappedData);
+              break;
+            case 'pool_fund':
+              result = await storage.createPoolFundEntry(mappedData);
+              break;
+            case 'properties':
+              result = await storage.createProperty(mappedData);
+              break;
+            default:
+              throw new Error(`Unsupported table: ${tableName}`);
+          }
+
+          successful++;
+        } catch (error) {
+          failed++;
+          errors.push({
+            row: i + 1,
+            error: error.message,
+            data: parseResult.data[i]
+          });
+        }
+      }
+
+      // Clean up file
+      fs.unlinkSync(filePath);
+
+      // Log import activity
+      await storage.createAuditLog({
+        userId: user.id,
+        action: "csv_import",
+        resource: tableName,
+        details: { 
+          successful,
+          failed,
+          totalRows: parseResult.data.length,
+          tableName
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+      });
+
+      res.json({
+        success: true,
+        summary: {
+          successful,
+          failed,
+          totalRows: parseResult.data.length,
+          errors: errors.slice(0, 10) // Limit error details
+        }
+      });
+    } catch (error) {
+      console.error('CSV import error:', error);
+      if (req.body.filePath && fs.existsSync(req.body.filePath)) {
+        fs.unlinkSync(req.body.filePath); // Clean up file
+      }
+      res.status(500).json({ error: "Failed to import CSV data" });
+    }
+  });
+
+  // Start the server
+  const httpServer = createServer(app);
+  const PORT = parseInt(process.env.PORT || "5000");
+
+  httpServer.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 
   return httpServer;

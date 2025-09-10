@@ -4231,7 +4231,6 @@ The payment has been recorded in the system with the benefit period and the clie
     }
   });
 
-  const httpServer = createServer(app);
   // Payment Document Analysis Routes
   app.post("/api/payment-documents/analyze", async (req, res) => {
     try {
@@ -4650,13 +4649,7 @@ The payment has been recorded in the system with the benefit period and the clie
     }
   });
 
-  // Start the server
+  // Return the server instance (don't start it here - index.ts will handle that)
   const httpServer = createServer(app);
-  const PORT = parseInt(process.env.PORT || "5000");
-
-  httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
-
   return httpServer;
 }

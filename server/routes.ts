@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secure: false, // Keep false even in production for Replit
       httpOnly: false, // Allow frontend access for deployed environment  
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: 'lax', // Allow cross-site requests
+      sameSite: 'none', // Required for cross-origin requests in deployed environment
       domain: undefined, // Let the browser handle the domain
     },
   }));
